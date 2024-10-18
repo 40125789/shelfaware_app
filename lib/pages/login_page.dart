@@ -31,7 +31,7 @@ class LoginPage extends StatelessWidget {
                 color: Colors.green,
               ),
 
-              const SizedBox(height: 50),
+              const SizedBox(height: 20),
 
               //Text
               Text(
@@ -50,8 +50,6 @@ class LoginPage extends StatelessWidget {
                 hintText: 'Email',
                 obscureText: false,
               ),
-
-              const SizedBox(height: 10),
 
               //password textfield
               MyTextField(
@@ -121,32 +119,27 @@ class LoginPage extends StatelessWidget {
                   SizedBox(width: 25),
 
                   //Facebook icon
-                   SquareTile(imagePath: 'lib/images/facebook.png'),
-
-                
+                  SquareTile(imagePath: 'lib/images/facebook.png'),
                 ],
               ),
 
               const SizedBox(height: 50),
 
               //not a member? sign up
-              Row (
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Not a member?', 
+                    'Not a member?',
                     style: TextStyle(color: Colors.grey[700]),
                   ),
                   const SizedBox(width: 4),
                   const Text(
                     'Register Now',
                     style: TextStyle(
-                      color: Colors.blue, 
-                      fontWeight: FontWeight.bold
-                      ),
-                    ),
-
-              ],
+                        color: Colors.blue, fontWeight: FontWeight.bold),
+                  ),
+                ],
               )
             ],
           ),
