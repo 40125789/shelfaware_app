@@ -17,7 +17,7 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(actions: [
         IconButton(onPressed: signUserOut, icon: Icon(Icons.logout))
       ]),
-      body: Center(child: Text("LOGGED IN AS: " + user.email!,
+      body: Center(child: Text("LOGGED IN AS: ${user.email!}",
           style: TextStyle(fontSize: 20),
           )),
     );

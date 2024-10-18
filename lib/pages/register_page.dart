@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
 import 'package:shelfaware_app/components/square_tile.dart';
-import 'login_page.dart';
-import 'register_page.dart';
 
 class RegisterPage extends StatefulWidget {
   final Function()? onTap;
@@ -36,15 +34,14 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       //check if passwords match
       if (passwordController.text == confirmPasswordController.text) {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
-      );
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: emailController.text,
+          password: passwordController.text,
+        );
       } else {
         //show error message
         showErrorMessage('Passwords do not match');
       }
-
 
       //pop the loading circle
       Navigator.pop(context);
@@ -133,9 +130,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
 
                 const SizedBox(height: 25),
-
-
-
 
                 //sign in button
                 MyButton(
