@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
 import 'package:shelfaware_app/components/square_tile.dart';
+import 'package:shelfaware_app/services/auth_services.dart';
 
 class RegisterPage extends StatefulWidget {
   final Function()? onTap;
@@ -13,10 +15,22 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  //text editing controller
+  //text editing controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
+    super.dispose();
+  }
 
   //Sign up Function
   void signUserUp() async {
@@ -38,6 +52,13 @@ class _RegisterPageState extends State<RegisterPage> {
           email: emailController.text,
           password: passwordController.text,
         );
+
+        // After successful signup, add the user details to Firestore
+        addUserDetails(
+          firstNameController.text.trim(),
+          lastNameController.text.trim(),
+          emailController.text.trim(),
+        );
       } else {
         //show error message
         showErrorMessage('Passwords do not match');
@@ -54,7 +75,17 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-//error message to user
+  // Function to add user details to Firestore
+  Future<void> addUserDetails(
+      String firstName, String lastName, String email) async {
+    await FirebaseFirestore.instance.collection('users').add({
+      'firstName': firstName,
+      'lastName': lastName,
+      'email': email,
+    });
+  }
+
+  //error message to user
   void showErrorMessage(String message) {
     showDialog(
       context: context,
@@ -64,7 +95,7 @@ class _RegisterPageState extends State<RegisterPage> {
           title: Center(
             child: Text(
               message,
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         );
@@ -103,6 +134,20 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
 
                 const SizedBox(height: 25),
+
+                //first name textfield
+                MyTextField(
+                  controller: firstNameController,
+                  hintText: 'First Name',
+                  obscureText: false,
+                ),
+
+                //last name textfield
+                MyTextField(
+                  controller: lastNameController,
+                  hintText: 'Last Name',
+                  obscureText: false,
+                ),
 
                 //email textfield
                 MyTextField(
@@ -170,16 +215,22 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 50),
 
                 //google signin button
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     //google icon
-                    SquareTile(imagePath: 'lib/images/google.png'),
+                    SquareTile(
+                      onTap: () => AuthService().signInWithGoogle(),
+                      imagePath: 'lib/images/google.png',
+                    ),
 
-                    SizedBox(width: 25),
+                    const SizedBox(width: 25),
 
                     //Facebook icon
-                    SquareTile(imagePath: 'lib/images/facebook.png'),
+                    SquareTile(
+                      onTap: () {},
+                      imagePath: 'lib/images/facebook.png',
+                    ),
                   ],
                 ),
 
@@ -199,7 +250,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: const Text(
                         'Login Now',
                         style: TextStyle(
-                            color: Colors.blue, fontWeight: FontWeight.bold),
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -212,3 +265,4 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
+
