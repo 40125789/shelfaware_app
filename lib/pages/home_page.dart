@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:shelfaware_app/components/bottom_navigation_bar.dart';
-import 'package:shelfaware_app/components/side_drawer_menu.dart'; // Import the new CustomDrawer
+import 'package:shelfaware_app/components/side_drawer_menu.dart'; 
 import 'package:shelfaware_app/components/top_app_bar.dart';
+import 'package:shelfaware_app/components/filter_dropdown.dart'; // Import the new component
 import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
 import 'package:shelfaware_app/pages/recipes_page.dart';
 import 'package:shelfaware_app/pages/donations_page.dart';
@@ -22,12 +23,15 @@ class _HomePageState extends State<HomePage> {
   String lastName = '';
   final user = FirebaseAuth.instance.currentUser!;
   late PageController _pageController;
+  String selectedFilter = 'All'; // State for the filter
+  List<String> filterOptions = ['All']; // Default value to show
 
   @override
   void initState() {
     super.initState();
     getUserData();
     _pageController = PageController();
+    _fetchFilterOptions(); // Fetch filter options from Firestore
   }
 
   @override
@@ -37,16 +41,40 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> getUserData() async {
-    QueryDocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: user.email)
-        .get()
-        .then((snapshot) => snapshot.docs.first);
+    try {
+      QueryDocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .get()
+          .then((snapshot) => snapshot.docs.first);
 
-    setState(() {
-      firstName = userDoc['firstName'];
-      lastName = userDoc['lastName'];
-    });
+      setState(() {
+        firstName = userDoc['firstName'];
+        lastName = userDoc['lastName'];
+      });
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
+
+  // Function to fetch filter options (categories) from Firestore
+  Future<void> _fetchFilterOptions() async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('categories') // Assuming 'categories' is the collection
+          .get();
+
+      // Map through the documents and get the 'Food Type' field
+      List<String> categories = snapshot.docs.map((doc) {
+        return doc['Food Type'].toString();
+      }).toList();
+      
+      setState(() {
+        filterOptions = ['All', ...categories]; // Add 'All' at the beginning
+      });
+    } catch (e) {
+      print('Error fetching filter options: $e');
+    }
   }
 
   void signUserOut() {
@@ -57,17 +85,14 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TopAppBar(
-        //title: 'ShelfAware',
         onLocationPressed: () {},
         onNotificationPressed: () {},
         onMessagePressed: () {},
       ),
-
       drawer: CustomDrawer(
         firstName: firstName,
         lastName: lastName,
         onSignOut: signUserOut,
-
       ),
       body: PageView(
         controller: _pageController,
@@ -78,6 +103,18 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Use the FilterDropdown component
+                FilterDropdown(
+                  selectedFilter: selectedFilter,
+                  filterOptions: filterOptions,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedFilter = newValue!;
+                    });
+                    // Optionally, implement filtering logic based on selected category
+                  },
+                ),
+                const SizedBox(height: 20),
                 _buildInventoryCard(),
                 const SizedBox(height: 20),
                 _buildExpiringSoonCard(),
