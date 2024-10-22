@@ -59,12 +59,25 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.green,
         iconTheme: IconThemeData(color: Colors.grey[800]),
         actions: [
+
+          IconButton(
+          icon: Icon(Icons.location_on, color: Colors.grey[800]), // Location icon
+          onPressed: () {
+            // Define actions for location, e.g., showing user location or navigation
+          },
+        ),
           IconButton(
             icon: Icon(Icons.notifications, color: Colors.grey[800]),
             onPressed: () {
               // Define actions for notifications
             },
           ),
+          IconButton(
+          icon: Icon(Icons.message, color: Colors.grey[800]), // Message icon
+          onPressed: () {
+            // Navigate to the Messages screen or define message-related actions
+          },
+        ),
           const Padding(padding: EdgeInsets.symmetric(horizontal: 10.0)),
         ],
       ),
