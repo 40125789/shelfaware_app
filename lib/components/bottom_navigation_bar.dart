@@ -34,7 +34,7 @@ class BottomNavigationBarComponent extends StatelessWidget {
           textColor: Colors.green,
         ),
         GButton(
-          icon: Icons.location_on,
+          icon: Icons.food_bank,
           text: 'Donations',
           iconColor: Colors.grey,
           textColor: Colors.green,
