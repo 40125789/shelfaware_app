@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
+
 class BottomNavigationBarComponent extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onTabChange;
@@ -23,12 +24,6 @@ class BottomNavigationBarComponent extends StatelessWidget {
         GButton(
           icon: Icons.home,
           text: 'Home',
-          iconColor: Colors.grey,
-          textColor: Colors.green,
-        ),
-        GButton(
-          icon: Icons.list,
-          text: 'Inventory',
           iconColor: Colors.grey,
           textColor: Colors.green,
         ),
