@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:shelfaware_app/components/bottom_navigation_bar.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -48,47 +48,6 @@ class _HomePageState extends State<HomePage> {
           IconButton(onPressed: signUserOut, icon: const Icon(Icons.logout)),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 10.0),
-          ),
-        ],
-      ),
-      bottomNavigationBar: GNav(
-        activeColor: Colors.green,
-        iconSize: 24,
-        gap: 8,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-        onTabChange: (index) {
-          print(index);
-        },
-        tabs: [
-          GButton(
-            icon: Icons.home,
-            text: 'Home',
-            iconColor: Colors.grey,
-            textColor: Colors.green,
-          ),
-          GButton(
-            icon: Icons.list,
-            text: 'Inventory',
-            iconColor: Colors.grey,
-            textColor: Colors.green,
-          ),
-          GButton(
-            icon: Icons.favorite_border_outlined,
-            text: 'Recipes',
-            iconColor: Colors.grey,
-            textColor: Colors.green,
-          ),
-          GButton(
-            icon: Icons.location_on,
-            text: 'Donations',
-            iconColor: Colors.grey,
-            textColor: Colors.green,
-          ),
-          GButton(
-            icon: Icons.bar_chart,
-            text: 'Statistics',
-            iconColor: Colors.grey,
-            textColor: Colors.green,
           ),
         ],
       ),
@@ -156,6 +115,12 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 20),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBarComponent(
+        selectedIndex: 0,
+        onTabChange: (index) {
+          // Handle navigation
+        },
       ),
     );
   }
