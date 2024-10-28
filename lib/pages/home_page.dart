@@ -11,10 +11,10 @@ import 'package:shelfaware_app/pages/recipes_page.dart';
 import 'package:shelfaware_app/pages/donations_page.dart';
 import 'package:shelfaware_app/pages/statistics_page.dart';
 import 'package:shelfaware_app/pages/add_food_item.dart'; // Import the add_food_item page
+import 'package:shelfaware_app/models/food_category.dart';
+import 'package:shelfaware_app/models/food_category_icons.dart';
+import 'package:shelfaware_app/components/expiry_icon.dart'; // Import the expiry icon component
 
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -65,17 +65,18 @@ class _HomePageState extends State<HomePage> {
   // Function to fetch filter options (categories) from Firestore
   Future<void> _fetchFilterOptions() async {
     try {
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('categories') // Assuming 'categories' is the collection
-          .get();
-
-      // Map through the documents and get the 'Food Type' field
+      QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('categories').get();
       List<String> categories = snapshot.docs.map((doc) {
-        return doc['Food Type'].toString();
+        final foodType = doc['Food Type'];
+        print('Fetched Food Type: $foodType'); // Debugging output
+        return foodType?.toString() ?? ''; // Ensure safety against null
       }).toList();
-      
+
+      // Remove empty strings if any
+      categories.removeWhere((category) => category.isEmpty);
+
       setState(() {
-        filterOptions = ['All', ...categories]; // Add 'All' at the beginning
+        filterOptions = ['All', ...categories];
       });
     } catch (e) {
       print('Error fetching filter options: $e');
@@ -86,19 +87,6 @@ class _HomePageState extends State<HomePage> {
     FirebaseAuth.instance.signOut();
   }
 
-  Icon getExpiryIcon(Timestamp expiryTimestamp) {
-    DateTime expiryDate = expiryTimestamp.toDate();
-    DateTime today = DateTime.now();
-    int daysDifference = expiryDate.difference(today).inDays;
-
-    if (daysDifference < 0) {
-      return Icon(Icons.error, color: Colors.red[700]); // Expired
-    } else if (daysDifference <= 5) {
-      return Icon(Icons.warning, color: Colors.orange[700]); // Close to expiry
-    } else {
-      return Icon(Icons.check_circle, color: Colors.green[700]); // Fresh
-    }
-  }
 
   // Updated formatDate function to show "Expires in X days" format
   String formatDate(Timestamp expiryTimestamp) {
@@ -165,32 +153,64 @@ class _HomePageState extends State<HomePage> {
                       final filteredItems = selectedFilter == 'All'
                           ? snapshot.data!.docs
                           : snapshot.data!.docs.where((doc) {
-                              return doc['foodType'] == selectedFilter;
+                              return doc['category'] == selectedFilter;
                             }).toList();
 
-                      return ListView(
-                        children: filteredItems.map((document) {
-                          final data = document.data() as Map<String, dynamic>;
-                          final expiryTimestamp = data['expiryDate'] as Timestamp;
+                      if (filteredItems.isEmpty) {
+                        return const Center(child: Text('No food items match the selected filter.'));
+                      }
 
-                          return Card(
-                            elevation: 3,
-                            margin: const EdgeInsets.symmetric(vertical: 8.0),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            child: ListTile(
-                              leading: getExpiryIcon(expiryTimestamp),
-                              title: Text(
-                                data['productName'] ?? 'No Name',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text(
-                                "${formatDate(expiryTimestamp)}\nQuantity: ${data['quantity']}",
-                              ),
-                              trailing: Icon(Icons.fastfood, color: Colors.green[700]),
-                            ),
-                          );
-                        }).toList(),
-                      );
+                      return ListView(
+  children: filteredItems.map((document) {
+    final data = document.data() as Map<String, dynamic>;
+    final expiryTimestamp = data['expiryDate'] as Timestamp;
+
+    // Get the food category from the "foodItems" collection
+    String? fetchedFoodType = data['category'];
+    FoodCategory foodCategory;
+
+    if (fetchedFoodType != null) {
+      foodCategory = FoodCategory.values.firstWhere(
+        (e) => e.toString().split('.').last == fetchedFoodType,
+        orElse: () => FoodCategory.values.first, // Default category if not found
+      );
+    } else {
+      foodCategory = FoodCategory.values.first; // Default category if no type is present
+    }
+
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: ListTile(
+        leading: SizedBox(
+          width: 40, // Adjust as necessary
+          height: 40, // Adjust as necessary
+          child: Icon(FoodCategoryIcons.getIcon(foodCategory)), // Displaying the icon
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                data['productName'] ?? 'No Name',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Text(
+          "Quantity: ${data['quantity']}\n${formatDate(expiryTimestamp)}", // Showing quantity and expiry date
+        ),
+        trailing: SizedBox(
+          width: 60, // Adjust as necessary
+          height: 60, // Adjust as necessary
+          child: ExpiryIcon(expiryTimestamp: expiryTimestamp), // Displaying the expiry icon
+        ),
+      ),
+    );
+  }).toList(),
+);
+
                     },
                   ),
                 ),
@@ -224,7 +244,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.green,
         elevation: 6.0, // Adds shadow to the button
         shape: const CircleBorder(), // Change to a circular button
-            ),
-          );
-        }
+      ),
+    );
+  }
 }
