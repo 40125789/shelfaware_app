@@ -10,6 +10,11 @@ import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
 import 'package:shelfaware_app/pages/recipes_page.dart';
 import 'package:shelfaware_app/pages/donations_page.dart';
 import 'package:shelfaware_app/pages/statistics_page.dart';
+import 'package:shelfaware_app/pages/add_food_item.dart'; // Import the add_food_item page
+
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -81,10 +86,40 @@ class _HomePageState extends State<HomePage> {
     FirebaseAuth.instance.signOut();
   }
 
+  Icon getExpiryIcon(Timestamp expiryTimestamp) {
+    DateTime expiryDate = expiryTimestamp.toDate();
+    DateTime today = DateTime.now();
+    int daysDifference = expiryDate.difference(today).inDays;
+
+    if (daysDifference < 0) {
+      return Icon(Icons.error, color: Colors.red[700]); // Expired
+    } else if (daysDifference <= 5) {
+      return Icon(Icons.warning, color: Colors.orange[700]); // Close to expiry
+    } else {
+      return Icon(Icons.check_circle, color: Colors.green[700]); // Fresh
+    }
+  }
+
+  // Updated formatDate function to show "Expires in X days" format
+  String formatDate(Timestamp expiryTimestamp) {
+    DateTime expiryDate = expiryTimestamp.toDate();
+    DateTime today = DateTime.now();
+    int daysDifference = expiryDate.difference(today).inDays;
+
+    if (daysDifference < 0) {
+      return "Expired";
+    } else if (daysDifference == 0) {
+      return "Expires today";
+    } else {
+      return "Expires in $daysDifference days";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TopAppBar(
+        title: 'Inventory',
         onLocationPressed: () {},
         onNotificationPressed: () {},
         onMessagePressed: () {},
@@ -103,7 +138,6 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Use the FilterDropdown component
                 FilterDropdown(
                   selectedFilter: selectedFilter,
                   filterOptions: filterOptions,
@@ -111,14 +145,55 @@ class _HomePageState extends State<HomePage> {
                     setState(() {
                       selectedFilter = newValue!;
                     });
-                    // Optionally, implement filtering logic based on selected category
                   },
                 ),
                 const SizedBox(height: 20),
-                _buildInventoryCard(),
-                const SizedBox(height: 20),
-                _buildExpiringSoonCard(),
-                const SizedBox(height: 20),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('foodItems').snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return const Center(child: Text('Error fetching food items'));
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(child: Text('No food items found'));
+                      }
+
+                      final filteredItems = selectedFilter == 'All'
+                          ? snapshot.data!.docs
+                          : snapshot.data!.docs.where((doc) {
+                              return doc['foodType'] == selectedFilter;
+                            }).toList();
+
+                      return ListView(
+                        children: filteredItems.map((document) {
+                          final data = document.data() as Map<String, dynamic>;
+                          final expiryTimestamp = data['expiryDate'] as Timestamp;
+
+                          return Card(
+                            elevation: 3,
+                            margin: const EdgeInsets.symmetric(vertical: 8.0),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            child: ListTile(
+                              leading: getExpiryIcon(expiryTimestamp),
+                              title: Text(
+                                data['productName'] ?? 'No Name',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text(
+                                "${formatDate(expiryTimestamp)}\nQuantity: ${data['quantity']}",
+                              ),
+                              trailing: Icon(Icons.fastfood, color: Colors.green[700]),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -138,54 +213,18 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
-    );
-  }
-
-  Card _buildInventoryCard() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Icon(Icons.list, size: 40, color: Colors.green),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text("Inventory", style: TextStyle(fontSize: 24)),
-                Text("Check your food items", style: TextStyle(fontSize: 16)),
-              ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddFoodItem()),
+          );
+        },
+        child: const Icon(Icons.add),
+        backgroundColor: Colors.green,
+        elevation: 6.0, // Adds shadow to the button
+        shape: const CircleBorder(), // Change to a circular button
             ),
-            const Icon(Icons.arrow_forward, size: 30),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Card _buildExpiringSoonCard() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Icon(Icons.warning, size: 40, color: Colors.red),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text("Items Expiring Soon", style: TextStyle(fontSize: 24)),
-                Text("3 items need your attention", style: TextStyle(fontSize: 16)),
-              ],
-            ),
-            const Icon(Icons.arrow_forward, size: 30),
-          ],
-        ),
-      ),
-    );
-  }
+          );
+        }
 }
