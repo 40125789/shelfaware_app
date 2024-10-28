@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/services/camera_service.dart';
-import 'package:shelfaware_app/components/top_app_bar.dart';
 import 'package:shelfaware_app/components/filter_dropdown.dart'; // Import the FilterDropdown widget
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:permission_handler/permission_handler.dart';
 //import 'camera_service.dart'; // Make sure this file exists and has the scanBarcode method.
 
 class AddFoodItem extends StatefulWidget {
