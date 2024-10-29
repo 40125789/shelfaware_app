@@ -5,10 +5,9 @@ import 'pages/auth_page.dart';
 import 'package:provider/provider.dart';
 import 'controllers/bottom_nav_controller.dart'; // Import your BottomNavController
 
-
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
