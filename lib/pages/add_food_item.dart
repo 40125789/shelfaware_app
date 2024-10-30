@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+final user = FirebaseAuth.instance.currentUser;
+
 //import 'camera_service.dart'; // Make sure this file exists and has the scanBarcode method.
 
 class AddFoodItem extends StatefulWidget {
@@ -77,6 +79,7 @@ class _AddFoodItemState extends State<AddFoodItem> {
         'productName': _productNameController.text,
         'expiryDate': _expiryDate,
         'quantity': int.tryParse(_quantityController.text) ?? 1,
+        'userId': user!.uid,  // Add this line
         'storageLocation': _storageLocationController.text,
         'notes': _notesController.text,
         'category': _category,

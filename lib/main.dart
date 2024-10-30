@@ -3,18 +3,24 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'pages/auth_page.dart';
 import 'package:provider/provider.dart';
-import 'controllers/bottom_nav_controller.dart'; // Import your BottomNavController
+import 'controllers/bottom_nav_controller.dart';
+import 'controllers/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => BottomNavController(), // Provide the controller
-      child: const MyApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => AuthController()),
+        ChangeNotifierProvider(create: (context) => BottomNavController()),
+      ],
+      builder: (context, child) {
+        return const MyApp();
+      },
     ),
   );
 }
@@ -22,12 +28,11 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: AuthPage(), // Keep the AuthPage as the starting point
+      home: AuthPage(),
     );
   }
 }

@@ -4,6 +4,8 @@ import 'package:shelfaware_app/services/location_service.dart';
 import 'package:shelfaware_app/services/map_service.dart';
 import 'package:shelfaware_app/components/map_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../controllers/auth_controller.dart';
+
 
 
 class DonationsPage extends StatefulWidget {
@@ -68,11 +70,14 @@ Future<void> _loadMap() async {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SafeArea(
+      child: Scaffold(
       appBar: AppBar(
-        title: Text("Donations"),
+        title: Text('Donations'),
         bottom: TabBar(
           controller: _tabController,
+          labelColor: Colors.green, // Set the active tab text color to green
+          unselectedLabelColor: Colors.grey[700], // Optional: Set the inactive tab text color
           tabs: [
             Tab(text: "Donation List"),
             Tab(text: "Donation Map"),
@@ -93,6 +98,8 @@ Future<void> _loadMap() async {
                 ),
         ],
       ),
+    ),
     );
+
   }
 }
