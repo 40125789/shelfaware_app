@@ -6,7 +6,8 @@ class RecipeService {
   final String appId = dotenv.env['EDAMAM_APP_ID'] ?? '';
   final String appKey = dotenv.env['EDAMAM_APP_KEY'] ?? '';
 
-  Future<List<Map<String, dynamic>>> fetchRecipes(List<String> ingredients) async {
+  Future<List<Map<String, dynamic>>> fetchRecipes(
+      List<String> ingredients) async {
     // Join ingredients with commas for the API query
     String query = ingredients.join(',');
 
