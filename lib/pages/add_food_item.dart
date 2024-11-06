@@ -4,6 +4,8 @@ import 'package:shelfaware_app/components/filter_dropdown.dart'; // Import the F
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shelfaware_app/components/barcode_scanner_widget.dart'; // Import the BarcodeScannerWidget widget
+import 'package:shelfaware_app/services/food_api_service.dart'; // Import the fetchProductDetails method
 
 final user = FirebaseAuth.instance.currentUser;
 
@@ -21,7 +23,8 @@ class _AddFoodItemState extends State<AddFoodItem> {
   final TextEditingController _productNameController = TextEditingController();
   final TextEditingController _expiryDateController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
-  final TextEditingController _storageLocationController = TextEditingController();
+  final TextEditingController _storageLocationController =
+      TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   DateTime _expiryDate = DateTime.now();
 
@@ -37,8 +40,10 @@ class _AddFoodItemState extends State<AddFoodItem> {
 
   Future<void> _fetchFilterOptions() async {
     try {
-      QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('categories').get();
-      List<String> categories = snapshot.docs.map((doc) => doc['Food Type'].toString()).toList();
+      QuerySnapshot snapshot =
+          await FirebaseFirestore.instance.collection('categories').get();
+      List<String> categories =
+          snapshot.docs.map((doc) => doc['Food Type'].toString()).toList();
       setState(() {
         _categoryOptions = ['All', ...categories];
       });
@@ -79,7 +84,7 @@ class _AddFoodItemState extends State<AddFoodItem> {
         'productName': _productNameController.text,
         'expiryDate': _expiryDate,
         'quantity': int.tryParse(_quantityController.text) ?? 1,
-        'userId': user!.uid,  // Add this line
+        'userId': user!.uid, // Add this line
         'storageLocation': _storageLocationController.text,
         'notes': _notesController.text,
         'category': _category,
@@ -101,7 +106,7 @@ class _AddFoodItemState extends State<AddFoodItem> {
       _formKey.currentState?.reset();
       _productNameController.clear();
       _expiryDateController.clear();
-      _quantityController.clear();  // Clear quantity field
+      _quantityController.clear(); // Clear quantity field
       _storageLocationController.clear();
       _notesController.clear();
       setState(() {
@@ -124,33 +129,33 @@ class _AddFoodItemState extends State<AddFoodItem> {
   }
 
   Future<void> _scanBarcode() async {
-    // Check camera permission
-    var status = await Permission.camera.status;
-    if (status.isDenied) {
-      // Request permission
-      if (await Permission.camera.request().isGranted) {
-        // If the permission is granted, proceed to scan the barcode
-        String? barcode = await CameraService.scanBarcode();
-        if (barcode != null) {
-          // Handle the scanned barcode (e.g., fetch product details)
-          print('Scanned barcode: $barcode');
+    // Check for camera permission
+    var status = await Permission.camera.request();
+    if (status.isGranted) {
+      // Directly use CameraService to scan barcode
+      String? scannedBarcode = await CameraService.scanBarcode();
+
+      if (scannedBarcode != null && scannedBarcode.isNotEmpty) {
+        setState(() {
+          _productNameController.text = scannedBarcode;
+        });
+
+        // Fetch product details from FoodApiService
+        var product = await FoodApiService.fetchProductDetails(scannedBarcode);
+        if (product != null) {
+          setState(() {
+            _productNameController.text = product.productName;
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Product details not found')),
+          );
         }
-      } else {
-        // Show a message if permission is denied
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Camera permission is required to scan the barcode.'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     } else {
-      // If permission is already granted, proceed to scan the barcode
-      String? barcode = await CameraService.scanBarcode();
-      if (barcode != null) {
-        // Handle the scanned barcode (e.g., fetch product details)
-        print('Scanned barcode: $barcode');
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Camera permission is required')),
+      );
     }
   }
 
@@ -164,7 +169,8 @@ class _AddFoodItemState extends State<AddFoodItem> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
             child: Form(
               key: _formKey,
               child: Column(
@@ -172,26 +178,26 @@ class _AddFoodItemState extends State<AddFoodItem> {
                 children: <Widget>[
                   const SizedBox(height: 15),
 
-                  // Camera Button
-             SizedBox(
-  width: double.infinity,
-  child: ElevatedButton.icon(
-    onPressed: _scanBarcode,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.green,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      textStyle: const TextStyle(fontSize: 18),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0), // Rounded rectangle
-      ),
-    ),
-    icon: const Icon(Icons.camera_alt, color: Colors.white),
-    label: const Text(
-      'Scan Barcode',
-      style: TextStyle(color: Colors.white),
-    ),
-  ),
-),
+                  // Updated Camera Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _scanBarcode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        textStyle: const TextStyle(fontSize: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
+                      icon: const Icon(Icons.camera_alt, color: Colors.white),
+                      label: const Text(
+                        'Scan Barcode',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 20),
 
                   // Product Name Field
@@ -266,7 +272,8 @@ class _AddFoodItemState extends State<AddFoodItem> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a quantity';
                       }
-                      if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                      if (int.tryParse(value) == null ||
+                          int.parse(value) <= 0) {
                         return 'Please enter a valid positive number';
                       }
                       return null;
@@ -331,23 +338,27 @@ class _AddFoodItemState extends State<AddFoodItem> {
 
                   // Save Food Item Button
                   // Save Food Item Button
-SizedBox(
-  width: double.infinity,
-  child: ElevatedButton(
-    onPressed: _saveFoodItem,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.green,
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 16), // Adjusted padding
-      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), // Adjusted font size, weight, and color
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero, // Set to zero for rectangular shape
-      ),
-    ),
-    child: const Text('Save Food Item'),
-  ),
-),
-
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _saveFoodItem,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 16), // Adjusted padding
+                        textStyle: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight
+                                .bold), // Adjusted font size, weight, and color
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius
+                              .zero, // Set to zero for rectangular shape
+                        ),
+                      ),
+                      child: const Text('Save Food Item'),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -357,4 +368,3 @@ SizedBox(
     );
   }
 }
-

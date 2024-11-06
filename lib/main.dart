@@ -47,8 +47,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      title: 'ShelfAware',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor:
+              Colors.greenAccent, // You can choose your primary color here
+          primary: Colors.green,
+          secondary: Colors.lightGreen,
+          // Primary color for your app
+        ),
+      ),
       home: AuthPage(),
     );
   }
 }
-

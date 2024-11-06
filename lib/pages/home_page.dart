@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:shelfaware_app/components/bottom_navigation_bar.dart';
-import 'package:shelfaware_app/components/side_drawer_menu.dart'; 
+import 'package:shelfaware_app/components/side_drawer_menu.dart';
 import 'package:shelfaware_app/components/top_app_bar.dart';
 import 'package:shelfaware_app/components/filter_dropdown.dart'; // Import the new component
 import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
 import 'package:shelfaware_app/pages/recipes_page.dart';
+import 'package:shelfaware_app/pages/favourites_page.dart';
 import 'package:shelfaware_app/pages/donations_page.dart';
 import 'package:shelfaware_app/pages/statistics_page.dart';
 import 'package:shelfaware_app/pages/add_food_item.dart'; // Import the add_food_item page
@@ -45,26 +46,26 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-Future<void> getUserData() async {
-  try {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid) // Fetch document by UID
-        .get();
+  Future<void> getUserData() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid) // Fetch document by UID
+          .get();
 
-    setState(() {
-      firstName = userDoc['firstName'];
-      lastName = userDoc['lastName'];
-    });
-  } catch (e) {
-    print('Error fetching user data: $e');
+      setState(() {
+        firstName = userDoc['firstName'];
+        lastName = userDoc['lastName'];
+      });
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
   }
-}
-
 
   Future<void> _fetchFilterOptions() async {
     try {
-      QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('categories').get();
+      QuerySnapshot snapshot =
+          await FirebaseFirestore.instance.collection('categories').get();
       List<String> categories = snapshot.docs.map((doc) {
         final foodType = doc['Food Type'];
         return foodType?.toString() ?? '';
@@ -97,6 +98,12 @@ Future<void> getUserData() async {
               await authController.signOut(); // Use AuthController to sign out
               // Optionally navigate to login page if required
             },
+            onNavigateToFavorites: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FavoritesPage()),
+              );
+            },
           ),
           body: PageView(
             controller: _pageController,
@@ -124,14 +131,19 @@ Future<void> getUserData() async {
                             .where('userId', isEqualTo: user.uid)
                             .snapshots(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
                           }
                           if (snapshot.hasError) {
-                            return const Center(child: Text('Error fetching food items'));
+                            return const Center(
+                                child: Text('Error fetching food items'));
                           }
-                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                            return const Center(child: Text('No food items found'));
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            return const Center(
+                                child: Text('No food items found'));
                           }
 
                           final filteredItems = selectedFilter == 'All'
@@ -141,13 +153,17 @@ Future<void> getUserData() async {
                                 }).toList();
 
                           if (filteredItems.isEmpty) {
-                            return const Center(child: Text('No food items match the selected filter.'));
+                            return const Center(
+                                child: Text(
+                                    'No food items match the selected filter.'));
                           }
 
                           return ListView(
                             children: filteredItems.map((document) {
-                              final data = document.data() as Map<String, dynamic>;
-                              final expiryTimestamp = data['expiryDate'] as Timestamp;
+                              final data =
+                                  document.data() as Map<String, dynamic>;
+                              final expiryTimestamp =
+                                  data['expiryDate'] as Timestamp;
 
                               // Get the food category from the "foodItems" collection
                               String? fetchedFoodType = data['category'];
@@ -155,7 +171,9 @@ Future<void> getUserData() async {
 
                               if (fetchedFoodType != null) {
                                 foodCategory = FoodCategory.values.firstWhere(
-                                  (e) => e.toString().split('.').last == fetchedFoodType,
+                                  (e) =>
+                                      e.toString().split('.').last ==
+                                      fetchedFoodType,
                                   orElse: () => FoodCategory.values.first,
                                 );
                               } else {
@@ -164,20 +182,25 @@ Future<void> getUserData() async {
 
                               return Card(
                                 elevation: 3,
-                                margin: const EdgeInsets.symmetric(vertical: 8.0),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                margin:
+                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
                                 child: ListTile(
                                   leading: SizedBox(
                                     width: 40,
                                     height: 40,
-                                    child: Icon(FoodCategoryIcons.getIcon(foodCategory)),
+                                    child: Icon(FoodCategoryIcons.getIcon(
+                                        foodCategory)),
                                   ),
                                   title: Row(
                                     children: [
                                       Expanded(
                                         child: Text(
                                           data['productName'] ?? 'No Name',
-                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                          style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ],
@@ -188,7 +211,8 @@ Future<void> getUserData() async {
                                   trailing: SizedBox(
                                     width: 60,
                                     height: 60,
-                                    child: ExpiryIcon(expiryTimestamp: expiryTimestamp),
+                                    child: ExpiryIcon(
+                                        expiryTimestamp: expiryTimestamp),
                                   ),
                                 ),
                               );

@@ -4,12 +4,14 @@ class CustomDrawer extends StatelessWidget {
   final String firstName;
   final String lastName;
   final VoidCallback onSignOut;
+  final VoidCallback onNavigateToFavorites; // Add this line
 
   const CustomDrawer({
     Key? key,
     required this.firstName,
     required this.lastName,
     required this.onSignOut,
+    required this.onNavigateToFavorites, // Add this line
   }) : super(key: key);
 
   @override
@@ -72,7 +74,7 @@ class CustomDrawer extends StatelessWidget {
             leading: const Icon(Icons.favorite),
             title: const Text('Recipe Favourites'),
             onTap: () {
-              // Define action for Recipe Favourites
+              onNavigateToFavorites(); // Call the navigation function
             },
           ),
           const Divider(

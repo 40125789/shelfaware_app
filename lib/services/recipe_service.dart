@@ -26,6 +26,7 @@ class RecipeService {
               .map<String>((ingredient) => ingredient['text'] as String)
               .toList(),
           'source': recipe['source'],
+          'url': recipe['url'] ?? '',
         };
       }).toList();
     } else {
