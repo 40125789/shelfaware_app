@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/services/camera_service.dart';
-import 'package:shelfaware_app/components/filter_dropdown.dart'; // Import the FilterDropdown widget
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shelfaware_app/components/barcode_scanner_widget.dart'; // Import the BarcodeScannerWidget widget
 import 'package:shelfaware_app/services/food_api_service.dart'; // Import the fetchProductDetails method
 
 final user = FirebaseAuth.instance.currentUser;

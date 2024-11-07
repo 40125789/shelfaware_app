@@ -1,14 +1,15 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services" // Google services plugin
 }
 
 android {
-    namespace "com.example.shelfaware_app" // Use the correct syntax here
+    namespace "com.example.shelfaware_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+  
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -22,25 +23,34 @@ android {
     defaultConfig {
         applicationId = "com.example.shelfaware_app"
         minSdkVersion 23
-        targetSdkVersion 31
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
-     
-        
     }
 
-    
-    
+    buildFeatures {
+        buildConfig true  // Enable BuildConfig generation
+    }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            
+            signingConfig signingConfigs.debug
         }
-
-        
     }
 }
 
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:32.0.0') // Latest BOM version
+    implementation('com.google.firebase:firebase-messaging:24.0.3') {
+    exclude group: 'com.google.firebase', module: 'firebase-iid'
+}
+    implementation 'com.google.firebase:firebase-analytics'
+    // Add any other Firebase dependencies as needed
+}
+
+

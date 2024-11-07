@@ -31,8 +31,7 @@ class _RecipesPageState extends State<RecipesPage> {
           .get();
 
       setState(() {
-        favoriteRecipeIds =
-            snapshot.docs.map((doc) => doc['recipeId'] as String).toList();
+        favoriteRecipeIds = snapshot.docs.map((doc) => doc['recipeId'] as String).toList();
       });
     }
   }
@@ -45,7 +44,7 @@ class _RecipesPageState extends State<RecipesPage> {
       // Check if recipeId is null
       if (recipeId == null) {
         print("Error: Recipe ID is null for recipe: ${recipe['label']}");
-        return; // Exit the method if the ID is null
+        return;
       }
 
       if (!favoriteRecipeIds.contains(recipeId)) {
@@ -128,95 +127,99 @@ class _RecipesPageState extends State<RecipesPage> {
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16.0),
-                shrinkWrap:
-                    true, // Allows ListView to take only necessary space
+                shrinkWrap: true,
                 itemCount: recipes.length,
                 itemBuilder: (context, index) {
                   var recipe = recipes[index];
-                  List<String> recipeIngredients =
-                      List<String>.from(recipe['ingredients']);
+                  List<String> recipeIngredients = List<String>.from(recipe['ingredients']);
 
-                  int matchingIngredients = recipeIngredients
-                      .where((ingredient) => userFoodItems.any((foodItem) =>
-                          ingredient
-                              .toLowerCase()
-                              .contains(foodItem.toLowerCase())))
-                      .length;
+                  // Filter user inventory to only include items that match recipe ingredients
+                  List<String> matchingUserItems = userFoodItems.where((userItem) {
+                    return recipeIngredients.any((ingredient) => 
+                      ingredient.toLowerCase().contains(userItem.toLowerCase()));
+                  }).toList();
 
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => RecipeDetailPage(
-                            recipe: recipe,
-                            onFavoritesChanged: _fetchFavorites,
+                  // Calculate the number of matching ingredients
+                  int matchingIngredients = matchingUserItems.length;
+                  double matchPercentage = (matchingIngredients / recipeIngredients.length) * 100;
+
+                  // Set a threshold for displaying the recipe (e.g., 10% match)
+                  if (matchPercentage >= 10) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RecipeDetailPage(
+                              recipe: recipe,
+                              onFavoritesChanged: _fetchFavorites,
+                            ),
                           ),
+                        );
+                      },
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                      );
-                    },
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius:
-                                BorderRadius.vertical(top: Radius.circular(10)),
-                            child: Image.network(
-                              recipe['image'],
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                              child: Image.network(
+                                recipe['image'],
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        recipe['label'],
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          recipe['label'],
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        'Ingredients you have: $matchingIngredients out of ${recipeIngredients.length}',
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                    ],
+                                        Text(
+                                          'Ingredients you have: $matchingIngredients of ${recipeIngredients.length} (${matchPercentage.toStringAsFixed(0)}%)',
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    favoriteRecipeIds.contains(recipe['id'])
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
+                                  IconButton(
+                                    icon: Icon(
+                                      favoriteRecipeIds.contains(recipe['id'])
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                    ),
+                                    color: Colors.red,
+                                    onPressed: () {
+                                      _toggleFavorite(recipe);
+                                    },
                                   ),
-                                  color: Colors.red,
-                                  onPressed: () {
-                                    _toggleFavorite(recipe);
-                                  },
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    return SizedBox.shrink();
+                  }
                 },
               );
             },

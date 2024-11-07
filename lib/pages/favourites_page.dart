@@ -87,15 +87,18 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Main image for the recipe
-                        ClipRRect(
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(10)),
-                          child: Image.network(
-                            recipe['image'],
-                            height: 200,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
+                        // Image container with AspectRatio
+                        AspectRatio(
+                          aspectRatio: 16 /
+                              9, // You can adjust this ratio based on the images you have
+                          child: ClipRRect(
+                            borderRadius:
+                                BorderRadius.vertical(top: Radius.circular(10)),
+                            child: Image.network(
+                              recipe['image'],
+                              fit: BoxFit
+                                  .cover, // Ensures the image covers the container while maintaining its aspect ratio
+                            ),
                           ),
                         ),
                         Padding(
@@ -110,8 +113,12 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              )
+                                overflow: TextOverflow
+                                    .ellipsis, // Prevent text overflow
+                              ),
+                              const SizedBox(
+                                  height:
+                                      8), // Space between text and any other widgets
                             ],
                           ),
                         ),
