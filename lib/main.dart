@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'controllers/bottom_nav_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
+import 'package:shelfaware_app/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
