@@ -15,7 +15,8 @@ import 'package:shelfaware_app/pages/add_food_item.dart'; // Import the add_food
 import 'package:shelfaware_app/models/food_category.dart';
 import 'package:shelfaware_app/models/food_category_icons.dart';
 import 'package:shelfaware_app/components/expiry_icon.dart'; // Import the expiry icon component
-import 'package:shelfaware_app/controllers/auth_controller.dart'; // Import the auth controller
+import 'package:shelfaware_app/controllers/auth_controller.dart';
+import 'package:shelfaware_app/services/expiry_notifier.dart'; 
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -25,6 +26,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  int expiringItemCount = 0; // Track the number of expiring items
+  int expiredItemCount = 0;  // Track the number of expired items
   String firstName = '';
   String lastName = '';
   final user = FirebaseAuth.instance.currentUser!;
@@ -38,6 +41,7 @@ class _HomePageState extends State<HomePage> {
     getUserData();
     _pageController = PageController();
     _fetchFilterOptions();
+    _checkExpiryNotifications();
   }
 
   @override
@@ -60,6 +64,42 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       print('Error fetching user data: $e');
     }
+  }
+
+  Future<void> _checkExpiryNotifications() async {
+    try {
+      final QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('foodItems')
+          .where('userId', isEqualTo: user.uid)
+          .get();
+
+      int expiringSoonCount = 0;
+      int expiredCount = 0;
+      DateTime today = DateTime.now();
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        Timestamp expiryTimestamp = data['expiryDate'];
+        DateTime expiryDate = expiryTimestamp.toDate();
+
+        if (expiryDate.isBefore(today) && expiryDate.difference(today).inDays <= 0) {
+          expiredCount++; // Increment for expired items
+        } else if (expiryDate.isAfter(today) && expiryDate.difference(today).inDays <= 3) {
+          expiringSoonCount++; // Increment for items expiring soon
+        }
+      }
+
+      setState(() {
+        expiringItemCount = expiringSoonCount;
+        expiredItemCount = expiredCount;
+      });
+    } catch (e) {
+      print('Error checking expiry notifications: $e');
+    }
+  }
+
+  void _handleNotificationPress() {
+    // Navigate to the notifications page
   }
 
   Future<void> _fetchFilterOptions() async {
@@ -88,8 +128,8 @@ class _HomePageState extends State<HomePage> {
           appBar: TopAppBar(
             title: 'Inventory',
             onLocationPressed: () {},
-            onNotificationPressed: () {},
-            onMessagePressed: () {},
+            onNotificationPressed: _handleNotificationPress,
+            expiringItemCount: expiringItemCount + expiredItemCount, // Total count of expiring items
           ),
           drawer: CustomDrawer(
             firstName: firstName,
@@ -131,19 +171,14 @@ class _HomePageState extends State<HomePage> {
                             .where('userId', isEqualTo: user.uid)
                             .snapshots(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
                           }
                           if (snapshot.hasError) {
-                            return const Center(
-                                child: Text('Error fetching food items'));
+                            return const Center(child: Text('Error fetching food items'));
                           }
-                          if (!snapshot.hasData ||
-                              snapshot.data!.docs.isEmpty) {
-                            return const Center(
-                                child: Text('No food items found'));
+                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                            return const Center(child: Text('No food items found'));
                           }
 
                           final filteredItems = selectedFilter == 'All'
@@ -153,17 +188,13 @@ class _HomePageState extends State<HomePage> {
                                 }).toList();
 
                           if (filteredItems.isEmpty) {
-                            return const Center(
-                                child: Text(
-                                    'No food items match the selected filter.'));
+                            return const Center(child: Text('No food items match the selected filter.'));
                           }
 
                           return ListView(
                             children: filteredItems.map((document) {
-                              final data =
-                                  document.data() as Map<String, dynamic>;
-                              final expiryTimestamp =
-                                  data['expiryDate'] as Timestamp;
+                              final data = document.data() as Map<String, dynamic>;
+                              final expiryTimestamp = data['expiryDate'] as Timestamp;
 
                               // Get the food category from the "foodItems" collection
                               String? fetchedFoodType = data['category'];
@@ -171,9 +202,7 @@ class _HomePageState extends State<HomePage> {
 
                               if (fetchedFoodType != null) {
                                 foodCategory = FoodCategory.values.firstWhere(
-                                  (e) =>
-                                      e.toString().split('.').last ==
-                                      fetchedFoodType,
+                                  (e) => e.toString().split('.').last == fetchedFoodType,
                                   orElse: () => FoodCategory.values.first,
                                 );
                               } else {
@@ -182,37 +211,29 @@ class _HomePageState extends State<HomePage> {
 
                               return Card(
                                 elevation: 3,
-                                margin:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
+                                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 child: ListTile(
                                   leading: SizedBox(
                                     width: 40,
                                     height: 40,
-                                    child: Icon(FoodCategoryIcons.getIcon(
-                                        foodCategory)),
+                                    child: Icon(FoodCategoryIcons.getIcon(foodCategory)),
                                   ),
                                   title: Row(
                                     children: [
                                       Expanded(
                                         child: Text(
                                           data['productName'] ?? 'No Name',
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold),
+                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  subtitle: Text(
-                                    "Quantity: ${data['quantity']}\n${formatDate(expiryTimestamp)}",
-                                  ),
+                                  subtitle: Text("Quantity: ${data['quantity']}\n${formatDate(expiryTimestamp)}"),
                                   trailing: SizedBox(
                                     width: 60,
                                     height: 60,
-                                    child: ExpiryIcon(
-                                        expiryTimestamp: expiryTimestamp),
+                                    child: ExpiryIcon(expiryTimestamp: expiryTimestamp),
                                   ),
                                 ),
                               );
@@ -272,3 +293,4 @@ class _HomePageState extends State<HomePage> {
     }
   }
 }
+
