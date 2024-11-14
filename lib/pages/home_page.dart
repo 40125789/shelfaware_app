@@ -16,7 +16,7 @@ import 'package:shelfaware_app/models/food_category.dart';
 import 'package:shelfaware_app/models/food_category_icons.dart';
 import 'package:shelfaware_app/components/expiry_icon.dart'; // Import the expiry icon component
 import 'package:shelfaware_app/controllers/auth_controller.dart';
-import 'package:shelfaware_app/services/expiry_notifier.dart'; 
+import 'package:geolocator/geolocator.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -25,9 +25,27 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+Future<Position> getUserLocation() async {
+  LocationPermission permission;
+  permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      throw Exception('Location permissions are denied');
+    }
+  }
+
+  if (permission == LocationPermission.deniedForever) {
+    throw Exception('Location permissions are permanently denied');
+  }
+
+  return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high);
+}
+
 class _HomePageState extends State<HomePage> {
   int expiringItemCount = 0; // Track the number of expiring items
-  int expiredItemCount = 0;  // Track the number of expired items
+  int expiredItemCount = 0; // Track the number of expired items
   String firstName = '';
   String lastName = '';
   final user = FirebaseAuth.instance.currentUser!;
@@ -82,9 +100,11 @@ class _HomePageState extends State<HomePage> {
         Timestamp expiryTimestamp = data['expiryDate'];
         DateTime expiryDate = expiryTimestamp.toDate();
 
-        if (expiryDate.isBefore(today) && expiryDate.difference(today).inDays <= 0) {
+        if (expiryDate.isBefore(today) &&
+            expiryDate.difference(today).inDays <= 0) {
           expiredCount++; // Increment for expired items
-        } else if (expiryDate.isAfter(today) && expiryDate.difference(today).inDays <= 3) {
+        } else if (expiryDate.isAfter(today) &&
+            expiryDate.difference(today).inDays <= 3) {
           expiringSoonCount++; // Increment for items expiring soon
         }
       }
@@ -129,7 +149,8 @@ class _HomePageState extends State<HomePage> {
             title: 'Inventory',
             onLocationPressed: () {},
             onNotificationPressed: _handleNotificationPress,
-            expiringItemCount: expiringItemCount + expiredItemCount, // Total count of expiring items
+            expiringItemCount: expiringItemCount +
+                expiredItemCount, // Total count of expiring items
           ),
           drawer: CustomDrawer(
             firstName: firstName,
@@ -171,14 +192,19 @@ class _HomePageState extends State<HomePage> {
                             .where('userId', isEqualTo: user.uid)
                             .snapshots(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
                           }
                           if (snapshot.hasError) {
-                            return const Center(child: Text('Error fetching food items'));
+                            return const Center(
+                                child: Text('Error fetching food items'));
                           }
-                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                            return const Center(child: Text('No food items found'));
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            return const Center(
+                                child: Text('No food items found'));
                           }
 
                           final filteredItems = selectedFilter == 'All'
@@ -188,13 +214,17 @@ class _HomePageState extends State<HomePage> {
                                 }).toList();
 
                           if (filteredItems.isEmpty) {
-                            return const Center(child: Text('No food items match the selected filter.'));
+                            return const Center(
+                                child: Text(
+                                    'No food items match the selected filter.'));
                           }
 
                           return ListView(
                             children: filteredItems.map((document) {
-                              final data = document.data() as Map<String, dynamic>;
-                              final expiryTimestamp = data['expiryDate'] as Timestamp;
+                              final data =
+                                  document.data() as Map<String, dynamic>;
+                              final expiryTimestamp =
+                                  data['expiryDate'] as Timestamp;
 
                               // Get the food category from the "foodItems" collection
                               String? fetchedFoodType = data['category'];
@@ -202,7 +232,9 @@ class _HomePageState extends State<HomePage> {
 
                               if (fetchedFoodType != null) {
                                 foodCategory = FoodCategory.values.firstWhere(
-                                  (e) => e.toString().split('.').last == fetchedFoodType,
+                                  (e) =>
+                                      e.toString().split('.').last ==
+                                      fetchedFoodType,
                                   orElse: () => FoodCategory.values.first,
                                 );
                               } else {
@@ -211,29 +243,42 @@ class _HomePageState extends State<HomePage> {
 
                               return Card(
                                 elevation: 3,
-                                margin: const EdgeInsets.symmetric(vertical: 8.0),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                margin:
+                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
                                 child: ListTile(
                                   leading: SizedBox(
                                     width: 40,
                                     height: 40,
-                                    child: Icon(FoodCategoryIcons.getIcon(foodCategory)),
+                                    child: Icon(FoodCategoryIcons.getIcon(
+                                        foodCategory)),
                                   ),
-                                  title: Row(
+                                  title: Text(
+                                    data['productName'] ?? 'No Name',
+                                    style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: Text(
+                                      "Quantity: ${data['quantity']}\n${formatDate(expiryTimestamp)}"),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Expanded(
-                                        child: Text(
-                                          data['productName'] ?? 'No Name',
-                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                        ),
+                                      SizedBox(
+                                        width: 60,
+                                        height: 60,
+                                        child: ExpiryIcon(
+                                            expiryTimestamp: expiryTimestamp),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.volunteer_activism,
+                                            color: Colors.orange),
+                                        onPressed: () async {
+                                          await _confirmDonation(document.id);
+                                        },
                                       ),
                                     ],
-                                  ),
-                                  subtitle: Text("Quantity: ${data['quantity']}\n${formatDate(expiryTimestamp)}"),
-                                  trailing: SizedBox(
-                                    width: 60,
-                                    height: 60,
-                                    child: ExpiryIcon(expiryTimestamp: expiryTimestamp),
                                   ),
                                 ),
                               );
@@ -292,5 +337,79 @@ class _HomePageState extends State<HomePage> {
       return "Expires in $daysDifference days";
     }
   }
-}
 
+  Future<void> _donateFoodItem(String id) async {
+    try {
+      // Get the user’s current location
+      final location = await getUserLocation();
+
+      // Fetch the document from the foodItems collection
+      DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
+          .collection('foodItems')
+          .doc(id)
+          .get();
+
+      if (!foodItemDoc.exists) {
+        throw Exception("Food item not found.");
+      }
+
+      // Prepare the data to be copied, including donorId and status
+      Map<String, dynamic> foodItemData =
+          foodItemDoc.data() as Map<String, dynamic>;
+      foodItemData['donorId'] = FirebaseAuth.instance.currentUser!.uid;
+      foodItemData['donated'] = true;
+      foodItemData['donatedAt'] = Timestamp.now();
+      foodItemData['location'] =
+          GeoPoint(location.latitude, location.longitude);
+      foodItemData['status'] = 'available';
+
+      // Add the item to the donations collection
+      await FirebaseFirestore.instance
+          .collection('donations')
+          .add(foodItemData);
+
+      // Remove the item from the foodItems collection
+      await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Item donated successfully.")),
+      );
+    } catch (e) {
+      print('Error donating food item: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to donate item: $e")),
+      );
+    }
+  }
+
+  Future<void> _confirmDonation(String id) async {
+    bool? confirm = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm Donation"),
+          content: Text("Are you sure you want to donate this item?"),
+          actions: [
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop(false); // Return false
+              },
+            ),
+            TextButton(
+              child: Text("Donate"),
+              onPressed: () {
+                Navigator.of(context).pop(true); // Return true
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      await _donateFoodItem(id); // Proceed with donation if confirmed
+    }
+  }
+}

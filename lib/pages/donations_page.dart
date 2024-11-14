@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shelfaware_app/components/donation_list_widget.dart';
+import 'package:shelfaware_app/components/user_donation_map_widget.dart';
 import 'package:shelfaware_app/services/location_service.dart';
 import 'package:shelfaware_app/services/map_service.dart';
 import 'package:shelfaware_app/services/places_service.dart';
 import 'package:shelfaware_app/models/place.dart';
 import 'package:shelfaware_app/models/place_details.dart';
-import 'package:shelfaware_app/components/map_widget.dart';
+import 'package:shelfaware_app/models/donation.dart';
 
 class DonationsPage extends StatefulWidget {
   @override
@@ -22,6 +24,7 @@ class _DonationsScreenState extends State<DonationsPage>
   LatLng? _currentLocation;
   Set<Marker> _markers = {};
   late TabController _tabController;
+  bool _isLoading = true; // Flag to manage loading state
 
   @override
   void initState() {
@@ -70,17 +73,16 @@ class _DonationsScreenState extends State<DonationsPage>
 
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
+        _isLoading =
+            false; // Hide the loading indicator once location is fetched
       });
 
-          // Logging current location
-         print("User's current location: $_currentLocation");
-
+      final donationLocations = await fetchDonationLocations();
       Set<Marker> donationMarkers = _mapService.getMarkers(
         _currentLocation!,
-        [LatLng(54.6, -5.9)], // Replace with actual user donation locations
+        donationLocations,
+        [],
       );
-
-      
 
       final foodBanks =
           await _placesService.getNearbyFoodBanks(_currentLocation!);
@@ -154,43 +156,34 @@ class _DonationsScreenState extends State<DonationsPage>
     );
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Future<List<DonationLocation>> fetchDonationLocations() async {
+    // Fetch your donation locations from the database here.
+    return []; // Replace with your actual data fetching logic.
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Donations'),
-          bottom: TabBar(
-            controller: _tabController,
-            labelColor: Colors.green,
-            unselectedLabelColor: Colors.grey[700],
-            tabs: [
-              Tab(text: "Donation List"),
-              Tab(text: "Donation Map"),
-            ],
-          ),
-        ),
-        body: TabBarView(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Donations'),
+        bottom: TabBar(
           controller: _tabController,
-          children: [
-            Center(
-              child: Text("List of Donations"),
-            ),
-            _currentLocation == null
-                ? Center(child: CircularProgressIndicator())
-                : MapWidget(
-                    initialPosition: _currentLocation!,
-                    markers: _markers,
-                  ),
+          tabs: [
+            Tab(text: 'Donations List'),
+            Tab(text: 'Donation Map'),
           ],
         ),
       ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator()) // Show loading indicator
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                DonationListView(currentLocation: _currentLocation),
+                UserDonationMap(
+                    currentLocation: _currentLocation!, markers: _markers),
+              ],
+            ),
     );
   }
 }
