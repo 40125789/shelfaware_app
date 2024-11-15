@@ -17,6 +17,8 @@ import 'package:shelfaware_app/models/food_category_icons.dart';
 import 'package:shelfaware_app/components/expiry_icon.dart'; // Import the expiry icon component
 import 'package:shelfaware_app/controllers/auth_controller.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+// Import the Flutter Slidable package
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -44,8 +46,8 @@ Future<Position> getUserLocation() async {
 }
 
 class _HomePageState extends State<HomePage> {
-  int expiringItemCount = 0; // Track the number of expiring items
-  int expiredItemCount = 0; // Track the number of expired items
+  int expiringItemCount = 0;
+  int expiredItemCount = 0;
   String firstName = '';
   String lastName = '';
   final user = FirebaseAuth.instance.currentUser!;
@@ -146,7 +148,6 @@ class _HomePageState extends State<HomePage> {
       builder: (context, authController, child) {
         return Scaffold(
           appBar: TopAppBar(
-            title: 'Inventory',
             onLocationPressed: () {},
             onNotificationPressed: _handleNotificationPress,
             expiringItemCount: expiringItemCount +
@@ -156,8 +157,7 @@ class _HomePageState extends State<HomePage> {
             firstName: firstName,
             lastName: lastName,
             onSignOut: () async {
-              await authController.signOut(); // Use AuthController to sign out
-              // Optionally navigate to login page if required
+              await authController.signOut();
             },
             onNavigateToFavorites: () {
               Navigator.push(
@@ -241,44 +241,70 @@ class _HomePageState extends State<HomePage> {
                                 foodCategory = FoodCategory.values.first;
                               }
 
-                              return Card(
-                                elevation: 3,
-                                margin:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: ListTile(
-                                  leading: SizedBox(
-                                    width: 40,
-                                    height: 40,
-                                    child: Icon(FoodCategoryIcons.getIcon(
-                                        foodCategory)),
-                                  ),
-                                  title: Text(
-                                    data['productName'] ?? 'No Name',
-                                    style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Text(
-                                      "Quantity: ${data['quantity']}\n${formatDate(expiryTimestamp)}"),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      SizedBox(
-                                        width: 60,
-                                        height: 60,
-                                        child: ExpiryIcon(
-                                            expiryTimestamp: expiryTimestamp),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(Icons.volunteer_activism,
-                                            color: Colors.orange),
-                                        onPressed: () async {
-                                          await _confirmDonation(document.id);
-                                        },
-                                      ),
-                                    ],
+                              String documentId = document.id;
+
+                              return Slidable(
+                                endActionPane: ActionPane(
+                                  motion: const DrawerMotion(),
+                                  children: [
+                                    SlidableAction(
+                                      label: 'Donate',
+                                      backgroundColor: Colors.green,
+                                      icon: Icons.volunteer_activism,
+                                      onPressed: (context) =>
+                                          _confirmDonation(documentId),
+                                    ),
+                                    SlidableAction(
+                                      label: 'Edit',
+                                      backgroundColor: Colors.blue,
+                                      icon: Icons.edit,
+                                      onPressed: (context) =>
+                                          _editFoodItem(documentId),
+                                    ),
+                                    SlidableAction(
+                                      label: 'Delete',
+                                      backgroundColor: Colors.red,
+                                      icon: Icons.delete,
+                                      onPressed: (context) =>
+                                          _deleteFoodItem(documentId),
+                                    ),
+                                  ],
+                                ), // Sliding drawer effect
+                                child: Card(
+                                  elevation: 3,
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 8.0),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
+                                  child: ListTile(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(50),
+                                    ),
+                                    leading: SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: Icon(FoodCategoryIcons.getIcon(
+                                          foodCategory)),
+                                    ),
+                                    title: Text(
+                                      data['productName'] ?? 'No Name',
+                                      style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Text(
+                                        "Quantity: ${data['quantity']}\n${formatDate(expiryTimestamp)}"),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                          width: 60,
+                                          height: 60,
+                                          child: ExpiryIcon(
+                                              expiryTimestamp: expiryTimestamp),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );
@@ -323,19 +349,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Updated formatDate function to show "Expires in X days" format
-  String formatDate(Timestamp expiryTimestamp) {
-    DateTime expiryDate = expiryTimestamp.toDate();
-    DateTime today = DateTime.now();
-    int daysDifference = expiryDate.difference(today).inDays;
-
-    if (daysDifference < 0) {
-      return "Expired";
-    } else if (daysDifference == 0) {
-      return "Expires today";
-    } else {
-      return "Expires in $daysDifference days";
-    }
+  String formatDate(Timestamp timestamp) {
+    DateTime date = timestamp.toDate();
+    return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}";
   }
 
   Future<void> _donateFoodItem(String id) async {
@@ -413,3 +429,9 @@ class _HomePageState extends State<HomePage> {
     }
   }
 }
+
+Future<void> _editFoodItem(String documentId) async {
+  // Implement edit functionality
+}
+
+Future<void> _deleteFoodItem(String documentId) async {}

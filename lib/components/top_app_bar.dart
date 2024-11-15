@@ -6,7 +6,6 @@ import 'package:shelfaware_app/services/data_fetcher.dart'; // Import the DataFe
 import 'package:shelfaware_app/models/food_item.dart'; // Import the FoodItem model
 import 'package:shelfaware_app/pages/expiring_items_page.dart'; // Import the ExpiringItemsScreen
 
-// TopAppBar widget to display the app bar with title and actions
 
 class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -16,7 +15,7 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   const TopAppBar({
     Key? key,
-    this.title = '',
+    this.title = '', // Default title as empty, can be updated from page
     required this.onLocationPressed,
     required this.onNotificationPressed,
     required this.expiringItemCount,
@@ -52,18 +51,9 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
           children: [
             IconButton(
               icon: Icon(Icons.notifications, color: Colors.grey[800]),
-              onPressed: () {
-                // Navigate to the notifications screen when the icon is pressed
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ExpiringItemsScreen(),
-                  ),
-                );
-              },
+              onPressed: onNotificationPressed,
             ),
-            if (totalExpiringItems >
-                0) // Show badge if there are expiring or expired items
+            if (totalExpiringItems > 0) // Show badge if there are expiring or expired items
               Positioned(
                 right: 8,
                 top: 8,

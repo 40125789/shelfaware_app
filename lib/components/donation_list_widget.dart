@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
+import 'package:firebase_auth/firebase_auth.dart';  
 
 class DonationListView extends StatelessWidget {
   final LatLng? currentLocation;
@@ -12,10 +13,12 @@ class DonationListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ensure that currentLocation is not null
     if (currentLocation == null) {
       return Center(child: CircularProgressIndicator());
     }
+
+    // Get the current user's ID
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
     return StreamBuilder(
       stream: FirebaseFirestore.instance.collection('donations').snapshots(),
@@ -24,38 +27,16 @@ class DonationListView extends StatelessWidget {
           return Center(child: CircularProgressIndicator());
         }
 
-        var donations = snapshot.data!.docs;
-
-        // Define the maximum distance (in meters) that a donation can be from the user
-        const double maxDistance = 5000; // 5 km
-
-        // Filter donations based on the distance from the current user's location
-        var filteredDonations = donations.where((donation) {
-          GeoPoint? location = donation['location'];
-          if (location == null) return false;
-
-          double latitude = location.latitude;
-          double longitude = location.longitude;
-
-          double distanceInMeters = Geolocator.distanceBetween(
-            currentLocation!.latitude,
-            currentLocation!.longitude,
-            latitude,
-            longitude,
-          );
-
-          // Only keep donations within the specified max distance
-          return distanceInMeters <= maxDistance;
+        // Filter out donations made by the logged-in user
+        var donations = snapshot.data!.docs.where((doc) {
+          var donation = doc.data() as Map<String, dynamic>;
+          return donation['donorId'] != userId;  // Exclude user's own donations
         }).toList();
 
-        if (filteredDonations.isEmpty) {
-          return Center(child: Text('No donations available nearby.'));
-        }
-
         return ListView.builder(
-          itemCount: filteredDonations.length,
+          itemCount: donations.length,
           itemBuilder: (context, index) {
-            var donation = filteredDonations[index].data() as Map<String, dynamic>;
+            var donation = donations[index].data() as Map<String, dynamic>;
             String productName = donation['productName'] ?? 'No product name';
             String status = donation['status'] ?? 'Unknown';
             Timestamp? expiryDate = donation['expiryDate'];
@@ -71,7 +52,8 @@ class DonationListView extends StatelessWidget {
                     'Location unavailable for $productName',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  subtitle: Text("Expiry date: ${expiryDate?.toDate() ?? 'Unknown'}"),
+                  subtitle:
+                      Text("Expiry date: ${expiryDate?.toDate() ?? 'Unknown'}"),
                   trailing: Text('$status'),
                 ),
               );

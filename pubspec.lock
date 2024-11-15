@@ -366,6 +366,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.23"
+  flutter_slidable:
+    dependency: "direct main"
+    description:
+      name: flutter_slidable
+      sha256: "2c5611c0b44e20d180e4342318e1bbc28b0a44ad2c442f5df16962606fd3e8e3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.1"
+  flutter_swipe_action_cell:
+    dependency: "direct main"
+    description:
+      name: flutter_swipe_action_cell
+      sha256: c77baca62a6274980c57775672e62af6a3a05e0c3eeecc9b3ed5fb0574ae89c1
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.3"
   flutter_test:
     dependency: "direct dev"
     description: flutter
