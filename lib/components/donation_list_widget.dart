@@ -39,8 +39,10 @@ class DonationListView extends StatelessWidget {
             var donation = donations[index].data() as Map<String, dynamic>;
             String productName = donation['productName'] ?? 'No product name';
             String status = donation['status'] ?? 'Unknown';
+            String donorName = donation['donorName'] ?? 'Anonymous';
             Timestamp? expiryDate = donation['expiryDate'];
             GeoPoint? location = donation['location'];
+
 
             if (location == null) {
               return Card(
@@ -121,6 +123,11 @@ class DonationListView extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
+                      'Donor: $donorName',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
                       'This item is: $status',
                       style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
@@ -148,6 +155,14 @@ class DonationListView extends StatelessWidget {
                                 .format(expiryDate.toDate())
                             : 'Unknown',
                         status: status,
+                        donorName: donorName,
+                        chatId: '',
+                        userId: '', 
+                        receiverEmail: donation['donorEmail'],
+                        donatorId: donation['donorId'],
+                        donationId: donations[index].id, 
+                        donorEmail: donation['donorEmail'],
+                      
                       ),
                     ),
                   );

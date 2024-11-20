@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shelfaware_app/pages/chat_page.dart';
 
 class DonationMapScreen extends StatefulWidget {
   final double donationLatitude;
@@ -9,7 +11,14 @@ class DonationMapScreen extends StatefulWidget {
   final double userLongitude;
   final String productName;
   final String expiryDate;
-  final String status; // Added status for the item
+  final String status;
+  final String donorName;
+  final String chatId; // Unique chat ID
+  final String donorEmail; // Added donor email
+  final String donatorId; // Added donator ID
+  String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  // Added donor name
+  // Added status for the item
 
   DonationMapScreen({
     required this.donationLatitude,
@@ -19,6 +28,13 @@ class DonationMapScreen extends StatefulWidget {
     required this.productName,
     required this.expiryDate,
     required this.status,
+    required this.donorEmail, // Added donor email
+    required this.donatorId, // Added donator ID
+    required this.chatId,
+    required this.userId,
+    required this.donorName,
+    required String receiverEmail,
+    required String donationId,
   });
 
   @override
@@ -40,7 +56,8 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     donationMarker = Marker(
       markerId: MarkerId('donationLocation'),
       position: LatLng(widget.donationLatitude, widget.donationLongitude),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue), // Blue marker for donation
+      icon: BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueBlue), // Blue marker for donation
       infoWindow: InfoWindow(
         title: widget.productName,
         snippet: 'Expires on: ${widget.expiryDate}\nStatus: ${widget.status}',
@@ -52,7 +69,8 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     userMarker = Marker(
       markerId: MarkerId('userLocation'),
       position: LatLng(widget.userLatitude, widget.userLongitude),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed), // Red marker for user location
+      icon: BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueRed), // Red marker for user location
       infoWindow: InfoWindow(title: 'Your Location'),
     );
   }
@@ -62,9 +80,10 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) {
-        return SingleChildScrollView( // Make the sheet scrollable if content overflows
+        return SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Reduced padding for compactness
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -72,12 +91,12 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                   'Donation Item Details',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8), // Reduced space between title and content
+                SizedBox(height: 8),
                 Text(
                   'Product: ${widget.productName}',
                   style: TextStyle(fontSize: 16),
                 ),
-                SizedBox(height: 4), // Reduced space between text elements
+                SizedBox(height: 4),
                 Text(
                   'Expires on: ${widget.expiryDate}',
                   style: TextStyle(fontSize: 16),
@@ -87,13 +106,29 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                   'Status: ${widget.status}',
                   style: TextStyle(fontSize: 16),
                 ),
-                SizedBox(height: 16), // More space before the button
+                SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    // Handle donation actions, like contacting the donor or claiming the donation
-                    Navigator.pop(context); // Close the modal when user presses the button
+                    Navigator.pop(context); // Close the modal
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatPage(
+                          donorName: widget
+                              .donorName, // Replace with actual donor name
+                          productName: widget.productName,
+                          chatId: widget.chatId,
+                          userId: widget.userId,
+                          receiverEmail: widget.donorEmail,
+                          donatorId: widget.donatorId,
+                          receiverId: widget.donatorId,
+                          donationId: widget.donatorId,
+                          donationName: widget.productName,
+                        ),
+                      ),
+                    );
                   },
-                  child: Text('Claim Donation'),
+                  child: Text('Contact Donor'),
                 ),
               ],
             ),
@@ -105,8 +140,10 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final LatLng donationLocation = LatLng(widget.donationLatitude, widget.donationLongitude);
-    final LatLng userLocation = LatLng(widget.userLatitude, widget.userLongitude);
+    final LatLng donationLocation =
+        LatLng(widget.donationLatitude, widget.donationLongitude);
+    final LatLng userLocation =
+        LatLng(widget.userLatitude, widget.userLongitude);
 
     // Calculate the distance
     double distanceInMeters = Geolocator.distanceBetween(
@@ -115,7 +152,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
       widget.donationLatitude,
       widget.donationLongitude,
     );
-    double distanceInKm = distanceInMeters / 1000;  // Convert to km
+    double distanceInKm = distanceInMeters / 1000; // Convert to km
 
     return Scaffold(
       appBar: AppBar(title: Text('Donation Location')),

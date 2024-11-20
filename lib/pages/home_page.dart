@@ -373,6 +373,12 @@ class _HomePageState extends State<HomePage> {
       Map<String, dynamic> foodItemData =
           foodItemDoc.data() as Map<String, dynamic>;
       foodItemData['donorId'] = FirebaseAuth.instance.currentUser!.uid;
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .get();
+      foodItemData['donorName'] = userDoc['firstName'];
+      foodItemData['donorEmail'] = FirebaseAuth.instance.currentUser!.email;
       foodItemData['donated'] = true;
       foodItemData['donatedAt'] = Timestamp.now();
       foodItemData['location'] =
