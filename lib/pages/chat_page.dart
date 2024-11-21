@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import 'package:shelfaware_app/services/chat_service.dart';
 import 'package:shelfaware_app/models/message.dart';
 
@@ -21,9 +22,9 @@ class ChatPage extends StatelessWidget {
     required this.userId,
     required this.donationName,
     required this.donorName,
-     required String productName, 
-     required String chatId, 
-     required String donatorId,
+    required String productName,
+    required String chatId,
+    required String donatorId,
   });
 
   // Text controller for message input
@@ -56,8 +57,6 @@ class ChatPage extends StatelessWidget {
         receiverEmail,
         chatId,
         donationName,
-        donorName,
-
       );
 
       // Clear the text field
@@ -118,10 +117,15 @@ class ChatPage extends StatelessWidget {
 
   // Build the message list
   Widget _buildMessageList() {
+   
     String senderId = _auth.currentUser!.uid;
 
+    // Generate chatId using donationId and userIds
+    String chatId = getChatId(donationId, senderId, receiverId);
+
     return StreamBuilder(
-      stream: _chatService.getMessages(donationId, senderId, receiverId),
+      stream:
+          _chatService.getMessages(chatId), // Fetch messages based on chatId
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return const Center(child: Text('Something went wrong'));
@@ -131,20 +135,58 @@ class ChatPage extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return ListView(
-          children: snapshot.data!.docs.map((doc) => _buildMessageItem(doc)).toList(),
-        );
-      },
-    );
-  }
+// Reverse the messages for latest at the bottom
+      final messages = snapshot.data!.docs.reversed.toList();
 
+      return ListView(
+        reverse: true, // Ensures the list scrolls to the bottom by default
+        children: messages.map((doc) => _buildMessageItem(doc)).toList(),
+      );
+    },
+  );
+}
+        
   // Build individual message item
   Widget _buildMessageItem(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
     return ListTile(
-      title: Text(data['message']),
-      subtitle: Text(data['senderEmail']), // Display sender's email (optional)
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Message in a bubble
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            margin: EdgeInsets.only(
+                bottom:
+                    5), // Adjust spacing between message bubble and timestamp
+            decoration: BoxDecoration(
+              color: Colors.blueAccent, // Background color of the bubble
+              borderRadius: BorderRadius.circular(15), // Rounded corners
+            ),
+            child: Text(
+              data['message'],
+              style: TextStyle(
+                color: Colors.white, // White text inside the bubble
+                fontSize: 16, // Font size for the message text
+              ),
+            ),
+          ),
+          // Sender's email and timestamp below the bubble
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(data['senderEmail'],
+                  style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                DateFormat('HH:mm').format(data['timestamp']
+                    .toDate()), // Format timestamp in 24-hour format
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
