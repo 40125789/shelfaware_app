@@ -9,7 +9,6 @@ class ChatPage extends StatelessWidget {
   final String receiverId;
   final String donationId;
   final String userId;
-  final String chatId;
   final String donationName;
   final String donorName;
 
@@ -20,34 +19,46 @@ class ChatPage extends StatelessWidget {
     required this.receiverId,
     required this.donationId,
     required this.userId,
-    required this.chatId,
     required this.donationName,
     required this.donorName,
-    required String productName,
-    required String donatorId,
-   
+     required String productName, 
+     required String chatId, 
+     required String donatorId,
   });
 
-  // text controller for message input
+  // Text controller for message input
   final TextEditingController _messageController = TextEditingController();
 
-  //chat and auth service
+  // Chat and auth service
   final ChatService _chatService = ChatService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Generate a unique chatId based on donationId and userIds
+  String getChatId(String donationId, String userId, String receiverId) {
+    List<String> ids = [donationId, userId, receiverId];
+    ids.sort(); // Ensure chatId is consistently created
+    return ids.join('_');
+  }
 
   // Send message
   Future<void> _sendMessage() async {
     if (_messageController.text.isNotEmpty) {
-      // Send message using receiverId
+      // Generate the chatId dynamically
+      String chatId = getChatId(donationId, userId, receiverId);
+
+      // Send message using the new chatId
       await _chatService.sendMessage(
-          receiverId,
-          userId,
-          chatId,
-          donationId,
-          donationName,
-          _messageController.text,
-          _auth.currentUser!.email!,
-          receiverEmail);
+        donationId,
+        _messageController.text,
+        receiverId,
+        userId,
+        _auth.currentUser!.email!,
+        receiverEmail,
+        chatId,
+        donationName,
+        donorName,
+
+      );
 
       // Clear the text field
       _messageController.clear();
@@ -75,7 +86,7 @@ class ChatPage extends StatelessWidget {
     );
   }
 
-// Build the donation details header
+  // Build the donation details header
   Widget _buildDonationDetailsHeader() {
     return Container(
       width: double.infinity,
@@ -110,8 +121,7 @@ class ChatPage extends StatelessWidget {
     String senderId = _auth.currentUser!.uid;
 
     return StreamBuilder(
-      stream:
-          _chatService.getMessages(receiverId, senderId, chatId, donationId),
+      stream: _chatService.getMessages(donationId, senderId, receiverId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return const Center(child: Text('Something went wrong'));
@@ -122,8 +132,7 @@ class ChatPage extends StatelessWidget {
         }
 
         return ListView(
-          children:
-              snapshot.data!.docs.map((doc) => _buildMessageItem(doc)).toList(),
+          children: snapshot.data!.docs.map((doc) => _buildMessageItem(doc)).toList(),
         );
       },
     );
