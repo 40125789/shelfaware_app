@@ -72,7 +72,7 @@ Future<void> sendMessage(String donationId, String messageContent,
     throw Exception("Failed to send message: $e");
   }
 }
-
+//why is this not working
 
   Stream<QuerySnapshot> getMessages(String userId, String otherUserId, String donationId) {
   // Create a unique chatId based on user IDs and donationId
