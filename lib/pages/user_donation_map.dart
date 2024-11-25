@@ -15,7 +15,9 @@ class DonationMapScreen extends StatefulWidget {
   final String donorName;
   final String chatId; // Unique chat ID
   final String donorEmail; // Added donor email
-  final String donatorId; // Added donator ID
+  final String donatorId; 
+  final String donationId;
+  // Added donator ID
   String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   // Added donor name
   // Added status for the item
@@ -34,7 +36,7 @@ class DonationMapScreen extends StatefulWidget {
     required this.userId,
     required this.donorName,
     required String receiverEmail,
-    required String donationId,
+   required this.donationId,
   });
 
   @override
@@ -116,13 +118,10 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                         builder: (context) => ChatPage(
                           donorName: widget
                               .donorName, // Replace with actual donor name
-                          productName: widget.productName,
-                          chatId: widget.chatId,
                           userId: widget.userId,
                           receiverEmail: widget.donorEmail,
-                          donatorId: widget.donatorId,
                           receiverId: widget.donatorId,
-                          donationId: widget.donatorId,
+                          donationId: widget.donationId,
                           donationName: widget.productName,
                         ),
                       ),
@@ -155,7 +154,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     double distanceInKm = distanceInMeters / 1000; // Convert to km
 
     return Scaffold(
-      appBar: AppBar(title: Text('Donation Location')),
+      appBar: AppBar(title: Text('Donation Location'), backgroundColor: Colors.green),
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
           target: donationLocation,

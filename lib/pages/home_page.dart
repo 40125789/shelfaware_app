@@ -354,56 +354,66 @@ class _HomePageState extends State<HomePage> {
     return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}";
   }
 
-  Future<void> _donateFoodItem(String id) async {
-    try {
-      // Get the user’s current location
-      final location = await getUserLocation();
+Future<void> _donateFoodItem(String id) async {
+  try {
+    // Get the user’s current location
+    final location = await getUserLocation();
 
-      // Fetch the document from the foodItems collection
-      DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
-          .collection('foodItems')
-          .doc(id)
-          .get();
+    // Fetch the document from the foodItems collection
+    DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
+        .collection('foodItems')
+        .doc(id)
+        .get();
 
-      if (!foodItemDoc.exists) {
-        throw Exception("Food item not found.");
-      }
-
-      // Prepare the data to be copied, including donorId and status
-      Map<String, dynamic> foodItemData =
-          foodItemDoc.data() as Map<String, dynamic>;
-      foodItemData['donorId'] = FirebaseAuth.instance.currentUser!.uid;
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid)
-          .get();
-      foodItemData['donorName'] = userDoc['firstName'];
-      foodItemData['donorEmail'] = FirebaseAuth.instance.currentUser!.email;
-      foodItemData['donated'] = true;
-      foodItemData['donatedAt'] = Timestamp.now();
-      foodItemData['location'] =
-          GeoPoint(location.latitude, location.longitude);
-      foodItemData['status'] = 'available';
-
-      // Add the item to the donations collection
-      await FirebaseFirestore.instance
-          .collection('donations')
-          .add(foodItemData);
-
-      // Remove the item from the foodItems collection
-      await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Item donated successfully.")),
-      );
-    } catch (e) {
-      print('Error donating food item: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to donate item: $e")),
-      );
+    if (!foodItemDoc.exists) {
+      throw Exception("Food item not found.");
     }
+
+    // Prepare the data to be copied, including donorId and status
+    Map<String, dynamic> foodItemData =
+        foodItemDoc.data() as Map<String, dynamic>;
+    final donorId = FirebaseAuth.instance.currentUser!.uid;
+    final donorEmail = FirebaseAuth.instance.currentUser!.email;
+    final donorName = (await FirebaseFirestore.instance.collection('users').doc(donorId).get())['firstName'];
+
+    // Generate a unique donation ID using Firestore's doc().id
+    final String donationId = FirebaseFirestore.instance.collection('donations').doc().id;
+
+    foodItemData['donorId'] = donorId;
+    foodItemData['donorName'] = donorName;
+    foodItemData['donorEmail'] = donorEmail;
+    foodItemData['donated'] = true;
+    foodItemData['donatedAt'] = Timestamp.now();
+    foodItemData['location'] = GeoPoint(location.latitude, location.longitude);
+    foodItemData['status'] = 'available';
+    foodItemData['donationId'] = donationId;  // Assign unique donationId
+
+    // Add the item to the donations collection
+    await FirebaseFirestore.instance
+        .collection('donations')
+        .doc(donationId) // Use the unique donationId here
+        .set(foodItemData);
+
+    // Remove the item from the foodItems collection
+    await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
+
+    // Add this donation reference to the "myDonations" field in the user's document
+    await FirebaseFirestore.instance.collection('users').doc(donorId).update({
+      'myDonations': FieldValue.arrayUnion([donationId]),
+    });
+
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Item donated successfully.")),
+    );
+  } catch (e) {
+    print('Error donating food item: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to donate item: $e")),
+    );
   }
+}
+
 
   Future<void> _confirmDonation(String id) async {
     bool? confirm = await showDialog(

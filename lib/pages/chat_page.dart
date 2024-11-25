@@ -13,119 +13,166 @@ class ChatPage extends StatelessWidget {
   final String donationName;
   final String donorName;
 
-  // Constructor to accept parameters and store them
   ChatPage({
-    super.key,
+    Key? key,
     required this.receiverEmail,
     required this.receiverId,
     required this.donationId,
     required this.userId,
     required this.donationName,
     required this.donorName,
-    required String productName,
-    required String chatId,
-    required String donatorId,
-  });
+  }) : super(key: key);
 
-  // Text controller for message input
   final TextEditingController _messageController = TextEditingController();
-
-  // Chat and auth service
   final ChatService _chatService = ChatService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ScrollController _scrollController = ScrollController();
 
-  // Generate a unique chatId based on donationId and userIds
+  String _currentStatus = 'available'; // Default status
+
   String getChatId(String donationId, String userId, String receiverId) {
     List<String> ids = [donationId, userId, receiverId];
-    ids.sort(); // Ensure chatId is consistently created
+    ids.sort();
     return ids.join('_');
   }
 
-  // Send message
   Future<void> _sendMessage() async {
     if (_messageController.text.isNotEmpty) {
-      // Generate the chatId dynamically
-      String chatId = getChatId(donationId, userId, receiverId);
+      final String senderId = _auth.currentUser!.uid;
+      final String chatId = getChatId(donationId, senderId, receiverId);
 
-      // Send message using the new chatId
       await _chatService.sendMessage(
         donationId,
         _messageController.text,
         receiverId,
-        userId,
-        _auth.currentUser!.email!,
         receiverEmail,
-        chatId,
         donationName,
       );
 
-      // Clear the text field
       _messageController.clear();
+      _scrollToBottom();
     }
+  }
+
+  Future<void> _updateDonationStatus(BuildContext context, String newStatus) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('donations')
+          .doc(donationId)
+          .update({'status': newStatus});
+
+      _currentStatus = newStatus;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Status updated to $newStatus')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update status: $e')),
+      );
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final String senderId = _auth.currentUser!.uid;
+    final String chatId = getChatId(donationId, senderId, receiverId);
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Chat with $donorName"),
+        backgroundColor: Colors.green,
       ),
       body: Column(
         children: [
-          // Donation details header
-          _buildDonationDetailsHeader(),
-
-          // Messages list
-          Expanded(child: _buildMessageList()),
-
-          // User input
+          _buildDonationDetailsHeader(context),
+          Expanded(child: _buildMessageList(chatId)),
           _buildUserInput(),
         ],
       ),
     );
   }
-
-  // Build the donation details header
-  Widget _buildDonationDetailsHeader() {
-    return Container(
-      width: double.infinity,
-      color: Colors.grey.shade200,
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Donation Details",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+Widget _buildDonationDetailsHeader(BuildContext context) {
+  // Check if the logged-in user is the donor.
+  final bool isDonator = userId == _auth.currentUser!.uid;
+  
+  // Debugging: Print the values to check if the condition is correct
+  print('userId: $userId, logged-in userId: ${_auth.currentUser!.uid}');
+  
+  return Container(
+    width: double.infinity,
+    color: Colors.grey.shade200,
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Reduced padding
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Donation Details",
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16, // Slightly smaller font size
           ),
-          const SizedBox(height: 8),
-          Text(
-            "Product Name: $donationName",
-            style: TextStyle(fontSize: 16),
-          ),
-          Text(
-            "Donor Email: $receiverEmail",
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+        ),
+        const SizedBox(height: 4), // Reduced space
+        Text(
+          "Product Name: $donationName",
+          style: const TextStyle(fontSize: 14), // Smaller font size for product name
+        ),
+        Text(
+          "Donor Email: $receiverEmail",
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade700), // Smaller font size for email
+        ),
+        if (isDonator) ...[ // Only show this section if the user is the donor
+          const SizedBox(height: 8), // Adjust space for better layout
+          Row(
+            children: [
+              const Text(
+                "Update Status: ",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), // Smaller font size
+              ),
+              DropdownButton<String>(
+                value: _currentStatus,
+                onChanged: (String? newStatus) {
+                  if (newStatus != null) {
+                    _updateDonationStatus(context, newStatus);
+                  }
+                },
+                items: const [
+                  DropdownMenuItem(
+                    value: 'available',
+                    child: Text('Available'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'claimed',
+                    child: Text('Claimed'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'completed',
+                    child: Text('Completed'),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
-  // Build the message list
-  Widget _buildMessageList() {
-   
-    String senderId = _auth.currentUser!.uid;
+  
 
-    // Generate chatId using donationId and userIds
-    String chatId = getChatId(donationId, senderId, receiverId);
-
+  Widget _buildMessageList(String chatId) {
     return StreamBuilder(
-      stream:
-          _chatService.getMessages(chatId), // Fetch messages based on chatId
+      stream: _chatService.getMessages(chatId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return const Center(child: Text('Something went wrong'));
@@ -135,62 +182,64 @@ class ChatPage extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-// Reverse the messages for latest at the bottom
-      final messages = snapshot.data!.docs.reversed.toList();
+        final messages = snapshot.data!.docs;
 
-      return ListView(
-        reverse: true, // Ensures the list scrolls to the bottom by default
-        children: messages.map((doc) => _buildMessageItem(doc)).toList(),
-      );
-    },
-  );
-}
-        
-  // Build individual message item
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+
+        return ListView.builder(
+          controller: _scrollController,
+          itemCount: messages.length,
+          itemBuilder: (context, index) {
+            return _buildMessageItem(messages[index]);
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildMessageItem(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final bool isCurrentUser = data['senderId'] == _auth.currentUser!.uid;
 
-    return ListTile(
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+      child: Column(
+        crossAxisAlignment:
+            isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          // Message in a bubble
           Container(
-            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-            margin: EdgeInsets.only(
-                bottom:
-                    5), // Adjust spacing between message bubble and timestamp
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
             decoration: BoxDecoration(
-              color: Colors.blueAccent, // Background color of the bubble
-              borderRadius: BorderRadius.circular(15), // Rounded corners
+              color: isCurrentUser ? Colors.blueAccent : Colors.greenAccent,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(15),
+                topRight: const Radius.circular(15),
+                bottomLeft: isCurrentUser
+                    ? const Radius.circular(15)
+                    : const Radius.circular(0),
+                bottomRight: isCurrentUser
+                    ? const Radius.circular(0)
+                    : const Radius.circular(15),
+              ),
             ),
             child: Text(
               data['message'],
               style: TextStyle(
-                color: Colors.white, // White text inside the bubble
-                fontSize: 16, // Font size for the message text
+                color: isCurrentUser ? Colors.white : Colors.black,
+                fontSize: 16,
               ),
             ),
           ),
-          // Sender's email and timestamp below the bubble
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(data['senderEmail'],
-                  style: TextStyle(fontSize: 12, color: Colors.grey)),
-              Text(
-                DateFormat('HH:mm').format(data['timestamp']
-                    .toDate()), // Format timestamp in 24-hour format
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            "${DateFormat('HH:mm').format(data['timestamp'].toDate())} - ${data['senderEmail']}",
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
       ),
     );
   }
 
-  // Build the user input field (message text field)
   Widget _buildUserInput() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -200,7 +249,6 @@ class ChatPage extends StatelessWidget {
             child: TextField(
               controller: _messageController,
               decoration: const InputDecoration(hintText: 'Type a message'),
-              obscureText: false,
             ),
           ),
           IconButton(

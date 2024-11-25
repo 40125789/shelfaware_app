@@ -8,6 +8,8 @@ class Message {
   final String receiverId;
   final bool isRead;
   final Timestamp timestamp;
+  final String donationId;  
+
 
   Message({
     required this.senderEmail,
@@ -17,6 +19,7 @@ class Message {
     required this.receiverId,
     required this.isRead,
     required this.timestamp,
+    required this.donationId,
   });
 
   factory Message.fromMap(Map<String, dynamic> data) {
@@ -28,6 +31,7 @@ class Message {
       receiverId: data['receiverId'] ?? '',
       isRead: data['isRead'] ?? false,
       timestamp: data['timestamp'] ?? Timestamp.now(),
+      donationId: data['donationId'] ?? '',
     );
   }
 }
