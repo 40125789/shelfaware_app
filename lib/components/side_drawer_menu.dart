@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
+import 'package:shelfaware_app/pages/icon_selection_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
-
 
 class CustomDrawer extends StatefulWidget {
   final String firstName;
@@ -29,7 +29,6 @@ class CustomDrawer extends StatefulWidget {
 
 class _CustomDrawerState extends State<CustomDrawer> {
   String? _profileImageUrl;
-  bool _isUploading = false;
 
   @override
   void initState() {
@@ -37,82 +36,64 @@ class _CustomDrawerState extends State<CustomDrawer> {
     _loadProfileImage();
   }
 
+  // Load the user's profile image from Firestore
   Future<void> _loadProfileImage() async {
-  try {
-    final String userId = FirebaseAuth.instance.currentUser!.uid;
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
+    try {
+      final String userId = FirebaseAuth.instance.currentUser!.uid;
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
-    // Check if the document exists and profileImageUrl is valid
-    if (userDoc.exists) {
-      final profileImageUrl = userDoc.data()?['profileImageUrl'] ?? '';
-      setState(() {
-        _profileImageUrl = profileImageUrl.isNotEmpty ? profileImageUrl : null;
-      });
-    } else {
-      setState(() {
-        _profileImageUrl = null; // Use default avatar
-      });
+      // Check if the document exists and profileImageUrl is valid
+      if (userDoc.exists) {
+        final profileImageUrl = userDoc.data()?['profileImageUrl'] ?? '';
+        setState(() {
+          _profileImageUrl = profileImageUrl.isNotEmpty ? profileImageUrl : null;
+        });
+      } else {
+        setState(() {
+          _profileImageUrl = null; // Use default avatar if no URL is found
+        });
+      }
+    } catch (e) {
+      print('Error loading profile image: $e');
     }
-  } catch (e) {
-    print('Error loading profile image: $e');
   }
-}
-Future<void> _uploadProfileImage() async {
-  try {
-    // Select image from gallery
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile == null) {
-      print('No image selected.');
-      return;
+
+    // Navigate to the icon selection screen
+  void _navigateToIconSelection() async {
+    final selectedIconUrl = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => IconSelectionScreen(),
+      ),
+    );
+
+    // If an icon is selected, update the user's profile with the selected icon URL
+    if (selectedIconUrl != null && selectedIconUrl.isNotEmpty) {
+      // Optimistic update: Reflect the change immediately in the UI
+      _updateUserProfileWithIcon(selectedIconUrl);
     }
-
-    // Check if the user is authenticated
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print('User is not authenticated');
-      return;
-    }
-
-    final uid = user.uid;
-    final storageRef = FirebaseStorage.instance.ref().child('profile_image_${user.uid}.jpg');
-
-    // Start uploading the image
-    setState(() {
-      _isUploading = true;
-    });
-
-    await storageRef.putFile(File(pickedFile.path));
-
-    // Get the download URL after the upload is complete
-    final downloadUrl = await storageRef.getDownloadURL();
-
-    // Update the user's profile image URL in Firestore
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      'profileImageUrl': downloadUrl,
-    });
-
-    setState(() {
-      _profileImageUrl = downloadUrl;
-      _isUploading = false;
-    });
-
-    print('Profile image uploaded successfully!');
-  } catch (e) {
-    setState(() {
-      _isUploading = false;
-    });
-    print('Error uploading profile image: $e');
   }
-}
 
+  // Update the user's profile with the selected icon
+  Future<void> _updateUserProfileWithIcon(String iconUrl) async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser!.uid;
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'profileImageUrl': iconUrl,
+      });
+    } catch (e) {
+      print('Error updating profile image: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final String userId = FirebaseAuth.instance.currentUser!.uid;
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -123,26 +104,49 @@ Future<void> _uploadProfileImage() async {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: _uploadProfileImage, // Trigger image upload
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-   CircleAvatar(
-  radius: 30,
-  backgroundImage: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
-      ? NetworkImage(_profileImageUrl!)
-      : const AssetImage('assets/default_avatar.png') as ImageProvider,
-  child: _profileImageUrl == null || _profileImageUrl!.isEmpty
-      ? const Icon(Icons.person, color: Colors.white)
-      : null,
-),
+                  onTap: _navigateToIconSelection, // Navigate to Icon Selection Screen
+                  child: StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(userId)
+                        .snapshots(), // Listen to real-time updates
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircleAvatar(
+                          radius: 30,
+                          child: CircularProgressIndicator(),
+                        );
+                      }
 
-  
-                      if (_isUploading)
-                        const CircularProgressIndicator(
-                          color: Colors.white,
-                        ),
-                    ],
+                      if (snapshot.hasError) {
+                        return const CircleAvatar(
+                          radius: 30,
+                          child: Icon(Icons.error, color: Colors.red),
+                        );
+                      }
+
+                      if (!snapshot.hasData || snapshot.data == null) {
+                        return const CircleAvatar(
+                          radius: 30,
+                          backgroundImage:
+                              AssetImage('assets/default_avatar.png'),
+                        );
+                      }
+
+                      var profileImageUrl = snapshot.data!.get('profileImageUrl');
+                      profileImageUrl = profileImageUrl ?? ''; // Default to empty string if null
+
+                      return CircleAvatar(
+                        radius: 30,
+                        backgroundImage: profileImageUrl.isNotEmpty
+                            ? NetworkImage(profileImageUrl)
+                            : const AssetImage('assets/default_avatar.png')
+                                as ImageProvider,
+                        child: profileImageUrl.isEmpty
+                            ? const Icon(Icons.person, color: Colors.white)
+                            : null,
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -164,6 +168,7 @@ Future<void> _uploadProfileImage() async {
             ),
           ),
           const Divider(indent: 16, endIndent: 16, color: Colors.grey),
+          
 
           // Drawer List Items
           ListTile(
@@ -235,3 +240,4 @@ Future<void> _uploadProfileImage() async {
     );
   }
 }
+
