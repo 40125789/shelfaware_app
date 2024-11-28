@@ -5,7 +5,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shelfaware_app/pages/chat_list_page.dart';
+import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
+
 
 class CustomDrawer extends StatefulWidget {
   final String firstName;
@@ -35,77 +37,79 @@ class _CustomDrawerState extends State<CustomDrawer> {
     _loadProfileImage();
   }
 
-  // Load profile image from Firestore
   Future<void> _loadProfileImage() async {
-    try {
-      final String userId = FirebaseAuth.instance.currentUser!.uid;
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+  try {
+    final String userId = FirebaseAuth.instance.currentUser!.uid;
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .get();
 
-      // Check if the document exists and the profileImageUrl is present
-      if (userDoc.exists && userDoc.data()?['profileImageUrl'] != null) {
-        setState(() {
-          _profileImageUrl = userDoc.data()?['profileImageUrl'];
-        });
-      } else {
-        setState(() {
-          _profileImageUrl = null; // Use default avatar if not found
-        });
-      }
-    } catch (e) {
-      print('Error loading profile image: $e');
+    // Check if the document exists and profileImageUrl is valid
+    if (userDoc.exists) {
+      final profileImageUrl = userDoc.data()?['profileImageUrl'] ?? '';
+      setState(() {
+        _profileImageUrl = profileImageUrl.isNotEmpty ? profileImageUrl : null;
+      });
+    } else {
+      setState(() {
+        _profileImageUrl = null; // Use default avatar
+      });
     }
+  } catch (e) {
+    print('Error loading profile image: $e');
   }
+}
+Future<void> _uploadProfileImage() async {
+  try {
+    // Select image from gallery
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-  // Upload profile image to Firestore
-  Future<void> _uploadProfileImage() async {
-    try {
-      // Select image from gallery
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-      if (pickedFile == null) {
-        print('No image selected.');
-        return;
-      }
-
-      // Check if the user is authenticated
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        print('User is not authenticated');
-        return;
-      }
-
-      final uid = user.uid;
-      final storageRef = FirebaseStorage.instance.ref().child('profile_images').child('$uid.jpg');
-
-      // Start uploading the image
-      setState(() {
-        _isUploading = true;
-      });
-
-      await storageRef.putFile(File(pickedFile.path));
-
-      // Get the download URL after the upload is complete
-      final downloadUrl = await storageRef.getDownloadURL();
-
-      // Update the user's profile image URL in Firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
-        'profileImageUrl': downloadUrl,
-      });
-
-      setState(() {
-        _profileImageUrl = downloadUrl;
-        _isUploading = false;
-      });
-
-      print('Profile image uploaded successfully!');
-    } catch (e) {
-      setState(() {
-        _isUploading = false;
-      });
-      print('Error uploading profile image: $e');
+    if (pickedFile == null) {
+      print('No image selected.');
+      return;
     }
+
+    // Check if the user is authenticated
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print('User is not authenticated');
+      return;
+    }
+
+    final uid = user.uid;
+    final storageRef = FirebaseStorage.instance.ref().child('profile_image_${user.uid}.jpg');
+
+    // Start uploading the image
+    setState(() {
+      _isUploading = true;
+    });
+
+    await storageRef.putFile(File(pickedFile.path));
+
+    // Get the download URL after the upload is complete
+    final downloadUrl = await storageRef.getDownloadURL();
+
+    // Update the user's profile image URL in Firestore
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'profileImageUrl': downloadUrl,
+    });
+
+    setState(() {
+      _profileImageUrl = downloadUrl;
+      _isUploading = false;
+    });
+
+    print('Profile image uploaded successfully!');
+  } catch (e) {
+    setState(() {
+      _isUploading = false;
+    });
+    print('Error uploading profile image: $e');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -120,16 +124,25 @@ class _CustomDrawerState extends State<CustomDrawer> {
               children: [
                 GestureDetector(
                   onTap: _uploadProfileImage, // Trigger image upload
-                  child: CircleAvatar(
-                    radius: 30,
-                    backgroundImage: _profileImageUrl != null
-                        ? NetworkImage(_profileImageUrl!)
-                        : const AssetImage('assets/default_avatar.png') as ImageProvider,
-                    child: _profileImageUrl == null
-                        ? _isUploading
-                            ? CircularProgressIndicator()  // Show loading spinner while uploading
-                            : const Icon(Icons.camera_alt, color: Colors.white)
-                        : null,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+   CircleAvatar(
+  radius: 30,
+  backgroundImage: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+      ? NetworkImage(_profileImageUrl!)
+      : const AssetImage('assets/default_avatar.png') as ImageProvider,
+  child: _profileImageUrl == null || _profileImageUrl!.isEmpty
+      ? const Icon(Icons.person, color: Colors.white)
+      : null,
+),
+
+  
+                      if (_isUploading)
+                        const CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -164,7 +177,12 @@ class _CustomDrawerState extends State<CustomDrawer> {
             leading: const Icon(Icons.history),
             title: const Text('History'),
             onTap: () {
-              // Define action for History
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => HistoryPage(
+                        userId: FirebaseAuth.instance.currentUser!.uid)),
+              );
             },
           ),
           ListTile(
@@ -181,41 +199,20 @@ class _CustomDrawerState extends State<CustomDrawer> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  
-                  builder: (context) => ChatListPage(
-            
-                    // Replace `ChatListPage()` with your actual Chat List Page widget.
-                  ),
+                  builder: (context) => ChatListPage(),
                 ),
               );
-          
-                  
-                   
-                  
-             
-                 
-               // Replace `ChatListPage()` with your actual Chat List Page widget.
-              
             },
           ),
-                
-              
-            
-          
           ListTile(
             leading: const Icon(Icons.food_bank),
             title: const Text('My Donation Listings'),
             onTap: () {
-              // Retrieve the current user's UID
               final userId = FirebaseAuth.instance.currentUser!.uid;
-
-              // Navigate to MyDonationsPage
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => MyDonationsPage(
-                    userId: userId,
-                  ),
+                  builder: (context) => MyDonationsPage(userId: userId),
                 ),
               );
             },
@@ -238,4 +235,3 @@ class _CustomDrawerState extends State<CustomDrawer> {
     );
   }
 }
-

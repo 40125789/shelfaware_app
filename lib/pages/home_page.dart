@@ -18,6 +18,9 @@ import 'package:shelfaware_app/components/expiry_icon.dart'; // Import the expir
 import 'package:shelfaware_app/controllers/auth_controller.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:shelfaware_app/components/mark_food_dialogue.dart';
+import 'package:shelfaware_app/services/food_item_service.dart'; // Import the Mark Food Dialog page
+// Import the Mark Food Dialog page
 // Import the Flutter Slidable package
 
 class HomePage extends StatefulWidget {
@@ -269,41 +272,57 @@ class _HomePageState extends State<HomePage> {
                                           _deleteFoodItem(documentId),
                                     ),
                                   ],
-                                ), // Sliding drawer effect
-                                child: Card(
-                                  elevation: 3,
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 8.0),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10)),
-                                  child: ListTile(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(50),
-                                    ),
-                                    leading: SizedBox(
-                                      width: 40,
-                                      height: 40,
-                                      child: Icon(FoodCategoryIcons.getIcon(
-                                          foodCategory)),
-                                    ),
-                                    title: Text(
-                                      data['productName'] ?? 'No Name',
-                                      style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    subtitle: Text(
-                                        "Quantity: ${data['quantity']}\n${formatDate(expiryTimestamp)}"),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          width: 60,
-                                          height: 60,
-                                          child: ExpiryIcon(
-                                              expiryTimestamp: expiryTimestamp),
+                                ),
+                                child: InkWell(
+                                  onTap: () {
+                                    // Navigate to Mark Food Dialog
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MarkFoodDialog(
+                                          documentId: documentId,
                                         ),
-                                      ],
+                                      ),
+                                    );
+                                  },
+                                  // Sliding drawer effect
+                                  child: Card(
+                                    elevation: 3,
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                    child: ListTile(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(50),
+                                      ),
+                                      leading: SizedBox(
+                                        width: 40,
+                                        height: 40,
+                                        child: Icon(FoodCategoryIcons.getIcon(
+                                            foodCategory)),
+                                      ),
+                                      title: Text(
+                                        data['productName'] ?? 'No Name',
+                                        style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Text(
+                                          "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}"),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SizedBox(
+                                            width: 60,
+                                            height: 60,
+                                            child: ExpiryIcon(
+                                                expiryTimestamp:
+                                                    expiryTimestamp),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -354,66 +373,105 @@ class _HomePageState extends State<HomePage> {
     return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}";
   }
 
-Future<void> _donateFoodItem(String id) async {
-  try {
-    // Get the user’s current location
-    final location = await getUserLocation();
+  Future<void> _donateFoodItem(String id) async {
+    try {
+      // Get the user’s current location
+      final location = await getUserLocation();
 
-    // Fetch the document from the foodItems collection
-    DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
-        .collection('foodItems')
-        .doc(id)
-        .get();
+      // Fetch the document from the foodItems collection
+      DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
+          .collection('foodItems')
+          .doc(id)
+          .get();
 
-    if (!foodItemDoc.exists) {
-      throw Exception("Food item not found.");
+      if (!foodItemDoc.exists) {
+        throw Exception("Food item not found.");
+      }
+
+      // Get the food item data
+      Map<String, dynamic> foodItemData =
+          foodItemDoc.data() as Map<String, dynamic>;
+
+      // Get the expiry date of the item
+      Timestamp expiryTimestamp = foodItemData[
+          'expiryDate']; // Assuming expiryDate is stored as a Timestamp
+      DateTime expiryDate = expiryTimestamp.toDate();
+
+      // Check if the food item has expired
+      if (expiryDate.isBefore(DateTime.now())) {
+        // Show a dialog if the item is expired
+        _showExpiredItemDialog();
+        return; // Prevent donation if the item is expired
+      }
+
+      // Prepare the data to be copied, including donorId and status
+      final donorId = FirebaseAuth.instance.currentUser!.uid;
+      final donorEmail = FirebaseAuth.instance.currentUser!.email;
+      final donorName = (await FirebaseFirestore.instance
+          .collection('users')
+          .doc(donorId)
+          .get())['firstName'];
+
+      // Generate a unique donation ID using Firestore's doc().id
+      final String donationId =
+          FirebaseFirestore.instance.collection('donations').doc().id;
+
+      foodItemData['donorId'] = donorId;
+      foodItemData['donorName'] = donorName;
+      foodItemData['donorEmail'] = donorEmail;
+      foodItemData['donated'] = true;
+      foodItemData['donatedAt'] = Timestamp.now();
+      foodItemData['location'] =
+          GeoPoint(location.latitude, location.longitude);
+      foodItemData['status'] = 'available';
+      foodItemData['donationId'] = donationId; // Assign unique donationId
+
+      // Add the item to the donations collection
+      await FirebaseFirestore.instance
+          .collection('donations')
+          .doc(donationId) // Use the unique donationId here
+          .set(foodItemData);
+
+      // Remove the item from the foodItems collection
+      await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
+
+      // Add this donation reference to the "myDonations" field in the user's document
+      await FirebaseFirestore.instance.collection('users').doc(donorId).update({
+        'myDonations': FieldValue.arrayUnion([donationId]),
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Item donated successfully.")),
+      );
+    } catch (e) {
+      print('Error donating food item: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to donate item: $e")),
+      );
     }
+  }
 
-    // Prepare the data to be copied, including donorId and status
-    Map<String, dynamic> foodItemData =
-        foodItemDoc.data() as Map<String, dynamic>;
-    final donorId = FirebaseAuth.instance.currentUser!.uid;
-    final donorEmail = FirebaseAuth.instance.currentUser!.email;
-    final donorName = (await FirebaseFirestore.instance.collection('users').doc(donorId).get())['firstName'];
-
-    // Generate a unique donation ID using Firestore's doc().id
-    final String donationId = FirebaseFirestore.instance.collection('donations').doc().id;
-
-    foodItemData['donorId'] = donorId;
-    foodItemData['donorName'] = donorName;
-    foodItemData['donorEmail'] = donorEmail;
-    foodItemData['donated'] = true;
-    foodItemData['donatedAt'] = Timestamp.now();
-    foodItemData['location'] = GeoPoint(location.latitude, location.longitude);
-    foodItemData['status'] = 'available';
-    foodItemData['donationId'] = donationId;  // Assign unique donationId
-
-    // Add the item to the donations collection
-    await FirebaseFirestore.instance
-        .collection('donations')
-        .doc(donationId) // Use the unique donationId here
-        .set(foodItemData);
-
-    // Remove the item from the foodItems collection
-    await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
-
-    // Add this donation reference to the "myDonations" field in the user's document
-    await FirebaseFirestore.instance.collection('users').doc(donorId).update({
-      'myDonations': FieldValue.arrayUnion([donationId]),
-    });
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Item donated successfully.")),
-    );
-  } catch (e) {
-    print('Error donating food item: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Failed to donate item: $e")),
+// Function to show a popup dialog when the item is expired
+  void _showExpiredItemDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Donation Alert!"),
+          content: Text("This item has expired and cannot be donated."),
+          actions: [
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
     );
   }
-}
-
 
   Future<void> _confirmDonation(String id) async {
     bool? confirm = await showDialog(
@@ -442,6 +500,23 @@ Future<void> _donateFoodItem(String id) async {
 
     if (confirm == true) {
       await _donateFoodItem(id); // Proceed with donation if confirmed
+    }
+  }
+
+  String _formatExpiryDate(Timestamp expiryTimestamp) {
+    DateTime expiryDate = expiryTimestamp.toDate();
+    DateTime today = DateTime.now();
+    int daysDifference = expiryDate.difference(today).inDays;
+
+    // Determine the expiry date message
+    if (daysDifference < 0) {
+      return 'Expired'; // If expired, show 'Expired'
+    } else if (daysDifference == 0) {
+      return 'Expires today'; // If it expires today
+    } else if (daysDifference <= 5) {
+      return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}'; // Expiring soon
+    } else {
+      return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}'; // Fresh items
     }
   }
 }

@@ -1,4 +1,3 @@
-
 class PlaceDetails {
   final String formattedAddress;
   final String? phoneNumber;

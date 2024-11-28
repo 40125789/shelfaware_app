@@ -64,67 +64,84 @@ class _AddFoodItemState extends State<AddFoodItem> {
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
   }
 
-  Future<void> _saveFoodItem() async {
-    if (!_formKey.currentState!.validate()) return;
+Future<void> _saveFoodItem() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    // Display loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
+  // Display loading indicator
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return const Center(child: CircularProgressIndicator());
+    },
+  );
 
-    try {
-      // Save data to Firestore
-      await FirebaseFirestore.instance.collection('foodItems').add({
-        'productName': _productNameController.text,
-        'expiryDate': _expiryDate,
-        'quantity': int.tryParse(_quantityController.text) ?? 1,
-        'userId': user!.uid, // Add this line
-        'storageLocation': _storageLocationController.text,
-        'notes': _notesController.text,
-        'category': _category,
-        'addedOn': DateTime.now(),
-      });
+  try {
+    // Ensure to get the current logged-in user's UID dynamically
+    User? currentUser = FirebaseAuth.instance.currentUser;
 
-      // Close the loading indicator
-      Navigator.pop(context);
-
-      // Show a success message
+    // Check if there's a valid user
+    if (currentUser == null) {
+      // Show error message if no user is logged in
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Food item saved successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Clear the form
-      _formKey.currentState?.reset();
-      _productNameController.clear();
-      _expiryDateController.clear();
-      _quantityController.clear(); // Clear quantity field
-      _storageLocationController.clear();
-      _notesController.clear();
-      setState(() {
-        _category = 'All';
-        _expiryDate = DateTime.now();
-        _expiryDateController.text = formatDate(_expiryDate);
-      });
-    } catch (e) {
-      // Close the loading indicator
-      Navigator.pop(context);
-
-      // Show an error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save food item: $e'),
+          content: Text('No user is logged in. Please log in first.'),
           backgroundColor: Colors.red,
         ),
       );
+      Navigator.pop(context); // Close loading indicator
+      return;
     }
+
+    // Save data to Firestore with current user UID
+    await FirebaseFirestore.instance.collection('foodItems').add({
+      'productName': _productNameController.text,
+      'expiryDate': _expiryDate,
+      'quantity': int.tryParse(_quantityController.text) ?? 1,
+      'userId': currentUser.uid, // Use the dynamically fetched UID
+      'storageLocation': _storageLocationController.text,
+      'notes': _notesController.text,
+      'category': _category,
+      'addedOn': DateTime.now(),
+    });
+
+    // Close the loading indicator
+    Navigator.pop(context);
+
+    // Show a success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Food item saved successfully!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // Clear the form
+    _formKey.currentState?.reset();
+    _productNameController.clear();
+    _expiryDateController.clear();
+    _quantityController.clear(); // Clear quantity field
+    _storageLocationController.clear();
+    _notesController.clear();
+    setState(() {
+      _category = 'All';
+      _expiryDate = DateTime.now();
+      _expiryDateController.text = formatDate(_expiryDate);
+    });
+  } catch (e) {
+    // Close the loading indicator
+    Navigator.pop(context);
+
+    // Show an error message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to save food item: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
+
 
   Future<void> _scanBarcode() async {
     // Check for camera permission

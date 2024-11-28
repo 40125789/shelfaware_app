@@ -15,13 +15,21 @@ class ExpiryIcon extends StatelessWidget {
     IconData iconData;
     Color iconColor;
 
+    // Adjusted logic for "Fresh", "Expiring Soon", and "Expired"
     if (daysDifference < 0) {
+      // Expired items
       iconData = Icons.error;
       iconColor = Colors.red[700]!;
+    } else if (daysDifference == 0) {
+      // Expiring today
+      iconData = Icons.warning;
+      iconColor = Colors.orange[700]!;
     } else if (daysDifference <= 5) {
+      // Expiring soon (within 5 days)
       iconData = Icons.warning;
       iconColor = Colors.orange[700]!;
     } else {
+      // Fresh items (more than 5 days left)
       iconData = Icons.check_circle;
       iconColor = Colors.green[700]!;
     }

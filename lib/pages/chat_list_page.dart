@@ -79,21 +79,22 @@ class ChatListPage extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChatPage(
+          builder: (context) => ChatPage(
+                                    
               receiverEmail: '', // Fetch or pass if available.
               receiverId: otherUserId,
               donationId: chat['product']['donationId'],
               userId: currentUserId,
               donationName: productName,
               donorName: displayName,
-            ),
+                                  
+         ),
           ),
         );
       },
     );
   }
 }
-
 
 
 
