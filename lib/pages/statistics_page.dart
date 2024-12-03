@@ -1,119 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:shelfaware_app/components/community_stats_tab.dart';
+import 'package:shelfaware_app/components/my_stats_tab.dart';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
   _StatisticsPageState createState() => _StatisticsPageState();
 }
 
-class _StatisticsPageState extends State<StatisticsPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  bool _isLoading = true;
+class _StatisticsPageState extends State<StatisticsPage> {
+  // Get the current user's ID
+  String? userId;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _loadStats(); // Simulate loading stats
-  }
-
-  Future<void> _loadStats() async {
-    // Simulate a delay for loading stats
-    await Future.delayed(Duration(seconds: 2));
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+    // Retrieve the user ID from FirebaseAuth
+    userId = FirebaseAuth.instance.currentUser?.uid;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Statistics'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: 'My Stats'),
-            Tab(text: 'Community Stats'),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Statistics'),
+          bottom: TabBar(
+            tabs: [
+              Tab(text: 'My Stats'),
+              Tab(text: 'Community Stats'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            // Pass the userId to MyStatsTab
+            MyStatsTab(userId: userId ?? ''),  // Ensure userId is not null
+            CommunityStatsTab(),
           ],
         ),
-      ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator()) // Show loading indicator
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                MyStatsTab(), // Widget for "My Stats"
-                CommunityStatsTab(), // Widget for "Community Stats"
-              ],
-            ),
-    );
-  }
-}
-
-class MyStatsTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Replace with actual stats for the logged-in user
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'My Stats',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 16),
-          Text(
-            '• Items Donated: 12',
-            style: TextStyle(fontSize: 18),
-          ),
-          Text(
-            '• Waste Reduced: 5 kg',
-            style: TextStyle(fontSize: 18),
-          ),
-          Text(
-            '• Environmental Impact: Positive 🌱',
-            style: TextStyle(fontSize: 18),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class CommunityStatsTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Replace with actual aggregated community stats
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Community Stats',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 16),
-          Text(
-            '• Total Donations: 250',
-            style: TextStyle(fontSize: 18),
-          ),
-          Text(
-            '• Food Waste Prevented: 1,200 kg',
-            style: TextStyle(fontSize: 18),
-          ),
-          Text(
-            '• Active Users: 150',
-            style: TextStyle(fontSize: 18),
-          ),
-        ],
       ),
     );
   }
