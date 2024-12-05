@@ -17,9 +17,8 @@ import 'package:shelfaware_app/models/food_category_icons.dart';
 import 'package:shelfaware_app/components/expiry_icon.dart'; // Import the expiry icon component
 import 'package:shelfaware_app/controllers/auth_controller.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:shelfaware_app/components/mark_food_dialogue.dart';
-import 'package:shelfaware_app/services/food_item_service.dart'; // Import the Mark Food Dialog page
+// Import the Mark Food Dialog page
 // Import the Mark Food Dialog page
 // Import the Flutter Slidable package
 
@@ -147,6 +146,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    bool _isToggled = false; // Add this variable for the toggle state
     return Consumer<AuthController>(
       builder: (context, authController, child) {
         return Scaffold(
@@ -178,16 +178,45 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FilterDropdown(
-                      selectedFilter: selectedFilter,
-                      filterOptions: filterOptions,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedFilter = newValue!;
-                        });
-                      },
+                    // Row containing the filter dropdown (left) and toggle button (right)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment
+                          .spaceBetween, // Align items on both sides
+                      children: [
+                        // Filter Dropdown on the left
+                        FilterDropdown(
+                          selectedFilter: selectedFilter,
+                          filterOptions: filterOptions,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedFilter = newValue!;
+                            });
+                          },
+                        ),
+                        // Row for the toggle button and its label on the right
+                        Row(
+                          children: [
+                            Text(
+                              _isToggled
+                                  ? "Calendar view"
+                                  : "List view", // Dynamic text based on the toggle state
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            Switch(
+                              value: _isToggled,
+                              onChanged: (bool value) {
+                                setState(() {
+                                  _isToggled = value;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 20),
+
+                    // Add a StreamBuilder for fetching food items
                     Expanded(
                       child: StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
@@ -246,83 +275,102 @@ class _HomePageState extends State<HomePage> {
 
                               String documentId = document.id;
 
-                              return Slidable(
-                                endActionPane: ActionPane(
-                                  motion: const DrawerMotion(),
-                                  children: [
-                                    SlidableAction(
-                                      label: 'Donate',
-                                      backgroundColor: Colors.green,
-                                      icon: Icons.volunteer_activism,
-                                      onPressed: (context) =>
-                                          _confirmDonation(documentId),
-                                    ),
-                                    SlidableAction(
-                                      label: 'Edit',
-                                      backgroundColor: Colors.blue,
-                                      icon: Icons.edit,
-                                      onPressed: (context) =>
-                                          _editFoodItem(documentId),
-                                    ),
-                                    SlidableAction(
-                                      label: 'Delete',
-                                      backgroundColor: Colors.red,
-                                      icon: Icons.delete,
-                                      onPressed: (context) =>
-                                          _deleteFoodItem(documentId),
-                                    ),
-                                  ],
-                                ),
-                                child: InkWell(
-                                  onTap: () {
-                                    // Navigate to Mark Food Dialog
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => MarkFoodDialog(
-                                          documentId: documentId,
-                                        ),
+                              return InkWell(
+                                onTap: () {
+                                  // Navigate to Mark Food Dialog
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MarkFoodDialog(
+                                        documentId: documentId,
                                       ),
-                                    );
-                                  },
-                                  // Sliding drawer effect
-                                  child: Card(
-                                    elevation: 3,
-                                    margin: const EdgeInsets.symmetric(
-                                        vertical: 8.0),
+                                    ),
+                                  );
+                                },
+                                child: Card(
+                                  elevation: 3,
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 8.0),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: ListTile(
                                     shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    child: ListTile(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(50),
-                                      ),
-                                      leading: SizedBox(
-                                        width: 40,
-                                        height: 40,
-                                        child: Icon(FoodCategoryIcons.getIcon(
-                                            foodCategory)),
-                                      ),
-                                      title: Text(
-                                        data['productName'] ?? 'No Name',
-                                        style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      subtitle: Text(
-                                          "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}"),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          SizedBox(
-                                            width: 60,
-                                            height: 60,
-                                            child: ExpiryIcon(
-                                                expiryTimestamp:
-                                                    expiryTimestamp),
-                                          ),
-                                        ],
-                                      ),
+                                      borderRadius: BorderRadius.circular(50),
+                                    ),
+                                    leading: SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: Icon(FoodCategoryIcons.getIcon(
+                                          foodCategory)),
+                                    ),
+                                    title: Text(
+                                      data['productName'] ?? 'No Name',
+                                      style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Text(
+                                      "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}",
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                          width: 60,
+                                          height: 60,
+                                          child: ExpiryIcon(
+                                              expiryTimestamp: expiryTimestamp),
+                                        ),
+                                        // Meatball menu for actions (three vertical dots)
+                                        PopupMenuButton<String>(
+                                          icon: Icon(Icons
+                                              .more_vert), // The three vertical dots icon
+                                          onSelected: (String value) {
+                                            if (value == 'edit') {
+                                              _editFoodItem(documentId);
+                                            } else if (value == 'delete') {
+                                              _deleteFoodItem(documentId);
+                                            } else if (value == 'donate') {
+                                              _confirmDonation(documentId);
+                                            }
+                                          },
+                                          itemBuilder: (BuildContext context) =>
+                                              [
+                                            PopupMenuItem<String>(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit),
+                                                  SizedBox(width: 8),
+                                                  Text('Edit'),
+                                                ],
+                                              ),
+                                            ),
+                                            PopupMenuItem<String>(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.delete),
+                                                  SizedBox(width: 8),
+                                                  Text('Delete'),
+                                                ],
+                                              ),
+                                            ),
+                                            PopupMenuItem<String>(
+                                              value: 'donate',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                      Icons.volunteer_activism),
+                                                  SizedBox(width: 8),
+                                                  Text('Donate'),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
