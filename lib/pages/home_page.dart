@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:shelfaware_app/components/bottom_navigation_bar.dart';
+import 'package:shelfaware_app/components/calendar_view_widget.dart';
 import 'package:shelfaware_app/components/side_drawer_menu.dart';
 import 'package:shelfaware_app/components/top_app_bar.dart';
 import 'package:shelfaware_app/components/filter_dropdown.dart'; // Import the new component
@@ -65,6 +66,8 @@ class _HomePageState extends State<HomePage> {
     _fetchFilterOptions();
     _checkExpiryNotifications();
   }
+
+  bool _isToggled = false;
 
   @override
   void dispose() {
@@ -146,7 +149,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    bool _isToggled = false; // Add this variable for the toggle state
+    // Add this variable for the toggle state
     return Consumer<AuthController>(
       builder: (context, authController, child) {
         return Scaffold(
@@ -216,170 +219,181 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Add a StreamBuilder for fetching food items
-                    Expanded(
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('foodItems')
-                            .where('userId', isEqualTo: user.uid)
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-                          if (snapshot.hasError) {
-                            return const Center(
-                                child: Text('Error fetching food items'));
-                          }
-                          if (!snapshot.hasData ||
-                              snapshot.data!.docs.isEmpty) {
-                            return const Center(
-                                child: Text('No food items found'));
-                          }
+                    // Conditionally show either the list view or the calendar view
+                    _isToggled
+                        ? SizedBox(
+                            height: 400, // Adjust height of the calendar view
+                            child: CalendarView(user, userId: user.uid),
+                          )
+                        : Expanded(
+                            child: StreamBuilder<QuerySnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('foodItems')
+                                  .where('userId', isEqualTo: user.uid)
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                                if (snapshot.hasError) {
+                                  return const Center(
+                                      child: Text('Error fetching food items'));
+                                }
+                                if (!snapshot.hasData ||
+                                    snapshot.data!.docs.isEmpty) {
+                                  return const Center(
+                                      child: Text('No food items found'));
+                                }
 
-                          final filteredItems = selectedFilter == 'All'
-                              ? snapshot.data!.docs
-                              : snapshot.data!.docs.where((doc) {
-                                  return doc['category'] == selectedFilter;
-                                }).toList();
+                                final filteredItems = selectedFilter == 'All'
+                                    ? snapshot.data!.docs
+                                    : snapshot.data!.docs.where((doc) {
+                                        return doc['category'] ==
+                                            selectedFilter;
+                                      }).toList();
 
-                          if (filteredItems.isEmpty) {
-                            return const Center(
-                                child: Text(
-                                    'No food items match the selected filter.'));
-                          }
+                                if (filteredItems.isEmpty) {
+                                  return const Center(
+                                      child: Text(
+                                          'No food items match the selected filter.'));
+                                }
 
-                          return ListView(
-                            children: filteredItems.map((document) {
-                              final data =
-                                  document.data() as Map<String, dynamic>;
-                              final expiryTimestamp =
-                                  data['expiryDate'] as Timestamp;
+                                return ListView(
+                                  children: filteredItems.map((document) {
+                                    final data =
+                                        document.data() as Map<String, dynamic>;
+                                    final expiryTimestamp =
+                                        data['expiryDate'] as Timestamp;
 
-                              // Get the food category from the "foodItems" collection
-                              String? fetchedFoodType = data['category'];
-                              FoodCategory foodCategory;
+                                    String? fetchedFoodType = data['category'];
+                                    FoodCategory foodCategory;
 
-                              if (fetchedFoodType != null) {
-                                foodCategory = FoodCategory.values.firstWhere(
-                                  (e) =>
-                                      e.toString().split('.').last ==
-                                      fetchedFoodType,
-                                  orElse: () => FoodCategory.values.first,
-                                );
-                              } else {
-                                foodCategory = FoodCategory.values.first;
-                              }
+                                    if (fetchedFoodType != null) {
+                                      foodCategory =
+                                          FoodCategory.values.firstWhere(
+                                        (e) =>
+                                            e.toString().split('.').last ==
+                                            fetchedFoodType,
+                                        orElse: () => FoodCategory.values.first,
+                                      );
+                                    } else {
+                                      foodCategory = FoodCategory.values.first;
+                                    }
 
-                              String documentId = document.id;
+                                    String documentId = document.id;
 
-                              return InkWell(
-                                onTap: () {
-                                  // Navigate to Mark Food Dialog
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => MarkFoodDialog(
-                                        documentId: documentId,
+                                    return InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                MarkFoodDialog(
+                                              documentId: documentId,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Card(
+                                        elevation: 3,
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 8.0),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: ListTile(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(50),
+                                          ),
+                                          leading: SizedBox(
+                                            width: 40,
+                                            height: 40,
+                                            child: Icon(
+                                                FoodCategoryIcons.getIcon(
+                                                    foodCategory)),
+                                          ),
+                                          title: Text(
+                                            data['productName'] ?? 'No Name',
+                                            style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          subtitle: Text(
+                                            "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}",
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SizedBox(
+                                                width: 60,
+                                                height: 60,
+                                                child: ExpiryIcon(
+                                                    expiryTimestamp:
+                                                        expiryTimestamp),
+                                              ),
+                                              PopupMenuButton<String>(
+                                                icon: Icon(Icons.more_vert),
+                                                onSelected: (String value) {
+                                                  if (value == 'edit') {
+                                                    _editFoodItem(documentId);
+                                                  } else if (value ==
+                                                      'delete') {
+                                                    _deleteFoodItem(documentId);
+                                                  } else if (value ==
+                                                      'donate') {
+                                                    _confirmDonation(
+                                                        documentId);
+                                                  }
+                                                },
+                                                itemBuilder:
+                                                    (BuildContext context) => [
+                                                  PopupMenuItem<String>(
+                                                    value: 'edit',
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.edit),
+                                                        SizedBox(width: 8),
+                                                        Text('Edit'),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  PopupMenuItem<String>(
+                                                    value: 'delete',
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.delete),
+                                                        SizedBox(width: 8),
+                                                        Text('Delete'),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  PopupMenuItem<String>(
+                                                    value: 'donate',
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons
+                                                            .volunteer_activism),
+                                                        SizedBox(width: 8),
+                                                        Text('Donate'),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                                child: Card(
-                                  elevation: 3,
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 8.0),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: ListTile(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(50),
-                                    ),
-                                    leading: SizedBox(
-                                      width: 40,
-                                      height: 40,
-                                      child: Icon(FoodCategoryIcons.getIcon(
-                                          foodCategory)),
-                                    ),
-                                    title: Text(
-                                      data['productName'] ?? 'No Name',
-                                      style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    subtitle: Text(
-                                      "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}",
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          width: 60,
-                                          height: 60,
-                                          child: ExpiryIcon(
-                                              expiryTimestamp: expiryTimestamp),
-                                        ),
-                                        // Meatball menu for actions (three vertical dots)
-                                        PopupMenuButton<String>(
-                                          icon: Icon(Icons
-                                              .more_vert), // The three vertical dots icon
-                                          onSelected: (String value) {
-                                            if (value == 'edit') {
-                                              _editFoodItem(documentId);
-                                            } else if (value == 'delete') {
-                                              _deleteFoodItem(documentId);
-                                            } else if (value == 'donate') {
-                                              _confirmDonation(documentId);
-                                            }
-                                          },
-                                          itemBuilder: (BuildContext context) =>
-                                              [
-                                            PopupMenuItem<String>(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit),
-                                                  SizedBox(width: 8),
-                                                  Text('Edit'),
-                                                ],
-                                              ),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.delete),
-                                                  SizedBox(width: 8),
-                                                  Text('Delete'),
-                                                ],
-                                              ),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'donate',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                      Icons.volunteer_activism),
-                                                  SizedBox(width: 8),
-                                                  Text('Donate'),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      ),
-                    ),
+                                    );
+                                  }).toList(),
+                                );
+                              },
+                            ),
+                          ),
                   ],
                 ),
               ),
