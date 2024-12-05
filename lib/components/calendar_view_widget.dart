@@ -58,7 +58,41 @@ class _CalendarViewState extends State<CalendarView> {
 
   /// Get food items for a specific day
   List<Map<String, dynamic>> _getItemsForDay(DateTime day) {
-    return _groupedFoodItems[day] ?? [];
+    DateTime normalizedDay = DateTime(day.year, day.month, day.day);
+    return _groupedFoodItems[normalizedDay] ?? [];
+  }
+
+  /// Show a dialog with the food items for the selected day
+  void _showFoodItemsDialog(List<Map<String, dynamic>> items) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Food Items Expiring'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return ListTile(
+                  title: Text(item['productName'] ?? 'Unnamed Item'),
+                  subtitle: Text('Quantity: ${item['quantity']}'),
+                );
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -75,13 +109,42 @@ class _CalendarViewState extends State<CalendarView> {
               _selectedDay = selectedDay;
               _focusedDay = focusedDay;
             });
+
+            // Show the dialog when a day is selected
+            _showFoodItemsDialog(_getItemsForDay(selectedDay));
           },
           eventLoader: _getItemsForDay,
           calendarStyle: CalendarStyle(
             markerDecoration: BoxDecoration(
-              color: Colors.green,
+              color: Colors.red,
               shape: BoxShape.circle,
             ),
+          ),
+          calendarBuilders: CalendarBuilders(
+            markerBuilder: (context, day, events) {
+              if (events.isNotEmpty) {
+                // Display the number of expiring items as a small badge in the corner
+                return Positioned(
+                  right: 2,
+                  top: 2,
+                  child: Container(
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${events.length}', // Display number of expiring items
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return Container(); // No marker for days without events
+            },
           ),
         ),
         const SizedBox(height: 10),
