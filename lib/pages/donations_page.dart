@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/components/donation_list_widget.dart';
 import 'package:shelfaware_app/components/user_donation_map_widget.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
@@ -235,112 +236,34 @@ class _DonationsScreenState extends State<DonationsPage>
           '${placemark.thoroughfare}, ${placemark.locality}, ${placemark.postalCode}, ${placemark.country}';
     }
 
-    // Show dialog
+   
+   // Show dialog
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Product Name: ' + donation.itemName,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          content: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: SingleChildScrollView(
-              // Ensures dialog is scrollable for small screens
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.date_range, color: Colors.blue),
-                      SizedBox(width: 10),
-                      Text(
-                        'Expires on:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        formattedExpiryDate,
-                        style: TextStyle(
-                            color: Colors.red, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(Icons.person, color: Colors.green),
-                      SizedBox(width: 10),
-                      Text(
-                        'Donor:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(width: 5),
-                      Text(donation.donorName),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on, color: Colors.orange),
-                      SizedBox(width: 10),
-                      Text(
-                        'Location:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(width: 5),
-                      Expanded(
-                        // Ensures text fits within the dialog
-                        child: Text(
-                          address,
-                          style: TextStyle(color: Colors.blue),
-                          overflow: TextOverflow
-                              .ellipsis, // Ensures long addresses don't overflow
-                          maxLines: 2, // Allows for multi-line text
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                ],
+        return DonationDetailsDialog(
+          itemName: donation.itemName,
+          formattedExpiryDate: formattedExpiryDate,
+          donorName: donation.donorName,
+          address: address,
+          onContactDonor: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChatPage(
+                  donorName: donation.donorName,
+                  userId: donation.userId,
+                  receiverEmail: donation.donorEmail,
+                  receiverId: donation.donorId,
+                  donationId: donation.donationId,
+                  donationName: donation.itemName,
+                ),
               ),
-            ),
-          ),
-          actions: [
-            // Contact Donor button to open the Chat Page
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-                // Navigate to the chat page (assuming it's implemented and accepts donor ID or name)
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatPage(
-                      donorName:
-                          donation.donorName, // Replace with actual donor name
-                      userId: donation.userId,
-                      receiverEmail:
-                          donation.donorEmail, // Fetch or pass if available
-                      receiverId: donation.donorId,
-                      donationId: donation.donationId,
-                      donationName: donation.itemName,
-                      // Provide the chatId if available
-                    ), // Pass the required positional argument
-                  ),
-                );
-              },
-              child: Text('Contact Donor'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context), // Close the dialog
-              child: Text('Close'),
-            ),
-          ],
-        );
+            );
+          },
+          );
       },
-    );
+      );
   }
 
   Future<List<DonationLocation>> fetchDonationLocations() async {
