@@ -28,6 +28,10 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
               _markAsConsumed();
               Navigator.pop(context);
             },
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.green,
+            ),
             child: const Text("Consumed"),
           ),
           const SizedBox(height: 8),
@@ -36,6 +40,10 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
               Navigator.pop(context);
               _showDiscardReasonDialog();
             },
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.red,
+            ),
             child: const Text("Discarded"),
           ),
         ],

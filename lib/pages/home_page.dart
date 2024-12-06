@@ -286,14 +286,15 @@ class _HomePageState extends State<HomePage> {
 
                                     return InkWell(
                                       onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                MarkFoodDialog(
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible:
+                                              true, // Allows the background to be tapped to close the dialog
+                                          builder: (BuildContext context) {
+                                            return MarkFoodDialog(
                                               documentId: documentId,
-                                            ),
-                                          ),
+                                            );
+                                          },
                                         );
                                       },
                                       child: Card(
