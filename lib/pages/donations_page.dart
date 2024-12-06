@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/components/donation_list_widget.dart';
+import 'package:shelfaware_app/components/filter_dialogue_widget.dart';
 import 'package:shelfaware_app/components/user_donation_map_widget.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/donation_detail_page.dart';
@@ -236,8 +237,7 @@ class _DonationsScreenState extends State<DonationsPage>
           '${placemark.thoroughfare}, ${placemark.locality}, ${placemark.postalCode}, ${placemark.country}';
     }
 
-   
-   // Show dialog
+    // Show dialog
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -261,9 +261,9 @@ class _DonationsScreenState extends State<DonationsPage>
               ),
             );
           },
-          );
+        );
       },
-      );
+    );
   }
 
   Future<List<DonationLocation>> fetchDonationLocations() async {
@@ -296,6 +296,7 @@ class _DonationsScreenState extends State<DonationsPage>
     return Scaffold(
       appBar: AppBar(
         title: Text('Donations'),
+        
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -304,31 +305,51 @@ class _DonationsScreenState extends State<DonationsPage>
           ],
         ),
       ),
+
+      
+
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : TabBarView(
-              physics: NeverScrollableScrollPhysics(), // Disable swipe gestures
-              controller: _tabController,
+          : Stack(
               children: [
-                DonationListView(currentLocation: _currentLocation),
-                GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: _currentLocation ?? LatLng(0, 0),
-                    zoom: 14,
+                TabBarView(
+                  physics:
+                      NeverScrollableScrollPhysics(), // Disable swipe gestures
+                  controller: _tabController,
+                  children: [
+                    DonationListView(currentLocation: _currentLocation),
+                    GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: _currentLocation ?? LatLng(0, 0),
+                        zoom: 14,
+                      ),
+                      markers: _markers,
+                      onMapCreated: (GoogleMapController controller) {
+                        _googleMapController = controller;
+                      },
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: true,
+                      zoomGesturesEnabled: true,
+                      onTap: (LatLng latLng) {
+                        // You can implement a custom tap behavior here
+                      },
+                    ),
+                  ],
+                ),
+
+                // Filter button positioned above the tabs
+                Positioned(
+                  top: 5.0,
+                  right: 20.0, // Adjust position as needed
+                  child: FloatingActionButton.small(
+                    onPressed: _showFilterDialog, // Your filter dialog function
+                    tooltip: 'Filter Donations',
+                    child: Icon(Icons.filter_list),
                   ),
-                  markers: _markers,
-                  onMapCreated: (GoogleMapController controller) {
-                    _googleMapController = controller;
-                  },
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: true,
-                  zoomGesturesEnabled: true,
-                  onTap: (LatLng latLng) {
-                    // You can implement a custom tap behavior here
-                  },
                 ),
               ],
             ),
+
       floatingActionButton:
           _tabController.index == 1 // Check if the selected tab is the map tab
               ? Align(
@@ -346,7 +367,17 @@ class _DonationsScreenState extends State<DonationsPage>
               : null, // Don't show the button on the donations list page
     );
   }
+
+  void _showFilterDialog() {
+  }
 }
+
+          
+        
+      
+    
+  
+
 
 // Compare this snippet from lib/pages/expiring_items_page.dart:
 

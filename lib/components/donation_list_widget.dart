@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
-import 'package:firebase_auth/firebase_auth.dart';  
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DonationListView extends StatelessWidget {
   final LatLng? currentLocation;
@@ -30,7 +30,7 @@ class DonationListView extends StatelessWidget {
         // Filter out donations made by the logged-in user
         var donations = snapshot.data!.docs.where((doc) {
           var donation = doc.data() as Map<String, dynamic>;
-          return donation['donorId'] != userId;  // Exclude user's own donations
+          return donation['donorId'] != userId; // Exclude user's own donations
         }).toList();
 
         return ListView.builder(
@@ -42,7 +42,6 @@ class DonationListView extends StatelessWidget {
             String donorName = donation['donorName'] ?? 'Anonymous';
             Timestamp? expiryDate = donation['expiryDate'];
             GeoPoint? location = donation['location'];
-
 
             if (location == null) {
               return Card(
@@ -65,7 +64,7 @@ class DonationListView extends StatelessWidget {
             double longitude = location.longitude;
 
             String expiryText = expiryDate != null
-                ? "Expires on: ${DateFormat('MM/dd/yyyy').format(expiryDate.toDate())}"
+                ? "Expires on: ${DateFormat('dd/MM/yyyy').format(expiryDate.toDate())}"
                 : "Expiry date not available";
 
             double distanceInMeters = Geolocator.distanceBetween(
@@ -151,18 +150,17 @@ class DonationListView extends StatelessWidget {
                         userLongitude: currentLocation!.longitude,
                         productName: productName,
                         expiryDate: expiryDate != null
-                            ? DateFormat('MM/dd/yyyy')
+                            ? DateFormat('dd/MM/yyyy')
                                 .format(expiryDate.toDate())
                             : 'Unknown',
                         status: status,
                         donorName: donorName,
                         chatId: '',
-                        userId: '', 
+                        userId: '',
                         receiverEmail: donation['donorEmail'],
                         donatorId: donation['donorId'],
-                        donationId: donations[index].id, 
+                        donationId: donations[index].id,
                         donorEmail: donation['donorEmail'],
-                      
                       ),
                     ),
                   );
