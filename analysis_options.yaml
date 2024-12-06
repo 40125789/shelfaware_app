@@ -10,6 +10,7 @@
 analyzer:
   errors:
     prefer_typing_uninitialized_variables: ignore
+    empty_statements: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:

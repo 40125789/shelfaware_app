@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shelfaware_app/models/food_history.dart';
 import 'package:shelfaware_app/services/history_service.dart';
 
@@ -45,19 +46,44 @@ class _HistoryPageState extends State<HistoryPage> {
             itemCount: foodItems.length,
             itemBuilder: (context, index) {
               final foodItem = foodItems[index];
-              return ListTile(
-                title: Text(foodItem.productName),
+
+              //format the expiry date
+              final formattedExpiryDate =
+                  DateFormat('dd MMM yyyy').format(foodItem.expiryDate.toDate());
+
+
+              return Card(
+                margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                elevation: 5,
+                child: ListTile(
+                  contentPadding: EdgeInsets.all(15),
+                title: Text(
+                  foodItem.productName,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 subtitle: Text(
-                    'Expiry: ${foodItem.expiryDate.toDate()} | Status: ${foodItem.status}'),
+                    // ignore: unnecessary_brace_in_string_interps
+                    'Expiry: ${formattedExpiryDate}\nStatus: ${foodItem.status}',
+                    style: TextStyle(color: Colors.grey[600]),
+                ),
                 trailing: Icon(Icons.more_vert),
                 onTap: () {
                   // Navigate to the Mark Food Dialog (or other actions as needed)
-                },
-              );
+                
+              
             },
-          );
-        },
-      ),
-    );
-  }
+            ),
+                       );
+                      },
+                    );
+                  },
+                ),
+              );
+            }
 }
+          
+        
+      
+    
+
+
