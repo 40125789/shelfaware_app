@@ -318,12 +318,14 @@ class _DonationsScreenState extends State<DonationsPage>
                   context,
                   MaterialPageRoute(
                     builder: (context) => ChatPage(
-                      donorName: '', // Replace with actual donor name
-                      userId: '',
-                      receiverEmail: '', // Fetch or pass if available
-                      receiverId: '',
-                      donationId: '',
-                      donationName: '',
+                      donorName:
+                          donation.donorName, // Replace with actual donor name
+                      userId: donation.userId,
+                      receiverEmail:
+                          donation.donorEmail, // Fetch or pass if available
+                      receiverId: donation.donorId,
+                      donationId: donation.donationId,
+                      donationName: donation.itemName,
                       // Provide the chatId if available
                     ), // Pass the required positional argument
                   ),
@@ -404,20 +406,21 @@ class _DonationsScreenState extends State<DonationsPage>
                 ),
               ],
             ),
-      floatingActionButton: _tabController.index == 1 // Check if the selected tab is the map tab
-    ? Align(
-        alignment: Alignment.bottomLeft, // Align to the bottom left
-        child: Padding(
-          padding: const EdgeInsets.all(16.0), // Add some padding around the button
-          child: FloatingActionButton(
-            onPressed: _launchFoodBankMap,
-            child: Icon(Icons.map),
-            tooltip: 'Find Nearby Food Banks',
-          ),
-        ),
-      )
-    : null, // Don't show the button on the donations list page
-
+      floatingActionButton:
+          _tabController.index == 1 // Check if the selected tab is the map tab
+              ? Align(
+                  alignment: Alignment.bottomLeft, // Align to the bottom left
+                  child: Padding(
+                    padding: const EdgeInsets.all(
+                        16.0), // Add some padding around the button
+                    child: FloatingActionButton(
+                      onPressed: _launchFoodBankMap,
+                      child: Icon(Icons.map),
+                      tooltip: 'Find Nearby Food Banks',
+                    ),
+                  ),
+                )
+              : null, // Don't show the button on the donations list page
     );
   }
 }

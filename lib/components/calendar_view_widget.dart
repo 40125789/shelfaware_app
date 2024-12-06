@@ -6,7 +6,8 @@ import 'package:table_calendar/table_calendar.dart';
 class CalendarView extends StatefulWidget {
   final String userId;
 
-  const CalendarView(User user, {required this.userId, Key? key}) : super(key: key);
+  const CalendarView(User user, {required this.userId, Key? key})
+      : super(key: key);
 
   @override
   State<CalendarView> createState() => _CalendarViewState();
@@ -157,9 +158,11 @@ class _CalendarViewState extends State<CalendarView> {
                   ),
                 )
               : ListView.builder(
-                  itemCount: _getItemsForDay(_selectedDay ?? DateTime.now()).length,
+                  itemCount:
+                      _getItemsForDay(_selectedDay ?? DateTime.now()).length,
                   itemBuilder: (context, index) {
-                    final item = _getItemsForDay(_selectedDay ?? DateTime.now())[index];
+                    final item =
+                        _getItemsForDay(_selectedDay ?? DateTime.now())[index];
                     return ListTile(
                       title: Text(item['productName'] ?? 'Unnamed Item'),
                       subtitle: Text('Quantity: ${item['quantity']}'),
