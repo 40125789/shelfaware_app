@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 
 class DonationMapScreen extends StatefulWidget {
@@ -50,6 +52,8 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
   late Marker donationMarker;
   late Marker userMarker;
 
+  late String address = '';
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +62,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     donationMarker = Marker(
       markerId: MarkerId('donationLocation'),
       position: LatLng(widget.donationLatitude, widget.donationLongitude),
-      icon: BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueBlue), // Blue marker for donation
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen), // Blue marker for donation
       infoWindow: InfoWindow(
         title: widget.productName,
         snippet: 'Expires on: ${widget.expiryDate}\nStatus: ${widget.status}',
@@ -71,68 +74,55 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     userMarker = Marker(
       markerId: MarkerId('userLocation'),
       position: LatLng(widget.userLatitude, widget.userLongitude),
-      icon: BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueRed), // Red marker for user location
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed), // Red marker for user location
       infoWindow: InfoWindow(title: 'Your Location'),
     );
+
+    // Get address for donation location
+    _getAddress();
+  }
+
+  // Get the address from latitude and longitude
+  void _getAddress() async {
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      widget.donationLatitude,
+      widget.donationLongitude,
+    );
+
+    if (placemarks.isNotEmpty) {
+      Placemark placemark = placemarks[0];
+      setState(() {
+        address =
+            '${placemark.thoroughfare}, ${placemark.locality}, ${placemark.postalCode}, ${placemark.country}';
+      });
+    }
   }
 
   // Show donation details when marker is tapped
   void _showDonationDetails() {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      builder: (context) {
-        return SingleChildScrollView(
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Donation Item Details',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      builder: (BuildContext context) {
+        return DonationDetailsDialog(
+          itemName: widget.productName,
+          formattedExpiryDate: widget.expiryDate,
+          donorName: widget.donorName,
+          address: address.isEmpty ? 'Loading address...' : address, // Show loading until address is fetched
+          onContactDonor: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChatPage(
+                  donorName: widget.donorName,
+                  userId: widget.userId,
+                  receiverEmail: widget.donorEmail,
+                  receiverId: widget.donatorId,
+                  donationId: widget.donationId,
+                  donationName: widget.productName,
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Product: ${widget.productName}',
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Expires on: ${widget.expiryDate}',
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Status: ${widget.status}',
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close the modal
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        
-                        builder: (context) => ChatPage(
-                          donorName: widget
-                              .donorName, // Replace with actual donor name
-                          userId: widget.userId,
-                          receiverEmail: widget.donorEmail,
-                          receiverId: widget.donatorId,
-                          donationId: widget.donationId,
-                          donationName: widget.productName,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Text('Contact Donor'),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -140,10 +130,8 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final LatLng donationLocation =
-        LatLng(widget.donationLatitude, widget.donationLongitude);
-    final LatLng userLocation =
-        LatLng(widget.userLatitude, widget.userLongitude);
+    final LatLng donationLocation = LatLng(widget.donationLatitude, widget.donationLongitude);
+    final LatLng userLocation = LatLng(widget.userLatitude, widget.userLongitude);
 
     // Calculate the distance
     double distanceInMeters = Geolocator.distanceBetween(
