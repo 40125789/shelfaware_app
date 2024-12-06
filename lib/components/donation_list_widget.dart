@@ -74,8 +74,11 @@ class DonationListView extends StatelessWidget {
               longitude,
             );
 
+           // Convert meters to miles
+            double distanceInMiles = distanceInMeters / 1609.34; // 1 mile = 1609.34 meters
+
             String distanceText =
-                "${(distanceInMeters / 1000).toStringAsFixed(2)} km";
+                "${(distanceInMiles).toStringAsFixed(2)} miles"; // Update to miles
 
             Icon donationStatusIcon;
             Color statusColor;
