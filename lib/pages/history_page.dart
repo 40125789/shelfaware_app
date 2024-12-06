@@ -51,6 +51,24 @@ class _HistoryPageState extends State<HistoryPage> {
               final formattedExpiryDate =
                   DateFormat('dd MMM yyyy').format(foodItem.expiryDate.toDate());
 
+                  // Icon based on status
+              Icon statusIcon;
+              Color iconColor;
+
+              switch (foodItem.status) {
+                case 'consumed':
+                  statusIcon = Icon(Icons.check_circle, color: Colors.green);
+                  iconColor = Colors.green;
+                  break;
+                case 'discarded':
+                  statusIcon = Icon(Icons.delete, color: Colors.red);
+                  iconColor = Colors.red;
+                  break;
+                default:
+                  statusIcon = Icon(Icons.pending, color: Colors.grey);
+                  iconColor = Colors.grey;
+              }
+
 
               return Card(
                 margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
@@ -66,7 +84,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     'Expiry: ${formattedExpiryDate}\nStatus: ${foodItem.status}',
                     style: TextStyle(color: Colors.grey[600]),
                 ),
-                trailing: Icon(Icons.more_vert),
+                trailing: statusIcon,
                 onTap: () {
                   // Navigate to the Mark Food Dialog (or other actions as needed)
                 
