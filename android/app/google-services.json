@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "883041122970",
     "project_id": "shelfaware-40125789",
-    "storage_bucket": "shelfaware-40125789.appspot.com"
+    "storage_bucket": "shelfaware-40125789.firebasestorage.app"
   },
   "client": [
     {
@@ -12,7 +12,28 @@
           "package_name": "com.example.shelfaware_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "883041122970-78qrad807vcav03e901l8ffk889seesn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.shelfaware_app",
+            "certificate_hash": "072b4855c2ae657db632746e3cb2e8167e6081e8"
+          }
+        },
+        {
+          "client_id": "883041122970-e6tj1cn9nvrbphqejhc86ug0ev5pd190.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.shelfaware_app",
+            "certificate_hash": "e8b77306f733084e74e451b7f1d1c57750ebf01b"
+          }
+        },
+        {
+          "client_id": "883041122970-km1860he01gjbaai7tfbl1vdsnne5u21.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAGgyUu2T0qODPInVo5FxL93BfE-hCab5I"
@@ -20,7 +41,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "883041122970-km1860he01gjbaai7tfbl1vdsnne5u21.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

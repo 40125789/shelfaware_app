@@ -8,7 +8,6 @@ import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
 
-
 class CustomDrawer extends StatefulWidget {
   final String firstName;
   final String lastName;
@@ -30,86 +29,82 @@ class CustomDrawer extends StatefulWidget {
 class _CustomDrawerState extends State<CustomDrawer> {
   String? _profileImageUrl;
   bool _isUploading = false;
+  late String uid;
+  late Reference storageRef;
 
   @override
   void initState() {
     super.initState();
+    uid = FirebaseAuth.instance.currentUser!.uid;
+    storageRef =
+        FirebaseStorage.instance.ref().child('user_profile_images/$uid.jpg');
     _loadProfileImage();
   }
 
+  // Load the profile image from Firestore
   Future<void> _loadProfileImage() async {
-  try {
-    final String userId = FirebaseAuth.instance.currentUser!.uid;
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
+    try {
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-    // Check if the document exists and profileImageUrl is valid
-    if (userDoc.exists) {
-      final profileImageUrl = userDoc.data()?['profileImageUrl'] ?? '';
-      setState(() {
-        _profileImageUrl = profileImageUrl.isNotEmpty ? profileImageUrl : null;
-      });
-    } else {
-      setState(() {
-        _profileImageUrl = null; // Use default avatar
-      });
+      if (userDoc.exists && userDoc.data()?['profileImageUrl'] != null) {
+        setState(() {
+          _profileImageUrl = userDoc.data()?['profileImageUrl'];
+        });
+      }
+    } catch (e) {
+      print('Error loading profile image: $e');
     }
-  } catch (e) {
-    print('Error loading profile image: $e');
   }
-}
-Future<void> _uploadProfileImage() async {
-  try {
-    // Select image from gallery
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile == null) {
-      print('No image selected.');
-      return;
+  // Upload a new profile image
+  Future<void> _uploadProfileImage() async {
+    try {
+      // Select image from gallery
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile == null) {
+        print('No image selected.');
+        return;
+      }
+
+      print('Picked file path: ${pickedFile.path}'); // Log the path
+
+      setState(() {
+        _isUploading = true;
+      });
+
+      // Start uploading the image to Firebase Storage
+      final uploadTask = storageRef.putFile(File(pickedFile.path));
+
+      uploadTask.snapshotEvents.listen((taskSnapshot) {
+        double progress =
+            taskSnapshot.bytesTransferred / taskSnapshot.totalBytes;
+        print('Upload is $progress% complete');
+      });
+
+      final snapshot = await uploadTask.whenComplete(() {});
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      // Update the user's profile image URL in Firestore
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'profileImageUrl': downloadUrl,
+      });
+
+      setState(() {
+        _profileImageUrl = downloadUrl;
+        _isUploading = false;
+      });
+
+      print('Profile image uploaded successfully!');
+    } catch (e) {
+      setState(() {
+        _isUploading = false;
+      });
+      print('Error uploading profile image: $e');
     }
-
-    // Check if the user is authenticated
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print('User is not authenticated');
-      return;
-    }
-
-    final uid = user.uid;
-    final storageRef = FirebaseStorage.instance.ref().child('profile_image_${user.uid}.jpg');
-
-    // Start uploading the image
-    setState(() {
-      _isUploading = true;
-    });
-
-    await storageRef.putFile(File(pickedFile.path));
-
-    // Get the download URL after the upload is complete
-    final downloadUrl = await storageRef.getDownloadURL();
-
-    // Update the user's profile image URL in Firestore
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      'profileImageUrl': downloadUrl,
-    });
-
-    setState(() {
-      _profileImageUrl = downloadUrl;
-      _isUploading = false;
-    });
-
-    print('Profile image uploaded successfully!');
-  } catch (e) {
-    setState(() {
-      _isUploading = false;
-    });
-    print('Error uploading profile image: $e');
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -127,17 +122,18 @@ Future<void> _uploadProfileImage() async {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-   CircleAvatar(
-  radius: 30,
-  backgroundImage: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
-      ? NetworkImage(_profileImageUrl!)
-      : const AssetImage('assets/default_avatar.png') as ImageProvider,
-  child: _profileImageUrl == null || _profileImageUrl!.isEmpty
-      ? const Icon(Icons.person, color: Colors.white)
-      : null,
-),
-
-  
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundImage: _profileImageUrl != null &&
+                                _profileImageUrl!.isNotEmpty
+                            ? NetworkImage(_profileImageUrl!)
+                            : const AssetImage('assets/default_avatar.png')
+                                as ImageProvider,
+                        child: _profileImageUrl == null ||
+                                _profileImageUrl!.isEmpty
+                            ? const Icon(Icons.person, color: Colors.white)
+                            : null,
+                      ),
                       if (_isUploading)
                         const CircularProgressIndicator(
                           color: Colors.white,

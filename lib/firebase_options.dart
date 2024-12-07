@@ -17,29 +17,17 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -57,6 +45,49 @@ class DefaultFirebaseOptions {
     appId: '1:883041122970:android:8ec88080a2be2b27b9fd23',
     messagingSenderId: '883041122970',
     projectId: 'shelfaware-40125789',
-    storageBucket: 'shelfaware-40125789.appspot.com',
+    storageBucket: 'shelfaware-40125789.firebasestorage.app',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyB6exqSKhLfPzl0dpQt7SzicMZDFPsIBGo',
+    appId: '1:883041122970:web:f1bf683d50ec217db9fd23',
+    messagingSenderId: '883041122970',
+    projectId: 'shelfaware-40125789',
+    authDomain: 'shelfaware-40125789.firebaseapp.com',
+    storageBucket: 'shelfaware-40125789.firebasestorage.app',
+    measurementId: 'G-36RWQ36PZS',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyByNg8hpPDqztCSbbPXiYxcpSsl7fMdR7s',
+    appId: '1:883041122970:ios:85070a44e1306df5b9fd23',
+    messagingSenderId: '883041122970',
+    projectId: 'shelfaware-40125789',
+    storageBucket: 'shelfaware-40125789.firebasestorage.app',
+    androidClientId: '883041122970-78qrad807vcav03e901l8ffk889seesn.apps.googleusercontent.com',
+    iosClientId: '883041122970-hllk5jk646v6hdkis4de8rjjem4efgr6.apps.googleusercontent.com',
+    iosBundleId: 'com.example.shelfawareApp',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyByNg8hpPDqztCSbbPXiYxcpSsl7fMdR7s',
+    appId: '1:883041122970:ios:85070a44e1306df5b9fd23',
+    messagingSenderId: '883041122970',
+    projectId: 'shelfaware-40125789',
+    storageBucket: 'shelfaware-40125789.firebasestorage.app',
+    androidClientId: '883041122970-78qrad807vcav03e901l8ffk889seesn.apps.googleusercontent.com',
+    iosClientId: '883041122970-hllk5jk646v6hdkis4de8rjjem4efgr6.apps.googleusercontent.com',
+    iosBundleId: 'com.example.shelfawareApp',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyB6exqSKhLfPzl0dpQt7SzicMZDFPsIBGo',
+    appId: '1:883041122970:web:6c3e1db57a2f7ad7b9fd23',
+    messagingSenderId: '883041122970',
+    projectId: 'shelfaware-40125789',
+    authDomain: 'shelfaware-40125789.firebaseapp.com',
+    storageBucket: 'shelfaware-40125789.firebasestorage.app',
+    measurementId: 'G-D59MVPFCPT',
+  );
+
 }
