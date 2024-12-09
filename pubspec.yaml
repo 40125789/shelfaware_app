@@ -71,6 +71,7 @@ dependencies:
   pie_chart: ^5.4.0
   table_calendar: ^3.1.2
   latlong2: ^0.8.0
+  cached_network_image: ^3.0.0
 
 
 
@@ -101,6 +102,7 @@ flutter:
   - lib/images/
   - assets/.env
   - assets/default_avatar.png
+  - assets/placeholder.png
 
 
 flutter_icons:

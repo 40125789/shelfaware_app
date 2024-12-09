@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -7,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
+
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CustomDrawer extends StatefulWidget {
   final String firstName;
@@ -126,7 +129,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                         radius: 30,
                         backgroundImage: _profileImageUrl != null &&
                                 _profileImageUrl!.isNotEmpty
-                            ? NetworkImage(_profileImageUrl!)
+                            ? CachedNetworkImageProvider(_profileImageUrl!)
                             : const AssetImage('assets/default_avatar.png')
                                 as ImageProvider,
                         child: _profileImageUrl == null ||

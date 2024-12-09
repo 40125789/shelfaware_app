@@ -6,6 +6,7 @@ class DonationDetailsDialog extends StatelessWidget {
   final String donorName;
   final String address;
   final Function onContactDonor;
+  final String? imageUrl;
 
   const DonationDetailsDialog({
     Key? key,
@@ -14,73 +15,115 @@ class DonationDetailsDialog extends StatelessWidget {
     required this.donorName,
     required this.address,
     required this.onContactDonor,
+    this.imageUrl,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-        'Product Name: $itemName',
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-      ),
-      content: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.date_range, color: Colors.blue),
-                  SizedBox(width: 10),
-                  Text(
-                    'Expires on:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+      contentPadding: EdgeInsets.zero, // Remove extra padding for better alignment
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Display the image at the top
+            if (imageUrl != null)
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                child: Image.network(
+                  imageUrl!,
+                  height: 200, // Set the desired height for the image
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.broken_image,
+                    size: 50,
+                    color: Colors.grey,
                   ),
-                  SizedBox(width: 5),
-                  Text(
-                    formattedExpiryDate,
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                  ),
-                ],
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                (loadingProgress.expectedTotalBytes ?? 1)
+                            : null,
+                      ),
+                    );
+                  },
+                ),
               ),
-              SizedBox(height: 10),
-              Row(
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.person, color: Colors.green),
-                  SizedBox(width: 10),
+                  // Donation details
                   Text(
-                    'Donor:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(width: 5),
-                  Text(donorName),
-                ],
-              ),
-              SizedBox(height: 10),
-              Row(
-                children: [
-                  Icon(Icons.location_on, color: Colors.orange),
-                  SizedBox(width: 10),
-                  Text(
-                    'Location:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      address,
-                      style: TextStyle(color: Colors.blue),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
+                    'Product Name: $itemName',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
+                  SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.date_range, color: Colors.blue),
+                      SizedBox(width: 10),
+                      Text(
+                        'Expires on:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        formattedExpiryDate,
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.person, color: Colors.green),
+                      SizedBox(width: 10),
+                      Text(
+                        'Donor:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 5),
+                      Text(donorName),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.location_on, color: Colors.orange),
+                      SizedBox(width: 10),
+                      Text(
+                        'Location:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          address,
+                          style: TextStyle(color: Colors.blue),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-              SizedBox(height: 20),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       actions: [
@@ -106,3 +149,4 @@ class DonationDetailsDialog extends StatelessWidget {
     );
   }
 }
+

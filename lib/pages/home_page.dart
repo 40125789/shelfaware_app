@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shelfaware_app/components/bottom_navigation_bar.dart';
 import 'package:shelfaware_app/components/calendar_view_widget.dart';
@@ -343,7 +347,7 @@ class _HomePageState extends State<HomePage> {
                                                     _editFoodItem(documentId);
                                                   } else if (value ==
                                                       'delete') {
-                                                    _deleteFoodItem(documentId);
+                                                    _deleteFoodItem(context, documentId);
                                                   } else if (value ==
                                                       'donate') {
                                                     _confirmDonation(
@@ -438,10 +442,62 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _donateFoodItem(String id) async {
     try {
-      // Get the user’s current location
+      // Get the user's current location
       final location = await getUserLocation();
 
-      // Fetch the document from the foodItems collection
+      // Ask if the user wants to add a photo
+      bool takePhoto = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Add a photo?"),
+            content: Text(
+                "Would you like to take a photo of the food item? Items with photos tend to attract more interest."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text("No, skip"),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text("Yes, add photo"),
+              ),
+            ],
+          );
+        },
+      );
+
+      String? imageUrl;
+      if (takePhoto) {
+        // Allow the user to take a photo
+        final picker = ImagePicker();
+        final XFile? image = await picker.pickImage(
+          source: ImageSource.camera,
+          maxWidth: 800,
+          maxHeight: 800,
+        );
+
+        if (image != null) {
+          // Upload the image to Firebase Storage
+          final String userId = FirebaseAuth.instance.currentUser!.uid;
+          final String imageName =
+              "donation_${DateTime.now().millisecondsSinceEpoch}.jpg";
+          final Reference storageRef = FirebaseStorage.instance
+              .ref()
+              .child('donation_images/$userId/$imageName');
+          final TaskSnapshot snapshot =
+              await storageRef.putFile(File(image.path)).whenComplete(() {});
+          imageUrl = await snapshot.ref.getDownloadURL();
+        } else {
+          // Notify user if no photo was taken
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text("No photo captured. Proceeding without photo.")),
+          );
+        }
+      }
+
+      // Fetch the food item document
       DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
           .collection('foodItems')
           .doc(id)
@@ -451,31 +507,27 @@ class _HomePageState extends State<HomePage> {
         throw Exception("Food item not found.");
       }
 
-      // Get the food item data
+      // Get food item data
       Map<String, dynamic> foodItemData =
           foodItemDoc.data() as Map<String, dynamic>;
 
-      // Get the expiry date of the item
-      Timestamp expiryTimestamp = foodItemData[
-          'expiryDate']; // Assuming expiryDate is stored as a Timestamp
+      // Check if the item is expired
+      Timestamp expiryTimestamp = foodItemData['expiryDate'];
       DateTime expiryDate = expiryTimestamp.toDate();
-
-      // Check if the food item has expired
       if (expiryDate.isBefore(DateTime.now())) {
-        // Show a dialog if the item is expired
         _showExpiredItemDialog();
-        return; // Prevent donation if the item is expired
+        return;
       }
 
-      // Prepare the data to be copied, including donorId and status
-      final donorId = FirebaseAuth.instance.currentUser!.uid;
-      final donorEmail = FirebaseAuth.instance.currentUser!.email;
-      final donorName = (await FirebaseFirestore.instance
+      // Prepare donation data
+      final String donorId = FirebaseAuth.instance.currentUser!.uid;
+      final String donorEmail = FirebaseAuth.instance.currentUser!.email!;
+      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(donorId)
-          .get())['firstName'];
+          .get();
+      final String donorName = userDoc['firstName'];
 
-      // Generate a unique donation ID using Firestore's doc().id
       final String donationId =
           FirebaseFirestore.instance.collection('donations').doc().id;
 
@@ -487,23 +539,27 @@ class _HomePageState extends State<HomePage> {
       foodItemData['location'] =
           GeoPoint(location.latitude, location.longitude);
       foodItemData['status'] = 'available';
-      foodItemData['donationId'] = donationId; // Assign unique donationId
+      foodItemData['donationId'] = donationId;
+
+      if (imageUrl != null) {
+        foodItemData['imageUrl'] = imageUrl;
+      }
 
       // Add the item to the donations collection
       await FirebaseFirestore.instance
           .collection('donations')
-          .doc(donationId) // Use the unique donationId here
+          .doc(donationId)
           .set(foodItemData);
 
       // Remove the item from the foodItems collection
       await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
 
-      // Add this donation reference to the "myDonations" field in the user's document
+      // Update the user's document with the new donation
       await FirebaseFirestore.instance.collection('users').doc(donorId).update({
         'myDonations': FieldValue.arrayUnion([donationId]),
       });
 
-      // Show success message
+      // Notify the user of success
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Item donated successfully.")),
       );
@@ -582,10 +638,54 @@ class _HomePageState extends State<HomePage> {
       return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}'; // Fresh items
     }
   }
+  
+  void _editFoodItem(String documentId) {}
 }
 
-Future<void> _editFoodItem(String documentId) async {
-  // Implement edit functionality
-}
 
-Future<void> _deleteFoodItem(String documentId) async {}
+
+Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
+  bool? confirm = await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Confirm Deletion"),
+        content: Text("Are you sure you want to delete this item? This action cannot be undone."),
+        actions: [
+          TextButton(
+            child: Text("Cancel"),
+            onPressed: () {
+              Navigator.of(context).pop(false); // Return false if user cancels
+            },
+          ),
+          TextButton(
+            child: Text("Delete"),
+            onPressed: () {
+              Navigator.of(context).pop(true); // Return true if user confirms
+            },
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirm == true) {
+    try {
+      // Delete the food item document from Firestore
+      await FirebaseFirestore.instance
+          .collection('foodItems')
+          .doc(documentId)
+          .delete();
+
+      // Notify the user of success
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Item deleted successfully.")),
+      );
+    } catch (e) {
+      print('Error deleting food item: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to delete item: $e")),
+      );
+    }
+  }
+}
