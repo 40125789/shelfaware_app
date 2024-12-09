@@ -174,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                 context,
                 MaterialPageRoute(builder: (context) => FavoritesPage()),
               );
-            },
+            }, onNavigateToDonationWatchList: () {  },
           ),
           body: PageView(
             controller: _pageController,

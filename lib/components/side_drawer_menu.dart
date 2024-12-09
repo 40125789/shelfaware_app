@@ -16,6 +16,7 @@ class CustomDrawer extends StatefulWidget {
   final String lastName;
   final VoidCallback onSignOut;
   final VoidCallback onNavigateToFavorites;
+  final VoidCallback onNavigateToDonationWatchList;
 
   const CustomDrawer({
     Key? key,
@@ -23,6 +24,7 @@ class CustomDrawer extends StatefulWidget {
     required this.lastName,
     required this.onSignOut,
     required this.onNavigateToFavorites,
+    required this.onNavigateToDonationWatchList,
   }) : super(key: key);
 
   @override
@@ -188,6 +190,12 @@ class _CustomDrawerState extends State<CustomDrawer> {
             leading: const Icon(Icons.favorite),
             title: const Text('Recipe Favourites'),
             onTap: widget.onNavigateToFavorites,
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.star),
+            title: const Text('Donation Watch List'),
+            // Navigate to Donation Watch List
           ),
           const Divider(indent: 16, endIndent: 16, color: Colors.grey),
           ListTile(
