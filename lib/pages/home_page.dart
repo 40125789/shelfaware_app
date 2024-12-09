@@ -441,186 +441,178 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _donateFoodItem(String id) async {
-    try {
-      // Get the user's current location
-      final location = await getUserLocation();
+  try {
+    // Fetch the food item document
+    DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
+        .collection('foodItems')
+        .doc(id)
+        .get();
 
-      // Ask if the user wants to add a photo
-      bool takePhoto = await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Add a photo?"),
-            content: Text(
-                "Would you like to take a photo of the food item? Items with photos tend to attract more interest."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text("No, skip"),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text("Yes, add photo"),
-              ),
-            ],
-          );
-        },
-      );
-
-      String? imageUrl;
-      if (takePhoto) {
-        // Allow the user to take a photo
-        final picker = ImagePicker();
-        final XFile? image = await picker.pickImage(
-          source: ImageSource.camera,
-          maxWidth: 800,
-          maxHeight: 800,
-        );
-
-        if (image != null) {
-          // Upload the image to Firebase Storage
-          final String userId = FirebaseAuth.instance.currentUser!.uid;
-          final String imageName =
-              "donation_${DateTime.now().millisecondsSinceEpoch}.jpg";
-          final Reference storageRef = FirebaseStorage.instance
-              .ref()
-              .child('donation_images/$userId/$imageName');
-          final TaskSnapshot snapshot =
-              await storageRef.putFile(File(image.path)).whenComplete(() {});
-          imageUrl = await snapshot.ref.getDownloadURL();
-        } else {
-          // Notify user if no photo was taken
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text("No photo captured. Proceeding without photo.")),
-          );
-        }
-      }
-
-      // Fetch the food item document
-      DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
-          .collection('foodItems')
-          .doc(id)
-          .get();
-
-      if (!foodItemDoc.exists) {
-        throw Exception("Food item not found.");
-      }
-
-      // Get food item data
-      Map<String, dynamic> foodItemData =
-          foodItemDoc.data() as Map<String, dynamic>;
-
-      // Check if the item is expired
-      Timestamp expiryTimestamp = foodItemData['expiryDate'];
-      DateTime expiryDate = expiryTimestamp.toDate();
-      if (expiryDate.isBefore(DateTime.now())) {
-        _showExpiredItemDialog();
-        return;
-      }
-
-      // Prepare donation data
-      final String donorId = FirebaseAuth.instance.currentUser!.uid;
-      final String donorEmail = FirebaseAuth.instance.currentUser!.email!;
-      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(donorId)
-          .get();
-      final String donorName = userDoc['firstName'];
-
-      final String donationId =
-          FirebaseFirestore.instance.collection('donations').doc().id;
-
-      foodItemData['donorId'] = donorId;
-      foodItemData['donorName'] = donorName;
-      foodItemData['donorEmail'] = donorEmail;
-      foodItemData['donated'] = true;
-      foodItemData['donatedAt'] = Timestamp.now();
-      foodItemData['location'] =
-          GeoPoint(location.latitude, location.longitude);
-      foodItemData['status'] = 'available';
-      foodItemData['donationId'] = donationId;
-
-      if (imageUrl != null) {
-        foodItemData['imageUrl'] = imageUrl;
-      }
-
-      // Add the item to the donations collection
-      await FirebaseFirestore.instance
-          .collection('donations')
-          .doc(donationId)
-          .set(foodItemData);
-
-      // Remove the item from the foodItems collection
-      await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
-
-      // Update the user's document with the new donation
-      await FirebaseFirestore.instance.collection('users').doc(donorId).update({
-        'myDonations': FieldValue.arrayUnion([donationId]),
-      });
-
-      // Notify the user of success
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Item donated successfully.")),
-      );
-    } catch (e) {
-      print('Error donating food item: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to donate item: $e")),
-      );
+    if (!foodItemDoc.exists) {
+      throw Exception("Food item not found.");
     }
+
+    // Get food item data
+    Map<String, dynamic> foodItemData = foodItemDoc.data() as Map<String, dynamic>;
+
+    // Check if the item is expired
+    Timestamp expiryTimestamp = foodItemData['expiryDate'];
+    DateTime expiryDate = expiryTimestamp.toDate();
+    if (expiryDate.isBefore(DateTime.now())) {
+      _showExpiredItemDialog();
+      return;
+    }
+
+    // Get the user's current location
+    final location = await getUserLocation();
+
+    // Ask if the user wants to add a photo
+    bool takePhoto = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Add a photo?"),
+          content: Text(
+              "Would you like to take a photo of the food item? Items with photos tend to attract more interest."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text("No, skip"),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text("Yes, add photo"),
+            ),
+          ],
+        );
+      },
+    );
+
+    String? imageUrl;
+    if (takePhoto) {
+      // Allow the user to take a photo
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+      );
+
+      if (image != null) {
+        // Upload the image to Firebase Storage
+        final String userId = FirebaseAuth.instance.currentUser!.uid;
+        final String imageName = "donation_${DateTime.now().millisecondsSinceEpoch}.jpg";
+        final Reference storageRef = FirebaseStorage.instance
+            .ref()
+            .child('donation_images/$userId/$imageName');
+        final TaskSnapshot snapshot = await storageRef.putFile(File(image.path)).whenComplete(() {});
+        imageUrl = await snapshot.ref.getDownloadURL();
+      } else {
+        // Notify user if no photo was taken
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No photo captured. Proceeding without photo.")),
+        );
+      }
+    }
+
+    // Prepare donation data
+    final String donorId = FirebaseAuth.instance.currentUser!.uid;
+    final String donorEmail = FirebaseAuth.instance.currentUser!.email!;
+    final DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(donorId)
+        .get();
+    final String donorName = userDoc['firstName'];
+
+    final String donationId = FirebaseFirestore.instance.collection('donations').doc().id;
+
+    foodItemData['donorId'] = donorId;
+    foodItemData['donorName'] = donorName;
+    foodItemData['donorEmail'] = donorEmail;
+    foodItemData['donated'] = true;
+    foodItemData['donatedAt'] = Timestamp.now();
+    foodItemData['location'] = GeoPoint(location.latitude, location.longitude);
+    foodItemData['status'] = 'available';
+    foodItemData['donationId'] = donationId;
+
+    if (imageUrl != null) {
+      foodItemData['imageUrl'] = imageUrl;
+    }
+
+    // Add the item to the donations collection
+    await FirebaseFirestore.instance.collection('donations').doc(donationId).set(foodItemData);
+
+    // Remove the item from the foodItems collection
+    await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
+
+    // Update the user's document with the new donation
+    await FirebaseFirestore.instance.collection('users').doc(donorId).update({
+      'myDonations': FieldValue.arrayUnion([donationId]),
+    });
+
+    // Notify the user of success
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Item donated successfully.")),
+    );
+  } catch (e) {
+    print('Error donating food item: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to donate item: $e")),
+    );
   }
+}
 
 // Function to show a popup dialog when the item is expired
-  void _showExpiredItemDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Donation Alert!"),
-          content: Text("This item has expired and cannot be donated."),
-          actions: [
-            TextButton(
-              child: Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+void _showExpiredItemDialog() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Donation Alert!"),
+        content: Text("This item has expired and cannot be donated."),
+        actions: [
+          TextButton(
+            child: Text("OK"),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
 
-  Future<void> _confirmDonation(String id) async {
-    bool? confirm = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Confirm Donation"),
-          content: Text("Are you sure you want to donate this item?"),
-          actions: [
-            TextButton(
-              child: Text("Cancel"),
-              onPressed: () {
-                Navigator.of(context).pop(false); // Return false
-              },
-            ),
-            TextButton(
-              child: Text("Donate"),
-              onPressed: () {
-                Navigator.of(context).pop(true); // Return true
-              },
-            ),
-          ],
-        );
-      },
-    );
+Future<void> _confirmDonation(String id) async {
+  bool? confirm = await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Confirm Donation"),
+        content: Text("Are you sure you want to donate this item?"),
+        actions: [
+          TextButton(
+            child: Text("Cancel"),
+            onPressed: () {
+              Navigator.of(context).pop(false); // Return false
+            },
+          ),
+          TextButton(
+            child: Text("Donate"),
+            onPressed: () {
+              Navigator.of(context).pop(true); // Return true
+            },
+          ),
+        ],
+      );
+    },
+  );
 
-    if (confirm == true) {
-      await _donateFoodItem(id); // Proceed with donation if confirmed
-    }
+  if (confirm == true) {
+    await _donateFoodItem(id); // Proceed with donation if confirmed
   }
+}
+
 
   String _formatExpiryDate(Timestamp expiryTimestamp) {
     DateTime expiryDate = expiryTimestamp.toDate();
