@@ -8,6 +8,15 @@ class ChatListPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  Future<String> _getProfileImageUrl(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      return userDoc.data()?['profileImageUrl'] ?? ''; // Default to empty if no image URL found
+    } catch (e) {
+      return ''; // Return empty if there's an error fetching the image
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final String currentUserId = _auth.currentUser!.uid;
@@ -61,9 +70,44 @@ class ChatListPage extends StatelessWidget {
     final String lastMessage = chat['lastMessage'] ?? '';
     final Timestamp timestamp = chat['lastMessageTimestamp'];
 
+    return FutureBuilder<String>(
+      future: _getProfileImageUrl(otherUserId), // Fetch profile image
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const ListTile(
+            leading: CircleAvatar(child: CircularProgressIndicator()),
+            title: Text('Loading...'),
+            subtitle: Text('Loading...'),
+          );
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildChatListItemWidget(context, chat, currentUserId, ''); // Fallback if no profile image
+        }
+
+        final profileImageUrl = snapshot.data!;
+
+        return _buildChatListItemWidget(context, chat, currentUserId, profileImageUrl);
+      },
+    );
+  }
+
+  Widget _buildChatListItemWidget(
+      BuildContext context, Map<String, dynamic> chat, String currentUserId, String profileImageUrl) {
+    final String otherUserId = (chat['participants'] as List)
+        .firstWhere((id) => id != currentUserId); // Get the other user's ID.
+    final String displayName = chat['donorId'] == otherUserId
+        ? "Donor"
+        : "Receiver"; // Identify if the user is chatting as the donor or receiver.
+    final String productName = chat['product']['productName'];
+    final String lastMessage = chat['lastMessage'] ?? '';
+    final Timestamp timestamp = chat['lastMessageTimestamp'];
+
     return ListTile(
       leading: CircleAvatar(
-        child: Text(displayName[0].toUpperCase()), // First letter of the role.
+        backgroundImage: profileImageUrl.isEmpty
+            ? const AssetImage('assets/default_profile_image.png') // Default image if no URL
+            : NetworkImage(profileImageUrl) as ImageProvider,
       ),
       title: Text(displayName),
       subtitle: Text(
@@ -79,22 +123,17 @@ class ChatListPage extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-          builder: (context) => ChatPage(
-                                    
+            builder: (context) => ChatPage(
               receiverEmail: '', // Fetch or pass if available.
               receiverId: otherUserId,
               donationId: chat['product']['donationId'],
               userId: currentUserId,
               donationName: productName,
               donorName: displayName,
-                                  
-         ),
+            ),
           ),
         );
       },
     );
   }
 }
-
-
-

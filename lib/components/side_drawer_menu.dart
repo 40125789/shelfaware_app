@@ -194,7 +194,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
 
           ListTile(
             leading: const Icon(Icons.star),
-            title: const Text('Donation Watch List'),
+            title: const Text('Donation WatchList'),
             // Navigate to Donation Watch List
           ),
           const Divider(indent: 16, endIndent: 16, color: Colors.grey),

@@ -87,6 +87,15 @@ class ChatPage extends StatelessWidget {
     });
   }
 
+  Future<String> _getReceiverProfileImage(String receiverId) async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(receiverId).get();
+      return userDoc['profileImageUrl'] ?? '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final String senderId = _auth.currentUser!.uid;
@@ -94,7 +103,29 @@ class ChatPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chat with $donorName"),
+        title: Row(
+          children: [
+            FutureBuilder<String>(
+              future: _getReceiverProfileImage(receiverId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                }
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const CircleAvatar(
+                    backgroundColor: Colors.grey,
+                    child: Icon(Icons.person, color: Colors.white),
+                  ); // Fallback if no profile image
+                }
+                return CircleAvatar(
+                  backgroundImage: NetworkImage(snapshot.data!),
+                );
+              },
+            ),
+            const SizedBox(width: 10),
+            Text("Chat with $donorName"),
+          ],
+        ),
         backgroundColor: Colors.green,
       ),
       body: Column(
@@ -106,75 +137,70 @@ class ChatPage extends StatelessWidget {
       ),
     );
   }
-Widget _buildDonationDetailsHeader(BuildContext context) {
-  // Check if the logged-in user is the donor.
-  final bool isDonator = userId == _auth.currentUser!.uid;
-  
-  // Debugging: Print the values to check if the condition is correct
-  print('userId: $userId, logged-in userId: ${_auth.currentUser!.uid}');
-  
-  return Container(
-    width: double.infinity,
-    color: Colors.grey.shade200,
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Reduced padding
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Donation Details",
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16, // Slightly smaller font size
-          ),
-        ),
-        const SizedBox(height: 4), // Reduced space
-        Text(
-          "Product Name: $donationName",
-          style: const TextStyle(fontSize: 14), // Smaller font size for product name
-        ),
-        Text(
-          "Donor Email: $receiverEmail",
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade700), // Smaller font size for email
-        ),
-        if (isDonator) ...[ // Only show this section if the user is the donor
-          const SizedBox(height: 8), // Adjust space for better layout
-          Row(
-            children: [
-              const Text(
-                "Update Status: ",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), // Smaller font size
-              ),
-              DropdownButton<String>(
-                value: _currentStatus,
-                onChanged: (String? newStatus) {
-                  if (newStatus != null) {
-                    _updateDonationStatus(context, newStatus);
-                  }
-                },
-                items: const [
-                  DropdownMenuItem(
-                    value: 'available',
-                    child: Text('Available'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'claimed',
-                    child: Text('Claimed'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'completed',
-                    child: Text('Completed'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ],
-    ),
-  );
-}
 
-  
+  Widget _buildDonationDetailsHeader(BuildContext context) {
+    final bool isDonator = userId == _auth.currentUser!.uid;
+
+    return Container(
+      width: double.infinity,
+      color: Colors.grey.shade200,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Donation Details",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Product Name: $donationName",
+            style: const TextStyle(fontSize: 14),
+          ),
+          Text(
+            "Donor Email: $receiverEmail",
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+          ),
+          if (isDonator) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text(
+                  "Update Status: ",
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                DropdownButton<String>(
+                  value: _currentStatus,
+                  onChanged: (String? newStatus) {
+                    if (newStatus != null) {
+                      _updateDonationStatus(context, newStatus);
+                    }
+                  },
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'available',
+                      child: Text('Available'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'claimed',
+                      child: Text('Claimed'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'completed',
+                      child: Text('Completed'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _buildMessageList(String chatId) {
     return StreamBuilder(
