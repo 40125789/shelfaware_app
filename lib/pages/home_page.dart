@@ -422,7 +422,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AddFoodItem()),
+                MaterialPageRoute(builder: (context) => AddFoodItem(foodItems: [],)),
               );
             },
             child: const Icon(Icons.add),

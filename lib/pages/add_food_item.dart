@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shelfaware_app/models/food_history.dart';
 import 'package:shelfaware_app/services/camera_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,9 +9,15 @@ import 'package:shelfaware_app/services/food_suggestions_service.dart'; // Impor
 
 final user = FirebaseAuth.instance.currentUser;
 
-
 class AddFoodItem extends StatefulWidget {
-  const AddFoodItem({Key? key}) : super(key: key);
+  final FoodHistory? foodItem;
+  const AddFoodItem(
+      {Key? key,
+      required List<FoodHistory> foodItems,
+      this.foodItem,
+      this.isRecreated = false})
+      : super(key: key);
+  final bool isRecreated;
 
   @override
   _AddFoodItemState createState() => _AddFoodItemState();
@@ -27,9 +34,10 @@ class _AddFoodItemState extends State<AddFoodItem> {
   DateTime _expiryDate = DateTime.now();
 
   List<String> _categoryOptions = ['All'];
+  List<String> _filterOptions = [];
   String _category = 'All';
 
-  int _quantity = 1;  // Default quantity set to 1
+  int _quantity = 1; // Default quantity set to 1
 
   // State variables for food suggestions
   List<String> _foodSuggestions = [];
@@ -38,19 +46,39 @@ class _AddFoodItemState extends State<AddFoodItem> {
   @override
   void initState() {
     super.initState();
-    _expiryDateController.text = formatDate(_expiryDate);
+
+    // Prepopulate the fields with data if the item is being recreated
+    if (widget.isRecreated && widget.foodItem != null) {
+      _productNameController.text = widget.foodItem!.productName;
+      _expiryDateController.text = formatDate(_expiryDate);
+      _quantity = widget.foodItem!.quantity;
+      _quantityController.text = _quantity.toString();
+      _storageLocationController.text = widget.foodItem!.storageLocation;
+      _notesController.text = widget.foodItem!.notes;
+
+      // Set the category properly, default to 'All' if null
+      _category = widget.foodItem!.category;
+
+      // Set the expiry date properly 
+    } else {
+      // If it's a new item, set default values
+      _expiryDateController.text = formatDate(_expiryDate);
+    }
+
     _fetchFilterOptions();
-    _quantityController.text = _quantity.toString(); // Initialize quantity field
+    _quantityController.text =
+        _quantity.toString(); // Initialize quantity field
   }
 
-   // Fetch food suggestions from Firebase
+  // Fetch food suggestions from Firebase
   Future<void> _fetchFoodSuggestions(String query) async {
     setState(() {
       _isLoadingSuggestions = true;
     });
 
     try {
-      List<String> suggestions = await fetchFoodSuggestions(query);  // Call the service to fetch suggestions
+      List<String> suggestions = await fetchFoodSuggestions(
+          query); // Call the service to fetch suggestions
 
       setState(() {
         _foodSuggestions = suggestions;
@@ -158,6 +186,10 @@ class _AddFoodItemState extends State<AddFoodItem> {
         _quantity = 1; // Reset quantity to 1
         _quantityController.text = _quantity.toString();
       });
+
+      // Navigate back to the home screen
+      Navigator.pop(
+          context); // This will return to the previous screen (home screen)
     } catch (e) {
       // Close the loading indicator
       Navigator.pop(context);
@@ -225,18 +257,18 @@ class _AddFoodItemState extends State<AddFoodItem> {
       appBar: AppBar(
         title: const Text('Add Food Item'),
         backgroundColor: Colors.green,
-          actions: [
+        actions: [
           IconButton(
             icon: const Icon(Icons.camera_alt),
             onPressed: _takePhoto,
           ),
         ],
       ),
-      
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
             child: Form(
               key: _formKey,
               child: Column(
@@ -266,7 +298,8 @@ class _AddFoodItemState extends State<AddFoodItem> {
                             return null;
                           },
                           onChanged: (query) {
-                            _fetchFoodSuggestions(query); // Fetch suggestions when text changes
+                            _fetchFoodSuggestions(
+                                query); // Fetch suggestions when text changes
                           },
                         ),
                       ),
@@ -290,7 +323,8 @@ class _AddFoodItemState extends State<AddFoodItem> {
                             title: Text(_foodSuggestions[index]),
                             onTap: () {
                               setState(() {
-                                _productNameController.text = _foodSuggestions[index];
+                                _productNameController.text =
+                                    _foodSuggestions[index];
                                 _foodSuggestions = [];
                               });
                             },
@@ -333,30 +367,31 @@ class _AddFoodItemState extends State<AddFoodItem> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Category Dropdown
-                  DropdownButtonFormField<String>(
-                    value: _category,
-                    items: _categoryOptions
-                        .map((category) => DropdownMenuItem<String>(
-                              value: category,
-                              child: Text(category),
-                            ))
-                        .toList(),
-                    onChanged: (String? newCategory) {
-                      setState(() {
-                        _category = newCategory!;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                 // Category Dropdown
+DropdownButtonFormField<String>(
+  value: _categoryOptions.contains(_category) ? _category : 'All', // Ensure the category is valid
+  items: _categoryOptions
+      .map((category) => DropdownMenuItem<String>(
+            value: category,
+            child: Text(category),
+          ))
+      .toList(),
+  onChanged: (String? newCategory) {
+    setState(() {
+      _category = newCategory ?? 'All'; // Default to 'All' if null
+    });
+  },
+  decoration: InputDecoration(
+    labelText: 'Category',
+    filled: true,
+    fillColor: Colors.white,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8.0),
+    ),
+  ),
+),
+const SizedBox(height: 20),
+
 
                   // Quantity Field with Increment and Decrement Buttons
                   Row(
@@ -433,16 +468,16 @@ class _AddFoodItemState extends State<AddFoodItem> {
                           borderRadius: BorderRadius.circular(12.0),
                         ),
                       ),
-    child: const Text(
-      'Save Food Item',
-      style: TextStyle(
-        fontSize: 18, // Font size to make it readable
-        fontWeight: FontWeight.bold, // Bold text for emphasis
-        color: Colors.white, // White text color  
-      ),
-    ),
-  ),
-),
+                      child: const Text(
+                        'Save Food Item',
+                        style: TextStyle(
+                          fontSize: 18, // Font size to make it readable
+                          fontWeight: FontWeight.bold, // Bold text for emphasis
+                          color: Colors.white, // White text color
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -452,6 +487,5 @@ class _AddFoodItemState extends State<AddFoodItem> {
     );
   }
 
-  void _takePhoto() {
-  }
+  void _takePhoto() {}
 }

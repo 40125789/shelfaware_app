@@ -4,12 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
+import 'package:shelfaware_app/pages/watched_donations_page.dart';
 
-import 'package:cached_network_image/cached_network_image.dart';
 
 class CustomDrawer extends StatefulWidget {
   final String firstName;
@@ -58,41 +60,42 @@ class _CustomDrawerState extends State<CustomDrawer> {
         });
       }
     } catch (e) {
-      print('Error loading profile image: $e');
+      debugPrint('Error loading profile image: $e');
     }
+  }
+
+  // Get the current location
+  Future<Position> _getCurrentLocation() async {
+    return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
   }
 
   // Upload a new profile image
   Future<void> _uploadProfileImage() async {
     try {
-      // Select image from gallery
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
       if (pickedFile == null) {
-        print('No image selected.');
+        debugPrint('No image selected.');
         return;
       }
-
-      print('Picked file path: ${pickedFile.path}'); // Log the path
 
       setState(() {
         _isUploading = true;
       });
 
-      // Start uploading the image to Firebase Storage
       final uploadTask = storageRef.putFile(File(pickedFile.path));
 
       uploadTask.snapshotEvents.listen((taskSnapshot) {
         double progress =
             taskSnapshot.bytesTransferred / taskSnapshot.totalBytes;
-        print('Upload is $progress% complete');
+        debugPrint('Upload progress: ${(progress * 100).toStringAsFixed(2)}%');
       });
 
       final snapshot = await uploadTask.whenComplete(() {});
       final downloadUrl = await snapshot.ref.getDownloadURL();
 
-      // Update the user's profile image URL in Firestore
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'profileImageUrl': downloadUrl,
       });
@@ -102,143 +105,176 @@ class _CustomDrawerState extends State<CustomDrawer> {
         _isUploading = false;
       });
 
-      print('Profile image uploaded successfully!');
+      debugPrint('Profile image uploaded successfully!');
     } catch (e) {
       setState(() {
         _isUploading = false;
       });
-      print('Error uploading profile image: $e');
+      debugPrint('Error uploading profile image: $e');
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          // Profile Picture Section
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _uploadProfileImage, // Trigger image upload
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundImage: _profileImageUrl != null &&
-                                _profileImageUrl!.isNotEmpty
-                            ? CachedNetworkImageProvider(_profileImageUrl!)
-                            : const AssetImage('assets/default_avatar.png')
-                                as ImageProvider,
-                        child: _profileImageUrl == null ||
-                                _profileImageUrl!.isEmpty
-                            ? const Icon(Icons.person, color: Colors.white)
-                            : null,
-                      ),
-                      if (_isUploading)
-                        const CircularProgressIndicator(
-                          color: Colors.white,
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+ @override
+Widget build(BuildContext context) {
+  return Drawer(
+    child: ListView(
+      padding: EdgeInsets.zero,
+      children: <Widget>[
+        // Profile Picture Section
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: _uploadProfileImage,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Text(
-                      "${widget.firstName} ${widget.lastName}",
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundImage: _profileImageUrl != null &&
+                              _profileImageUrl!.isNotEmpty
+                          ? CachedNetworkImageProvider(_profileImageUrl!)
+                          : const AssetImage('assets/default_avatar.png')
+                              as ImageProvider,
+                      child: _profileImageUrl == null ||
+                              _profileImageUrl!.isEmpty
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
                     ),
-                    const Text(
-                      "Edit Profile Picture",
-                      style: TextStyle(fontSize: 14, color: Colors.blue),
-                    ),
+                    if (_isUploading)
+                      const CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${widget.firstName} ${widget.lastName}",
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    "Edit Profile Picture",
+                    style: TextStyle(fontSize: 14, color: Colors.blue),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const Divider(indent: 16, endIndent: 16, color: Colors.grey),
+        ),
+        const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
-          // Drawer List Items
-          ListTile(
-            leading: const Icon(Icons.group),
-            title: const Text('My Groups'),
-            onTap: () {
-              // Define action for My Groups
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('History'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => HistoryPage(
-                        userId: FirebaseAuth.instance.currentUser!.uid)),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.favorite),
-            title: const Text('Recipe Favourites'),
-            onTap: widget.onNavigateToFavorites,
-          ),
+        // Drawer List Items - Section 1
+        ListTile(
+          leading: const Icon(Icons.group),
+          title: const Text('My Groups'),
+          onTap: () {
+            // Define action for My Groups
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.history),
+          title: const Text('History'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => HistoryPage(
+                      userId: FirebaseAuth.instance.currentUser!.uid)),
+            );
+          },
+        ),
+        const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
-          ListTile(
+        // Drawer List Items - Section 2
+        ListTile(
+          leading: const Icon(Icons.favorite),
+          title: const Text('Recipe Favourites'),
+          onTap: widget.onNavigateToFavorites,
+        ),
+        ListTile(
             leading: const Icon(Icons.star),
-            title: const Text('Donation WatchList'),
-            // Navigate to Donation Watch List
+  title: const Text('Donation WatchList'),
+  onTap: () async {
+    // Get the current user ID
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+
+    // Get the current location
+    try {
+      Position position = await _getCurrentLocation();  // Get dynamic location
+      LatLng currentLocation = LatLng(position.latitude, position.longitude);
+
+      // Navigate to WatchedDonationsPage with userId and currentLocation
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => WatchedDonationsPage(
+            userId: userId,
+            currentLocation: currentLocation,
           ),
-          const Divider(indent: 16, endIndent: 16, color: Colors.grey),
-          ListTile(
-            leading: const Icon(Icons.message),
-            title: const Text('Messages'),
-            onTap: () {
-              // Navigate to ChatListPage
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatListPage(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.food_bank),
-            title: const Text('My Donation Listings'),
-            onTap: () {
-              final userId = FirebaseAuth.instance.currentUser!.uid;
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MyDonationsPage(userId: userId),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              // Define action for Settings
-            },
-          ),
-          const Divider(indent: 16, endIndent: 16, color: Colors.grey),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Log off'),
-            onTap: widget.onSignOut,
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      );
+    } catch (e) {
+      // Handle errors (e.g., if location service is unavailable or permission denied)
+      print('Error getting location: $e');
+      // Optionally show a message to the user
+    }
+  },
+),
+          
+        const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
+
+        // Drawer List Items - Section 3
+        ListTile(
+          leading: const Icon(Icons.message),
+          title: const Text('Messages'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChatListPage(),
+              ),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.food_bank),
+          title: const Text('My Donation Listings'),
+          onTap: () {
+            final userId = FirebaseAuth.instance.currentUser!.uid;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MyDonationsPage(userId: userId),
+              ),
+            );
+          },
+        ),
+        const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
+
+        // Drawer List Items - Section 4
+        ListTile(
+          leading: const Icon(Icons.settings),
+          title: const Text('Settings'),
+          onTap: () {
+            // Define action for Settings
+          },
+        ),
+        const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
+
+        // Drawer List Items - Logout Section
+        ListTile(
+          leading: const Icon(Icons.logout),
+          title: const Text('Log off'),
+          onTap: widget.onSignOut,
+        ),
+      ],
+    ),
+  );
+}
 }

@@ -46,6 +46,11 @@ class WatchlistService {
         'donorName': donationData['donorName'],
         'imageUrl': donationData['imageUrl'],
         'addedOn': FieldValue.serverTimestamp(),
+        'donorId': donationData['donorId'],
+        'donationId': donationId,
+        'isWatched': donationData['isWatched'] ?? true,
+         
+          
       });
     } catch (e) {
       throw Exception("Error adding to watchlist: $e");

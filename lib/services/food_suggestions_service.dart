@@ -34,6 +34,9 @@ Future<List<String>> fetchFoodSuggestions(String query) async {
 
     suggestions.addAll(historySuggestions);
 
+    // Remove duplicates by converting to a Set and then back to a List
+    suggestions = suggestions.toSet().toList();
+
     return suggestions;
   } catch (e) {
     print('Error fetching food suggestions: $e');
