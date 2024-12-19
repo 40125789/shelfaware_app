@@ -13,6 +13,7 @@ class DonationLocation {
   final String donorName;
   final String donorEmail;
   final String donationId;
+  final String addedOn;
   // Name of the donor
   // ID of the donor (must be a string)
 
@@ -26,6 +27,7 @@ class DonationLocation {
     required this.donorName,
     required this.donorEmail,
     required this.donationId,
+    required this.addedOn,
   });
 
   // Factory constructor to map Firestore data to DonationLocation model
@@ -47,7 +49,11 @@ class DonationLocation {
         donorName: doc['donorName'] ?? 'Anonymous', //
 
         donorEmail: doc['donorEmail'],
-        donationId: doc['donationId']);
+        donationId: doc['donationId'], 
+        addedOn: (doc['addedOn'] as Timestamp)
+            .toDate()
+            .toLocal()
+            .toString());
   }
 
   // Optional: Getter for user ID if needed

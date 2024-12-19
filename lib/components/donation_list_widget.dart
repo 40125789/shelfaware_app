@@ -21,7 +21,6 @@ class DonationListView extends StatefulWidget {
 class _DonationListViewState extends State<DonationListView> {
   late WatchlistService watchlistService;
   Map<String, bool> watchlistStatus = {};
-  Map<String, String?> donorProfileImageUrl = {};
 
   @override
   void initState() {
@@ -29,6 +28,8 @@ class _DonationListViewState extends State<DonationListView> {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
     watchlistService = WatchlistService(userId: userId ?? ''); // Initialize WatchlistService
   }
+
+  
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +58,9 @@ class _DonationListViewState extends State<DonationListView> {
             String productName = donation['productName'] ?? 'No product name';
             String status = donation['status'] ?? 'Unknown';
             String donorName = donation['donorName'] ?? 'Anonymous';
-            String? imageUrl = donation['imageUrl']; // Get the image URL
+            String? imageUrl = donation['imageUrl'];
             Timestamp? expiryDate = donation['expiryDate'];
+            Timestamp? addedOn = donation['addedOn'];
             GeoPoint? location = donation['location'];
             String donorId = donation['donorId'];
             String donationId = donations[index].id;
@@ -111,6 +113,21 @@ class _DonationListViewState extends State<DonationListView> {
               });
             });
 
+            // Calculate if the donation is "Newly Added" (within 24 hours)
+            bool isNewlyAdded = false;
+            if (addedOn != null) {
+              var addedDate = addedOn.toDate();
+              isNewlyAdded = DateTime.now().difference(addedDate).inHours < 24;
+            }
+
+            // Calculate if the donation is "Expiring Soon" (within 3 days)
+            bool isExpiringSoon = false;
+            if (expiryDate != null) {
+              var expiryDateTime = expiryDate.toDate();
+              int daysUntilExpiry = expiryDateTime.difference(DateTime.now()).inDays;
+              isExpiringSoon = daysUntilExpiry >= 0 && daysUntilExpiry <= 3;
+            }
+
             return Stack(
               children: [
                 Card(
@@ -131,8 +148,7 @@ class _DonationListViewState extends State<DonationListView> {
                             userLongitude: widget.currentLocation!.longitude,
                             productName: productName,
                             expiryDate: expiryDate != null
-                                ? DateFormat('dd/MM/yyyy')
-                                    .format(expiryDate.toDate())
+                                ? DateFormat('dd/MM/yyyy').format(expiryDate.toDate())
                                 : 'Unknown',
                             status: status,
                             donorName: donorName,
@@ -164,11 +180,11 @@ class _DonationListViewState extends State<DonationListView> {
                                         CircularProgressIndicator(),
                                     errorWidget: (context, url, error) =>
                                         Image.asset(
-                                          'assets/placeholder.png',
-                                          width: 120,
-                                          height: 120,
-                                          fit: BoxFit.cover,
-                                        ),
+                                      'assets/placeholder.png',
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                    ),
                                   )
                                 : Image.asset(
                                     'assets/placeholder.png', // Placeholder image
@@ -193,23 +209,22 @@ class _DonationListViewState extends State<DonationListView> {
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                SizedBox(height: 8), // Space between product name and donor info
+                                SizedBox(height: 8),
 
                                 // Donor's name and profile image (below product name)
                                 Row(
                                   children: [
-                                    // Donor's profile image (small)
-      ProfileImage(donorId: donorId, userId: userId ?? ''),
-      SizedBox(width: 8),
-      Text(
-        donorName,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-        overflow: TextOverflow.ellipsis,
-      ),
-    ],
+                                    ProfileImage(donorId: donorId, userId: userId ?? ''),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      donorName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
                                 SizedBox(height: 8),
                                 Text(
@@ -232,6 +247,48 @@ class _DonationListViewState extends State<DonationListView> {
                                     ),
                                   ],
                                 ),
+                                if (isNewlyAdded || isExpiringSoon) ...[
+                                  SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      if (isNewlyAdded) ...[
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            'New',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                      ],
+                                      if (isExpiringSoon) ...[
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            'Expiring Soon',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
                           ),
