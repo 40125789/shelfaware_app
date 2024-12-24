@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart'; // Import LatLng
 import 'package:google_maps_flutter/google_maps_flutter.dart'
@@ -56,6 +58,22 @@ class DonationLocation {
             .toString());
   }
 
-  // Optional: Getter for user ID if needed
-  String get userId => donorId;
+    // This method calculates the distance between two GeoPoints
+  double filterDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double radius = 6371; // Radius of the Earth in kilometers
+    double dLat = _degToRad(lat2 - lat1);
+    double dLon = _degToRad(lon2 - lon1);
+    double a = 
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degToRad(lat1)) * cos(_degToRad(lat2)) *
+        sin(dLon / 2) * sin(dLon / 2);
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return radius * c; // Returns distance in kilometers
+  }
+
+  double _degToRad(double deg) {
+    return deg * (pi / 180);
+  }
+// Optional: Getter for user ID if needed
+String get userId => donorId;
 }

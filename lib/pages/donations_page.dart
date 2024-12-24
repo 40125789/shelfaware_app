@@ -18,8 +18,7 @@ import 'package:shelfaware_app/models/donation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:shelfaware_app/services/donation_filter_logic.dart'; 
-
+import 'package:shelfaware_app/services/donation_filter_logic.dart';
 
 class DonationsPage extends StatefulWidget {
   @override
@@ -41,6 +40,7 @@ class _DonationsScreenState extends State<DonationsPage>
   bool _filterExpiringSoon = false; // Define the variable
   bool _filterNewlyAdded = false; // Define the variable
   double _filterDistance = 0.0; // Define the variable
+  List<DonationLocation> _allDonations = []; // Define the variable
 
   @override
   void initState() {
@@ -53,8 +53,6 @@ class _DonationsScreenState extends State<DonationsPage>
     _requestLocationPermission();
     _getUserId();
   }
-
-  
 
   // Get logged-in user ID from FirebaseAuth
   Future<void> _getUserId() async {
@@ -275,12 +273,11 @@ class _DonationsScreenState extends State<DonationsPage>
 
   Future<List<DonationLocation>> fetchDonationLocations() async {
     try {
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('donations')
-          .get(); // Adjust your query as needed
+      QuerySnapshot snapshot =
+          await FirebaseFirestore.instance.collection('donations').get();
 
       // Filter donations to exclude the current user's donations
-      return snapshot.docs
+      final donations = snapshot.docs
           .map((doc) {
             var donation = DonationLocation.fromFirestore(
                 doc.data() as Map<String, dynamic>);
@@ -292,34 +289,107 @@ class _DonationsScreenState extends State<DonationsPage>
           })
           .whereType<DonationLocation>()
           .toList();
+
+      // Apply filters if they are enabled
+      if (_filterExpiringSoon) {
+        donations.removeWhere((donation) {
+          DateTime expiryDate = DateTime.parse(donation.expiryDate);
+          return !expiryDate.isBefore(DateTime.now().add(Duration(days: 7)));
+        });
+      }
+      if (_filterNewlyAdded) {
+        donations.sort((a, b) => b.addedOn.compareTo(a.addedOn));
+      }
+      if (_filterDistance != null && _filterDistance > 0) {
+        donations.removeWhere((donation) {
+          final distance = donation.filterDistance(
+            _currentLocation!.latitude,
+            _currentLocation!.longitude,
+            donation.location.latitude,
+            donation.location.longitude,
+          );
+          return distance > _filterDistance;
+        });
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _allDonations = donations;
+        });
+      }
+      return donations;
     } catch (e) {
-      print("Error fetching donation locations: $e");
+      print('Error fetching donation locations: $e');
       return [];
     }
+  }
+
+  // Method to show the filter dialog
+
+  void _showFilterDialog() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween<Offset>(begin: Offset(0, 1), end: Offset.zero)
+                  .chain(CurveTween(curve: Curves.easeInOut)),
+            ),
+            child: FilterDialog(
+              filterExpiringSoon: _filterExpiringSoon,
+              filterNewlyAdded: _filterNewlyAdded,
+              filterDistance: _filterDistance,
+              onExpiringSoonChanged: (bool value) {
+                setState(() => _filterExpiringSoon = value);
+              },
+              onNewlyAddedChanged: (bool value) {
+                setState(() => _filterNewlyAdded = value);
+              },
+              onDistanceChanged: (double? value) {
+                setState(() => _filterDistance = value ?? 0.0);
+              },
+              onApply: () async {
+                Navigator.of(context).pop();
+                setState(() {
+                  _isLoading =
+                      true; // Show the loading indicator when filter is applied
+                });
+                // Fetch filtered donations
+                await fetchDonationLocations();
+              },
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+        barrierDismissible: true,
+        barrierColor: Colors.black54,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-      title: Row(
-        children: [
-          Text('Donations'),
-          Spacer(), // Push the filter button to the right
-          IconButton(
-         icon: Row(
-              children: [
-                Icon(Icons.filter_alt_rounded), // Filter icon
-                SizedBox(width: 4), // Space between the icon and text
-                Text('Filter', style: TextStyle(fontSize: 16)), // Filter text
-              ],
+        title: Row(
+          children: [
+            Text('Donations'),
+            Spacer(), // Push the filter button to the right
+            IconButton(
+              icon: Row(
+                children: [
+                  Icon(Icons.filter_alt_rounded), // Filter icon
+                  SizedBox(width: 4), // Space between the icon and text
+                  Text('Filter', style: TextStyle(fontSize: 16)), // Filter text
+                ],
+              ),
+              onPressed: _showFilterDialog, // Your filter dialog function
+              tooltip: 'Filter Donations',
             ),
-            onPressed: _showFilterDialog, // Your filter dialog function
-            tooltip: 'Filter Donations',
-          ),
-        ],
-      ),
-        
+          ],
+        ),
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -328,8 +398,6 @@ class _DonationsScreenState extends State<DonationsPage>
           ],
         ),
       ),
-
-      
 
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -340,7 +408,11 @@ class _DonationsScreenState extends State<DonationsPage>
                       NeverScrollableScrollPhysics(), // Disable swipe gestures
                   controller: _tabController,
                   children: [
-                    DonationListView(currentLocation: _currentLocation),
+                    DonationListView(
+                        filterExpiringSoon: _filterExpiringSoon,
+                        filterNewlyAdded: _filterNewlyAdded,
+                        filterDistance: _filterDistance,
+                        currentLocation: _currentLocation),
                     GoogleMap(
                       initialCameraPosition: CameraPosition(
                         target: _currentLocation ?? LatLng(0, 0),
@@ -359,8 +431,7 @@ class _DonationsScreenState extends State<DonationsPage>
                     ),
                   ],
                 ),
-              ],    
-              
+              ],
             ),
 
       floatingActionButton:
@@ -380,56 +451,6 @@ class _DonationsScreenState extends State<DonationsPage>
               : null, // Don't show the button on the donations list page
     );
   }
-
-  
-void _showFilterDialog() {
-  Navigator.of(context).push(
-    PageRouteBuilder(
-      opaque: false,
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return SlideTransition(
-          position: animation.drive(
-            Tween<Offset>(
-              begin: Offset(0, 1), // Start off-screen at the bottom
-              end: Offset.zero,    // End at its final position
-            ).chain(CurveTween(curve: Curves.easeInOut)),
-          ),
-          child: FilterDialog(
-            filterExpiringSoon: _filterExpiringSoon,
-            filterNewlyAdded: _filterNewlyAdded,
-            filterDistance: _filterDistance,
-            onExpiringSoonChanged: (bool value) {
-              setState(() => _filterExpiringSoon = value);
-            },
-            onNewlyAddedChanged: (bool value) {
-             setState(() => _filterNewlyAdded = value);
-            },
-            onDistanceChanged: (double? value) {
-             setState(() => _filterDistance = value ?? 0.0);
-            },
-           onApply: () async {
-              Navigator.of(context).pop();
-              final donations = await fetchDonationLocations();
-              _updateMarkers(donations);
-              // Handle Apply action
-            },
-            
-          ),
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 300),
-      barrierDismissible: true,
-      barrierColor: Colors.black54, // Optional dimmed background
-    ),
-  );
-}
- 
-  
 }
 
-void _updateMarkers(List<DonationLocation> donations) {
-}
-
-
-// Compare this snippet from lib/pages/expiring_items_page.dart:
-
+void _updateMarkers(List<DonationLocation> donations) {}

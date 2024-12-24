@@ -11,8 +11,16 @@ import 'package:shelfaware_app/services/watched_donation_service.dart';
 
 class DonationListView extends StatefulWidget {
   final LatLng? currentLocation;
+  final bool filterExpiringSoon;
+  final bool filterNewlyAdded;
+  final double filterDistance;
 
-  DonationListView({this.currentLocation});
+  DonationListView({
+    this.currentLocation,
+    required this.filterExpiringSoon,
+    required this.filterNewlyAdded,
+    required this.filterDistance,
+  });
 
   @override
   _DonationListViewState createState() => _DonationListViewState();
@@ -22,14 +30,22 @@ class _DonationListViewState extends State<DonationListView> {
   late WatchlistService watchlistService;
   Map<String, bool> watchlistStatus = {};
 
+  bool filterExpiringSoon = false;
+  bool filterNewlyAdded = false;
+  double filterDistance = 0.0;
+
   @override
   void initState() {
     super.initState();
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
-    watchlistService = WatchlistService(userId: userId ?? ''); // Initialize WatchlistService
-  }
+    watchlistService =
+        WatchlistService(userId: userId ?? ''); // Initialize WatchlistService
 
-  
+    // Initialize filter criteria from constructor arguments
+    filterExpiringSoon = widget.filterExpiringSoon;
+    filterNewlyAdded = widget.filterNewlyAdded;
+    filterDistance = widget.filterDistance;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,10 +62,64 @@ class _DonationListViewState extends State<DonationListView> {
           return Center(child: CircularProgressIndicator());
         }
 
+        // Initially, show all donations without any filter applied
         var donations = snapshot.data!.docs.where((doc) {
           var donation = doc.data() as Map<String, dynamic>;
           return donation['donorId'] != userId;
         }).toList();
+
+        // Apply filters after initial load
+        if (filterExpiringSoon || filterNewlyAdded || filterDistance > 0.0) {
+          donations = donations.where((doc) {
+            var donation = doc.data() as Map<String, dynamic>;
+
+            // Apply 'Expiring Soon' filter
+            if (filterExpiringSoon) {
+              Timestamp? expiryDate = donation['expiryDate'];
+              if (expiryDate != null) {
+                var expiryDateTime = expiryDate.toDate();
+                int daysUntilExpiry =
+                    expiryDateTime.difference(DateTime.now()).inDays;
+                if (daysUntilExpiry < 0 || daysUntilExpiry > 3) {
+                  return false; // Filter out donations that are not expiring soon
+                }
+              }
+            }
+
+            // Apply 'Newly Added' filter
+            if (filterNewlyAdded) {
+              Timestamp? addedOn = donation['addedOn'];
+              if (addedOn != null) {
+                var addedDate = addedOn.toDate();
+                if (DateTime.now().difference(addedDate).inHours >= 24) {
+                  return false; // Filter out donations not added recently
+                }
+              }
+            }
+
+            // Apply 'Distance' filter
+            if (filterDistance > 0.0) {
+              GeoPoint? location = donation['location'];
+              if (location != null) {
+                double latitude = location.latitude;
+                double longitude = location.longitude;
+
+                double distanceInMeters = Geolocator.distanceBetween(
+                  widget.currentLocation!.latitude,
+                  widget.currentLocation!.longitude,
+                  latitude,
+                  longitude,
+                );
+
+                if (distanceInMeters / 1609.34 > filterDistance) {
+                  return false; // Filter out donations beyond the specified distance
+                }
+              }
+            }
+
+            return true; // Include this donation if it passes all filters
+          }).toList();
+        }
 
         return ListView.builder(
           itemCount: donations.length,
@@ -124,7 +194,8 @@ class _DonationListViewState extends State<DonationListView> {
             bool isExpiringSoon = false;
             if (expiryDate != null) {
               var expiryDateTime = expiryDate.toDate();
-              int daysUntilExpiry = expiryDateTime.difference(DateTime.now()).inDays;
+              int daysUntilExpiry =
+                  expiryDateTime.difference(DateTime.now()).inDays;
               isExpiringSoon = daysUntilExpiry >= 0 && daysUntilExpiry <= 3;
             }
 
@@ -148,7 +219,8 @@ class _DonationListViewState extends State<DonationListView> {
                             userLongitude: widget.currentLocation!.longitude,
                             productName: productName,
                             expiryDate: expiryDate != null
-                                ? DateFormat('dd/MM/yyyy').format(expiryDate.toDate())
+                                ? DateFormat('dd/MM/yyyy')
+                                    .format(expiryDate.toDate())
                                 : 'Unknown',
                             status: status,
                             donorName: donorName,
@@ -214,7 +286,8 @@ class _DonationListViewState extends State<DonationListView> {
                                 // Donor's name and profile image (below product name)
                                 Row(
                                   children: [
-                                    ProfileImage(donorId: donorId, userId: userId ?? ''),
+                                    ProfileImage(
+                                        donorId: donorId, userId: userId ?? ''),
                                     SizedBox(width: 8),
                                     Text(
                                       donorName,
@@ -239,11 +312,14 @@ class _DonationListViewState extends State<DonationListView> {
                                 SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    Icon(Icons.location_on, color: Colors.grey, size: 16),
+                                    Icon(Icons.location_on,
+                                        color: Colors.grey, size: 16),
                                     SizedBox(width: 4),
                                     Text(
                                       '$distanceText away',
-                                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[500]),
                                     ),
                                   ],
                                 ),
@@ -253,10 +329,12 @@ class _DonationListViewState extends State<DonationListView> {
                                     children: [
                                       if (isNewlyAdded) ...[
                                         Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: Colors.green,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Text(
                                             'New',
@@ -271,10 +349,12 @@ class _DonationListViewState extends State<DonationListView> {
                                       ],
                                       if (isExpiringSoon) ...[
                                         Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: Colors.red,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Text(
                                             'Expiring Soon',
@@ -316,7 +396,8 @@ class _DonationListViewState extends State<DonationListView> {
                           if (watchlistStatus[donationId] == true) {
                             watchlistService.removeFromWatchlist(donationId);
                           } else {
-                            watchlistService.addToWatchlist(donationId, donation);
+                            watchlistService.addToWatchlist(
+                                donationId, donation);
                           }
                           watchlistStatus[donationId] =
                               !(watchlistStatus[donationId] ?? false);

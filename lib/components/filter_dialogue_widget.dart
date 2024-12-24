@@ -26,7 +26,7 @@ class FilterDialog extends StatefulWidget {
 class _FilterDialogState extends State<FilterDialog> {
   late bool filterExpiringSoon;
   late bool filterNewlyAdded;
-  late double? filterDistance; // Nullable type for distance
+  late double? filterDistance;
 
   @override
   void initState() {
@@ -36,20 +36,10 @@ class _FilterDialogState extends State<FilterDialog> {
     filterDistance = widget.filterDistance;
   }
 
-  ButtonStyle buttonStyle(double? selectedDistance, double buttonDistance) {
-    return ElevatedButton.styleFrom(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      foregroundColor: selectedDistance == buttonDistance ? Colors.white : Colors.black,
-      backgroundColor: selectedDistance == buttonDistance ? Colors.green : Colors.grey[200],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: BottomSheet(
         onClosing: () {},
         builder: (context) => Container(
@@ -65,129 +55,138 @@ class _FilterDialogState extends State<FilterDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: Icon(Icons.close),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ),
-              Center(
-                child: Column(
-                  children: [
-                    Text(
-                      'Donations Filter',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    SizedBox(height: 8),
-                    Divider(
-                      thickness: 2,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              ),
+              _buildHeader(context),
               SizedBox(height: 20),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Sort by:'),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        filterExpiringSoon = !filterExpiringSoon;
-                      });
-                      widget.onExpiringSoonChanged(filterExpiringSoon);
-                    },
-                    style: buttonStyle(filterExpiringSoon ? 1.0 : 0.0, 1.0),
-                    child: Text('Expiring Soon'),
-                  ),
-                  SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        filterNewlyAdded = !filterNewlyAdded;
-                      });
-                      widget.onNewlyAddedChanged(filterNewlyAdded);
-                    },
-                    style: buttonStyle(filterNewlyAdded ? 1.0 : 0.0, 1.0),
-                    child: Text('Newly Added'),
-                  ),
-                ],
-              ),
+              _buildSortOptions(),
               SizedBox(height: 20),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Filter by Distance:'),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          filterDistance = filterDistance == 0.3 ? null : 0.3; // Toggle the distance
-                        });
-                        widget.onDistanceChanged(filterDistance); // Pass nullable double
-                      },
-                      style: buttonStyle(filterDistance, 0.3),
-                      child: Text('0.3 miles'),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          filterDistance = filterDistance == 0.6 ? null : 0.6; // Toggle the distance
-                        });
-                        widget.onDistanceChanged(filterDistance); // Pass nullable double
-                      },
-                      style: buttonStyle(filterDistance, 0.6),
-                      child: Text('0.6 miles'),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          filterDistance = filterDistance == 1.3 ? null : 1.3; // Toggle the distance
-                        });
-                        widget.onDistanceChanged(filterDistance); // Pass nullable double
-                      },
-                      style: buttonStyle(filterDistance, 1.3),
-                      child: Text('1.3 miles'),
-                    ),
-                  ),
-                ],
-              ),
+              _buildDistanceOptions(),
               SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: widget.onApply,
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    backgroundColor: Colors.green,
-                  ),
-                  child: Text(
-                    'Apply',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-              ),
+              _buildApplyButton(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.topRight,
+          child: IconButton(
+            icon: Icon(Icons.close),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        Center(
+          child: Column(
+            children: [
+              Text(
+                'Donations Filter',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              SizedBox(height: 8),
+              Divider(thickness: 2, color: Colors.grey),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSortOptions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Sort by:'),
+        Row(
+          children: [
+            _buildToggleButton(
+              label: 'Expiring Soon',
+              isSelected: filterExpiringSoon,
+              onPressed: () {
+                setState(() {
+                  filterExpiringSoon = !filterExpiringSoon;
+                });
+                widget.onExpiringSoonChanged(filterExpiringSoon);
+              },
+            ),
+            SizedBox(width: 10),
+            _buildToggleButton(
+              label: 'Newly Added',
+              isSelected: filterNewlyAdded,
+              onPressed: () {
+                setState(() {
+                  filterNewlyAdded = !filterNewlyAdded;
+                });
+                widget.onNewlyAddedChanged(filterNewlyAdded);
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+Widget _buildDistanceOptions() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Maximum Distance:'),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Add space between buttons
+        children: [0.3, 0.6, 1.3].map((distance) {
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0), // Add spacing between buttons
+              child: _buildToggleButton(
+                label: '${distance.toStringAsFixed(1)} miles',
+                isSelected: filterDistance == distance,
+                onPressed: () {
+                  setState(() {
+                    filterDistance = filterDistance == distance ? null : distance;
+                  });
+                  widget.onDistanceChanged(filterDistance);
+                },
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    ],
+  );
+}
+
+Widget _buildToggleButton({
+  required String label,
+  required bool isSelected,
+  required VoidCallback onPressed,
+}) {
+  return ElevatedButton(
+    onPressed: onPressed,
+    style: ElevatedButton.styleFrom(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), // Reduced padding
+      foregroundColor: isSelected ? Colors.white : Colors.black,
+      backgroundColor: isSelected ? Colors.green : Colors.grey[200],
+    ),
+    child: Text(label),
+  );
+}
+
+
+  Widget _buildApplyButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: widget.onApply,
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          backgroundColor: Colors.green,
+        ),
+        child: Text(
+          'Apply',
+          style: TextStyle(color: Colors.white, fontSize: 18),
         ),
       ),
     );
