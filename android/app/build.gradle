@@ -45,10 +45,12 @@ flutter {
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:32.0.0') // Latest BOM version
+    implementation platform('com.google.firebase:firebase-bom:32.0.0')
     implementation('com.google.firebase:firebase-messaging:24.0.3') {
-    exclude group: 'com.google.firebase', module: 'firebase-iid'
-}
+        exclude group: 'com.google.firebase', module: 'firebase-iid'
+    }
+
+
     implementation 'com.google.firebase:firebase-analytics'
     // Add any other Firebase dependencies as needed
 }

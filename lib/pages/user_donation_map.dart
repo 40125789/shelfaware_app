@@ -118,7 +118,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                   receiverEmail: widget.donorEmail,
                   receiverId: widget.donatorId,
                   donationId: widget.donationId,
-                  donationName: widget.productName,
+                  donationName: widget.productName, chatId: '',
                 ),
               ),
             );

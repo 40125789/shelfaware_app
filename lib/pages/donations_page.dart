@@ -261,7 +261,7 @@ class _DonationsScreenState extends State<DonationsPage>
                   receiverEmail: donation.donorEmail,
                   receiverId: donation.donorId,
                   donationId: donation.donationId,
-                  donationName: donation.itemName,
+                  donationName: donation.itemName, chatId: '',
                 ),
               ),
             );

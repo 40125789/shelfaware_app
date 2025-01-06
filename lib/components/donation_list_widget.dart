@@ -121,6 +121,17 @@ class _DonationListViewState extends State<DonationListView> {
           }).toList();
         }
 
+         // Check if donations list is empty
+    if (donations.isEmpty) {
+      return Center(
+        child: Text(
+          'No donations match your filters!',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+ // Render ListView if donations are found
         return ListView.builder(
           itemCount: donations.length,
           itemBuilder: (context, index) {

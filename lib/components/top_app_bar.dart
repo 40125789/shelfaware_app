@@ -4,82 +4,85 @@ import 'package:shelfaware_app/controllers/expiring_items_controller.dart'; // I
 import 'package:shelfaware_app/pages/expiring_items_page.dart'; // Import the ExpiringItemsScreen
 import 'package:shelfaware_app/services/data_fetcher.dart'; // Import the DataFetcher
 import 'package:shelfaware_app/models/food_item.dart'; // Import the FoodItem model
-import 'package:shelfaware_app/pages/expiring_items_page.dart'; // Import the ExpiringItemsScreen
-
+import 'package:shelfaware_app/pages/expiring_items_page.dart';
+import 'package:shelfaware_app/services/notification_service.dart'; // Import the ExpiringItemsScreen
 
 class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback onLocationPressed;
   final VoidCallback onNotificationPressed;
-  final int expiringItemCount;
+  final String userId;
 
   const TopAppBar({
     Key? key,
-    this.title = '', // Default title as empty, can be updated from page
+    this.title = '',
     required this.onLocationPressed,
     required this.onNotificationPressed,
-    required this.expiringItemCount,
+    required this.userId,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Access the expiring and expired item counts
-    final expiringSoonItemCount =
-        context.watch<ExpiringItemsController>().expiringSoonItems.length;
-    final expiredItemCount =
-        context.watch<ExpiringItemsController>().expiredItems.length;
-
-    // Total count of expiring items
-    final totalExpiringItems = expiringSoonItemCount + expiredItemCount;
-
-    return AppBar(
-      backgroundColor: Colors.green,
-      iconTheme: IconThemeData(color: Colors.grey[800]),
-      title: Text(
-        title,
-        style: TextStyle(color: Colors.white),
-      ),
-      actions: [
-        // Location Button
-        IconButton(
-          icon: Icon(Icons.location_on, color: Colors.grey[800]),
-          onPressed: onLocationPressed,
-        ),
-
-        // Notification Button with Badge
-        Stack(
-          children: [
-            IconButton(
-              icon: Icon(Icons.notifications, color: Colors.grey[800]),
-              onPressed: onNotificationPressed,
-            ),
-            if (totalExpiringItems > 0) // Show badge if there are expiring or expired items
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Text(
-                    '$totalExpiringItems',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+    return StreamBuilder<int>(
+      stream: NotificationService().getUnreadNotificationCount(userId), // Call the service's stream method
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show loading indicator while fetching data
+          return AppBar(
+            backgroundColor: Colors.green,
+            title: Text(title),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(color: Colors.white),
               ),
+            ],
+          );
+        }
+
+        // If data is available, set unread count
+        int unreadCount = snapshot.data ?? 0;
+
+        return AppBar(
+          backgroundColor: Colors.green,
+          title: Text(title),
+          actions: [
+            // Notification Icon with Badge
+            Stack(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.notifications, color: Colors.grey[800]),
+                  onPressed: onNotificationPressed, 
+                ),
+                if (unreadCount > 0) // Show badge if there are unread notifications
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 

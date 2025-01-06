@@ -1,137 +1,175 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter/material.dart';  // For navigation purposes
-
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationService {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
-  NotificationService(this.flutterLocalNotificationsPlugin);
+  // Initialize notification plugins
+  Future<void> initializeNotifications() async {
+    // Initialize local notifications
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('app_icon'); // Set your app icon
 
-  // Initialize local notifications plugin
-  Future<void> initialize() async {
-   const AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('@android:drawable/ic_dialog_info');
-    final initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    // Handle foreground notifications (app is in the foreground)
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        _showLocalNotification(message.notification!.title, message.notification!.body, message.data['chatId']);
+      }
+    });
+
+    // Handle background notifications (app is in the background)
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        _handleNotificationTap(message.data);
+      }
+    });
   }
 
-  // Method to send expiry notification
-  Future<void> sendExpiryNotification(String productName, DateTime expiryDate) async {
-    // Calculate the remaining days until expiry
-    final daysUntilExpiry = expiryDate.difference(DateTime.now()).inDays;
-    String expiryMessage = '';
-
-    // Provide a more specific message depending on how many days remain
-    if (daysUntilExpiry < 0) {
-      expiryMessage = '$productName has expired!';
-    } else if (daysUntilExpiry == 0) {
-      expiryMessage = '$productName expires today!';
-    } else {
-      expiryMessage = '$productName expires in $daysUntilExpiry days.';
-    }
-
-    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'expiry_notifications',
-      'Expiry Notifications',
-      channelDescription: 'Notifications for food items about to expire',
-      importance: Importance.max,
-      priority: Priority.high,
+  // Show a local notification
+  Future<void> _showLocalNotification(String? title, String? body, String chatId) async {
+    // Define notification details
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'default_channel_id', // channelId
+      'Default Channel', // channelName
+      channelDescription: 'This is the default channel', // channelDescription
+      importance: Importance.high, // Set importance to high
+      priority: Priority.high, // Set priority to high
+      showWhen: false, // Do not show time when notification is shown
     );
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidDetails);
 
     // Show the notification
     await flutterLocalNotificationsPlugin.show(
-      0, // notification ID
-      'Food Expiry Alert', // Title of the notification
-      expiryMessage, // Body of the notification
-      platformChannelSpecifics,
+      0,// Notification ID (this is a unique identifier for the notification)
+      title, // Notification title
+      body, // Notification body
+      platformChannelSpecifics, // Notification details
+      payload: chatId, // Optional payload for data
     );
   }
 
-  // Handle background messages (when app is in background or terminated)
-  static Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
-    final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-    await _showNotification(flutterLocalNotificationsPlugin, message);
+  // Handle notification tap (open the app or navigate to a screen)
+  void _handleNotificationTap(Map<String, dynamic> data) {
+    // Logic for handling notification tap, such as navigating to a screen
+    print('Notification tapped! Data: $data');
   }
 
-  // Handle foreground messages (when the app is in the foreground)
-  Future<void> firebaseMessageHandler(RemoteMessage message) async {
-    await _showNotification(flutterLocalNotificationsPlugin, message);
+  // Fetch notifications by userId
+  Future<List<Map<String, dynamic>>> fetchNotifications(String userId) async {
+    try {
+      print('Fetching notifications for userId: $userId');
+      final snapshot = await FirebaseFirestore.instance
+          .collection('notifications') // Collection name: 'notifications'
+          .where('userId', isEqualTo: userId) // Filter by userId
+          .orderBy('timestamp', descending: true) // Order by timestamp (descending)
+          .get(); // Get the query snapshot
+
+      // Convert the query snapshot to a list of maps
+      return snapshot.docs.map((doc) {
+        return doc.data() as Map<String, dynamic>;
+      }).toList();
+    } catch (e) {
+      print('Error fetching notifications: $e');
+      return []; // Return empty list on error
+    }
   }
 
-  // Show notification when an app notification is tapped
-  static Future<void> _showNotification(
-    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin,
-    RemoteMessage message,
-  ) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'expiry_notifications',
-      'Expiry Notifications',
-      channelDescription: 'Notifications for food items about to expire',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+  // Clear all notifications for a user
+  Future<void> clearAllNotifications(String userId) async {
+    if (userId == null) return; // If userId is null, exit early
 
-    // Extract product name and expiry date from the message payload
-    final String productName = message.data['productName'] ?? 'Unknown product';
-    final String expiryDateString = message.data['expiryDate'] ?? '';
-    final DateTime expiryDate = DateTime.parse(expiryDateString);
+    final collection = FirebaseFirestore.instance.collection('notifications');
+    final batch = FirebaseFirestore.instance.batch();
 
-    // Calculate the days until expiry
-    final daysUntilExpiry = expiryDate.difference(DateTime.now()).inDays;
-    String expiryMessage = '';
+    // Query notifications that belong to the current user
+    final querySnapshot = await collection.where('userId', isEqualTo: userId).get();
 
-    if (daysUntilExpiry < 0) {
-      expiryMessage = '$productName has expired!';
-    } else if (daysUntilExpiry == 0) {
-      expiryMessage = '$productName expires today!';
-    } else {
-      expiryMessage = '$productName expires in $daysUntilExpiry days.';
+    // Add all notifications to the batch for deletion
+    for (final doc in querySnapshot.docs) {
+      batch.delete(doc.reference);
     }
 
-    // Show the notification
-    await flutterLocalNotificationsPlugin.show(
-      0, // notification ID
-      'Food Expiry Alert', // Title of the notification
-      expiryMessage, // Body of the notification
-      platformChannelSpecifics,
-      payload: '$productName,$expiryDate',
-    );
+    // Commit the batch to delete all matching notifications
+    await batch.commit();
   }
 
-  // Method to handle when notification is tapped
-  void firebaseTapHandler(RemoteMessage message) async {
-    // Example: Handle notification tap by navigating to a specific screen
-    print("Tapped on notification: ${message.notification?.title}");
-
-    // Extract relevant data from the notification payload
-    final String productName = message.data['productName'] ?? 'Unknown product';
-    final String expiryDateString = message.data['expiryDate'] ?? '';
-    final DateTime expiryDate = DateTime.parse(expiryDateString);
-
-// This method will be called when a notification is tapped
-Future<void> selectNotification(String? payload) async {
-  if (payload != null) {
-    // You can parse the payload to get the product name and expiry date
-    final parts = payload.split(',');
-    final productName = parts[0];
-    final expiryDateString = parts[1];
-    final expiryDate = DateTime.parse(expiryDateString);
-
-    // You can now navigate to a specific screen to show the expiring items
-    print("Tapped on notification for: $productName, Expiry Date: $expiryDate");
-
-    // Example navigation to a specific screen (you need to define your screen)
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => ExpiryDetailsPage(productName: productName, expiryDate: expiryDate),
-    //   ),
-    // );
+  // Get unread notification count for a user
+  Stream<int> getUnreadNotificationCount(String userId) {
+    return FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .where('read', isEqualTo: false) // Filter by unread status
+        .snapshots()
+        .map((querySnapshot) => querySnapshot.docs.length);
   }
-}
 
+  // Update the notification's read status in Firestore
+  Future<void> markAsRead(String notificationId) async {
+    await FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(notificationId)
+        .update({
+      'read': true,
+    });
+  }
+
+  // Filter notifications by type (e.g., 'message' or 'expiry')
+  List<Map<String, dynamic>> filterByType(
+      List<Map<String, dynamic>> notifications, String type) {
+    return notifications
+        .where((notification) => notification['type'] == type)
+        .toList();
+  }
+
+  // Optionally, add a function to fetch specific notification by ID
+  Future<Map<String, dynamic>?> getNotificationById(String notificationId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notificationId)
+          .get();
+
+      if (doc.exists) {
+        return doc.data() as Map<String, dynamic>?;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching notification: $e');
+      return null;
+    }
+  }
+
+  // Request permission for push notifications
+  Future<void> requestNotificationPermission() async {
+    await _firebaseMessaging.requestPermission();
+  }
+
+  // Get the device's FCM token
+  Future<String?> getFCMToken() async {
+    return await _firebaseMessaging.getToken();
+  }
+
+  // Subscribe to a specific topic for notifications
+  Future<void> subscribeToTopic(String topic) async {
+    await _firebaseMessaging.subscribeToTopic(topic);
+  }
+
+  // Unsubscribe from a specific topic
+  Future<void> unsubscribeFromTopic(String topic) async {
+    await _firebaseMessaging.unsubscribeFromTopic(topic);
   }
 }

@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shelfaware_app/pages/chat_list_page.dart';
+import 'package:shelfaware_app/pages/groups_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
@@ -175,8 +176,15 @@ Widget build(BuildContext context) {
           title: const Text('My Groups'),
           onTap: () {
             // Define action for My Groups
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GroupsPage(userId: FirebaseAuth.instance.currentUser?.uid),
+              ),  
+            );
           },
         ),
+        
         ListTile(
           leading: const Icon(Icons.history),
           title: const Text('History'),

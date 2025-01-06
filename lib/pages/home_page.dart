@@ -12,6 +12,7 @@ import 'package:shelfaware_app/components/side_drawer_menu.dart';
 import 'package:shelfaware_app/components/top_app_bar.dart';
 import 'package:shelfaware_app/components/filter_dropdown.dart'; // Import the new component
 import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
+import 'package:shelfaware_app/pages/notification_page.dart';
 import 'package:shelfaware_app/pages/recipes_page.dart';
 import 'package:shelfaware_app/pages/favourites_page.dart';
 import 'package:shelfaware_app/pages/donations_page.dart';
@@ -129,9 +130,18 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _handleNotificationPress() {
-    // Navigate to the notifications page
+
+  void onNotificationPressed() {
+    Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => NotificationPage(userId: user.uid),
+            ),
+          );
   }
+
+    
+  
 
   Future<void> _fetchFilterOptions() async {
     try {
@@ -159,9 +169,9 @@ class _HomePageState extends State<HomePage> {
         return Scaffold(
           appBar: TopAppBar(
             onLocationPressed: () {},
-            onNotificationPressed: _handleNotificationPress,
-            expiringItemCount: expiringItemCount +
-                expiredItemCount, // Total count of expiring items
+            onNotificationPressed:  onNotificationPressed,
+            userId: user.uid,
+                 // Total count of expiring items
           ),
           drawer: CustomDrawer(
             firstName: firstName,

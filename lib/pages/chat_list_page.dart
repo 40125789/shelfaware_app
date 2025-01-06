@@ -156,7 +156,7 @@ Widget _buildChatListItemWidget(
             donationId: chat['product']['donationId'],
             userId: currentUserId,
             donationName: productName,
-            donorName: userName, // Pass the name of the user here
+            donorName: userName, chatId: '', // Pass the name of the user here
           ),
         ),
       );
