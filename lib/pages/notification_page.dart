@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/services/notification_service.dart';
@@ -15,6 +16,8 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
+  
+
   // Function to fetch notifications from the service
   Future<List<Map<String, dynamic>>> fetchNotifications() async {
     return await NotificationService().fetchNotifications(widget.userId);
@@ -135,6 +138,24 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
+  Future<String> _fetchReceiverName(String receiverId) async {
+  try {
+    // Fetch user data based on receiverId
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(receiverId).get();
+
+    if (userDoc.exists) {
+      var userData = userDoc.data();
+      return (userData as Map<String, dynamic>)['firstName'] ?? 'Unknown'; // Return 'Unknown' if the name is missing
+    } else {
+      return 'Unknown'; // Return 'Unknown' if the user doesn't exist
+    }
+  } catch (error) {
+    print("Error fetching donor name: $error");
+    return 'Unknown'; // Return 'Unknown' in case of an error
+  }
+}
+
+
   // Helper method to build the notification list
   Widget _buildNotificationList(List<Map<String, dynamic>> notifications) {
     if (notifications.isEmpty) {
@@ -152,24 +173,100 @@ class _NotificationPageState extends State<NotificationPage> {
           elevation: 3,
           margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           child: InkWell(
-            onTap: () async {
-              String notificationId = notification['id']; // Assuming 'id' exists
-              await NotificationService()
-                  .markAsRead(notificationId); // Mark as read
 
-              if (notification['type'] == 'message') {
-                // Navigate to chat screen for message notification
-                String chatId = notification['chatId']; // Assuming 'chatId' exists
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatPage(chatId: chatId, receiverEmail: notification['receiverEmail'], receiverId: notification['receiverId'],  donationId: '', userId: '', donationName: '', donorName: '',), // Pass the chatId to the chat screen
-                  ),
-                );
-              }
+            
+  onTap: () async {
+  String notificationId = notification['notificationId'];
+  if (notification['type'] == 'message') {
+    String chatId = notification['chatId']; // Assuming 'chatId' exists
 
-              setState(() {}); // Refresh UI after marking as read
-            },
+    // Check if chatId is null or empty before navigating
+    if (chatId != null && chatId.isNotEmpty) {
+      try {
+        // Step 1: Mark notification as read and refresh UI
+        await NotificationService().markAsRead(notificationId); // Using the document ID directly
+
+        // Step 2: Fetch the chat document using chatId
+        DocumentSnapshot chatSnapshot = await FirebaseFirestore.instance.collection('chats').doc(chatId).get();
+
+        if (chatSnapshot.exists) {
+          var chatData = chatSnapshot.data();
+          print("Chat data: $chatData");
+
+          if (chatData != null) {
+            // Fetch participants list
+            List<String> participants = List<String>.from((chatData as Map<String, dynamic>)['participants']);
+
+            // Dynamically determine receiverId based on the logged-in user
+            String loggedInUserId = FirebaseAuth.instance.currentUser?.uid ?? ''; // Assuming Firebase Auth is used
+            String receiverId = participants.firstWhere((id) => id != loggedInUserId, orElse: () => ''); // Get the receiverId
+
+            // Fetch product details
+            String productId = chatData['product']?['donationId'] ?? '';
+            String productName = chatData['product']?['productName'] ?? '';
+            String userId = chatData['userId'] ?? '';
+
+            // Step 3: Fetch the most recent message in the messages subcollection
+            QuerySnapshot messagesSnapshot = await FirebaseFirestore.instance
+                .collection('chats')
+                .doc(chatId)
+                .collection('messages')
+                .orderBy('timestamp', descending: true)
+                .limit(1)
+                .get();
+
+            String lastMessage = '';
+            String senderEmail = '';
+            String receiverEmail = '';
+
+            if (messagesSnapshot.docs.isNotEmpty) {
+              var lastMessageData = messagesSnapshot.docs.first.data();
+              lastMessage = (lastMessageData as Map<String, dynamic>)['message'] ?? '';
+              senderEmail = lastMessageData?['senderEmail'] ?? '';
+              receiverEmail = lastMessageData?['receiverEmail'] ?? '';
+            }
+
+            // Step 4: Fetch the receiver's name (donor name) from the users collection
+            String donorName = await _fetchReceiverName(receiverId);
+
+            // Refresh the UI by calling setState
+            setState(() {
+              notification['read'] = true;  // Assuming 'notification' is a reference to the specific notification
+            });
+
+            // Step 5: Navigate to the ChatPage
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChatPage(
+                  chatId: chatId,
+                  receiverEmail: receiverEmail,
+                  receiverId: receiverId,
+                  donationId: productId,
+                  userId: userId,
+                  donationName: productName,
+                  donorName: donorName,
+                ),
+              ),
+            );
+          }
+        } else {
+          // Handle the case where chat document doesn't exist
+          print("Chat document does not exist for chatId: $chatId");
+        }
+      } catch (e) {
+        print("Error fetching chat and message data: $e");
+      }
+    } else {
+      // Handle the case where chatId is missing or empty
+      print("Error: Missing or empty chatId for notification.");
+    }
+  }
+},
+
+
+
+         
             child: ListTile(
               title: Stack(
                 clipBehavior: Clip.none,

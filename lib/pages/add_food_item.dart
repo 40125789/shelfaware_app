@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shelfaware_app/components/product_detail_dialogue.dart';
 import 'package:shelfaware_app/models/food_history.dart';
+import 'package:shelfaware_app/models/product_details.dart';
 import 'package:shelfaware_app/services/camera_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,11 +13,13 @@ final user = FirebaseAuth.instance.currentUser;
 
 class AddFoodItem extends StatefulWidget {
   final FoodHistory? foodItem;
-  const AddFoodItem(
+  final String? productImage;
+  AddFoodItem(
       {Key? key,
       required List<FoodHistory> foodItems,
       this.foodItem,
-      this.isRecreated = false})
+      this.isRecreated = false,
+      this.productImage})
       : super(key: key);
   final bool isRecreated;
 
@@ -36,12 +40,14 @@ class _AddFoodItemState extends State<AddFoodItem> {
   List<String> _categoryOptions = ['All'];
   List<String> _filterOptions = [];
   String _category = 'All';
+  String? _productImage;
 
   int _quantity = 1; // Default quantity set to 1
 
   // State variables for food suggestions
   List<String> _foodSuggestions = [];
   bool _isLoadingSuggestions = false;
+  bool _isLoading = false; // Add this line to define _isLoading
 
   @override
   void initState() {
@@ -55,6 +61,7 @@ class _AddFoodItemState extends State<AddFoodItem> {
       _quantityController.text = _quantity.toString();
       _storageLocationController.text = widget.foodItem!.storageLocation;
       _notesController.text = widget.foodItem!.notes;
+      _productImage = widget.productImage;
 
       // Set the category properly, default to 'All' if null
       _category = widget.foodItem!.category;
@@ -159,6 +166,7 @@ class _AddFoodItemState extends State<AddFoodItem> {
         'notes': _notesController.text,
         'category': _category,
         'addedOn': DateTime.now(),
+        'productImage': _productImage,
       });
 
       // Close the loading indicator
@@ -204,37 +212,61 @@ class _AddFoodItemState extends State<AddFoodItem> {
     }
   }
 
-  Future<void> _scanBarcode() async {
-    // Check for camera permission
-    var status = await Permission.camera.request();
-    if (status.isGranted) {
-      // Directly use CameraService to scan barcode
-      String? scannedBarcode = await CameraService.scanBarcode();
+ Future<void> _scanBarcode() async {
+  // Check for camera permission
+  var status = await Permission.camera.request();
+  if (status.isGranted) {
+    // Display loading indicator while scanning and fetching product details
+    setState(() {
+      _isLoading = true;  // Track loading state
+    });
 
-      if (scannedBarcode != null && scannedBarcode.isNotEmpty) {
-        setState(() {
-          _productNameController.text = scannedBarcode;
-        });
+    // Directly use CameraService to scan barcode
+    String? scannedBarcode = await CameraService.scanBarcode();
 
-        // Fetch product details from FoodApiService
-        var product = await FoodApiService.fetchProductDetails(scannedBarcode);
-        if (product != null) {
-          setState(() {
-            _productNameController.text = product.productName;
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Product details not found')),
-          );
-        }
+    if (scannedBarcode != null && scannedBarcode.isNotEmpty) {
+      // Fetch product details from FoodApiService
+      var product = await FoodApiService.fetchProductDetails(scannedBarcode);
+
+      if (product != null) {
+        // Show the confirmation dialog first
+        _showProductDialog(product);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Product details not found')),
+        );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Camera permission is required')),
-      );
     }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Camera permission is required')),
+    );
   }
+}
 
+void _showProductDialog(ProductDetails product) async {
+  // Show the dialog and wait for the result (confirmation)
+  final confirmedProductName = await showDialog<String>(
+    context: context,
+    builder: (BuildContext context) {
+      return ProductDetailsDialog(product: product); // Show the dialog
+    },
+  );
+
+  // If a product name was returned (i.e., the user confirmed)
+  if (confirmedProductName != null) {
+    // Only update the text field and show the snackbar after confirmation
+    setState(() {
+      // Set product name in the controller after confirmation
+      _productNameController.text = confirmedProductName;
+    });
+
+    // Show the Snackbar only after confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Product confirmed!')),
+    );
+  }
+}
   void _incrementQuantity() {
     setState(() {
       _quantity++;
@@ -257,12 +289,8 @@ class _AddFoodItemState extends State<AddFoodItem> {
       appBar: AppBar(
         title: const Text('Add Food Item'),
         backgroundColor: Colors.green,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.camera_alt),
-            onPressed: _takePhoto,
-          ),
-        ],
+       
+        
       ),
       body: SafeArea(
         child: Center(
@@ -275,6 +303,19 @@ class _AddFoodItemState extends State<AddFoodItem> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   const SizedBox(height: 15),
+
+                  // Display the product image if available
+              if (_productImage != null)
+                Center(
+                  child: Image.network(
+                    _productImage!,
+                    height: 150,
+                    width: 150,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              
+              const SizedBox(height: 15),
 
                   // Product Name Field with Scan Barcode Button inside
                   Row(

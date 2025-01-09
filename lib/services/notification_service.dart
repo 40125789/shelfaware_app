@@ -79,8 +79,10 @@ class NotificationService {
 
       // Convert the query snapshot to a list of maps
       return snapshot.docs.map((doc) {
-        return doc.data() as Map<String, dynamic>;
-      }).toList();
+       Map<String, dynamic> notification = doc.data() as Map<String, dynamic>;
+      notification['notificationId'] = doc.id; // Add the document ID as 'notificationId'
+      return notification;
+    }).toList();
     } catch (e) {
       print('Error fetching notifications: $e');
       return []; // Return empty list on error
