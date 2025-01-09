@@ -34,8 +34,12 @@ class ProductDetailsDialog extends StatelessWidget {
               TextButton(
                 onPressed: () {
                   // Pass the product name when the bottom sheet is confirmed
-                  Navigator.of(context).pop(product.productName);
-                },
+                 Navigator.pop(context, {
+                  'productName': product.productName,
+                  'imageUrl': product.imageUrl
+                });
+              },
+                
                 child: const Text('Confirm'),
               ),
             ],

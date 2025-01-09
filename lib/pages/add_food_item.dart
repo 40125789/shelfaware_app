@@ -243,22 +243,23 @@ class _AddFoodItemState extends State<AddFoodItem> {
     );
   }
 }
-
 void _showProductDialog(ProductDetails product) async {
   // Show the dialog and wait for the result (confirmation)
-  final confirmedProductName = await showModalBottomSheet<String>(
+  final Map<String, dynamic>? confirmedProduct = await showModalBottomSheet<Map<String, dynamic>>(
     context: context,
     builder: (BuildContext context) {
       return ProductDetailsDialog(product: product); // Show the dialog
     },
   );
 
-  // If a product name was returned (i.e., the user confirmed)
-  if (confirmedProductName != null) {
+  // If a product map was returned (i.e., the user confirmed)
+  if (confirmedProduct != null) {
     // Only update the text field and show the snackbar after confirmation
     setState(() {
       // Set product name in the controller after confirmation
-      _productNameController.text = confirmedProductName;
+      _productNameController.text = confirmedProduct['productName'] ?? '';
+      // Handle imageUrl as well
+      _productImage = confirmedProduct['imageUrl'] ?? '';  // Set your image URL here
     });
 
     // Show the Snackbar only after confirmation
@@ -267,6 +268,8 @@ void _showProductDialog(ProductDetails product) async {
     );
   }
 }
+
+
   void _incrementQuantity() {
     setState(() {
       _quantity++;
@@ -304,16 +307,55 @@ void _showProductDialog(ProductDetails product) async {
                 children: <Widget>[
                   const SizedBox(height: 15),
 
-                  // Display the product image if available
-              if (_productImage != null)
-                Center(
-                  child: Image.network(
-                    _productImage!,
-                    height: 150,
-                    width: 150,
-                    fit: BoxFit.cover,
-                  ),
+  // Display the product image with a magnifying glass icon to indicate tapability
+if (_productImage != null)
+  GestureDetector(
+    onTap: () {
+      // Show the full-size image in a dialog when tapped
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+            child: Container(
+              color: Colors.transparent,
+              child: Center(
+                child: Image.network(
+                  _productImage!,
+                  fit: BoxFit.contain, // Ensures the image fits in the dialog without stretching
+                  height: MediaQuery.of(context).size.height * 0.8, // 80% of screen height
                 ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+    child: Center(
+      child: Stack(
+        alignment: Alignment.center, // Align the icon in the center of the image
+        children: [
+          // Image preview (smaller version)
+          Image.network(
+            _productImage!,
+            height: MediaQuery.of(context).size.height * 0.1, // 10% of screen height
+            width: MediaQuery.of(context).size.width * 0.5,   // 50% of screen width
+            fit: BoxFit.cover,
+          ),
+          // Magnifying glass or plus icon overlay
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: Icon(
+              Icons.zoom_in, // Magnifying glass icon
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+        ],
+      ),
+    ),
+  ),
+
               
               const SizedBox(height: 15),
 
