@@ -246,7 +246,7 @@ class _AddFoodItemState extends State<AddFoodItem> {
 
 void _showProductDialog(ProductDetails product) async {
   // Show the dialog and wait for the result (confirmation)
-  final confirmedProductName = await showDialog<String>(
+  final confirmedProductName = await showModalBottomSheet<String>(
     context: context,
     builder: (BuildContext context) {
       return ProductDetailsDialog(product: product); // Show the dialog
