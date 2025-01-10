@@ -13,52 +13,156 @@ class MarkFoodDialog extends StatefulWidget {
 
 class _MarkFoodDialogState extends State<MarkFoodDialog> {
   final TextEditingController _reasonController = TextEditingController();
+  late Map<String, dynamic> _foodItemData;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFoodItemData();
+  }
+
+  // Fetch food item details from Firestore
+  Future<void> _fetchFoodItemData() async {
+    final foodItemRef = FirebaseFirestore.instance
+        .collection('foodItems')
+        .doc(widget.documentId);
+    final foodItemSnapshot = await foodItemRef.get();
+    if (foodItemSnapshot.exists) {
+      setState(() {
+        _foodItemData = foodItemSnapshot.data()!;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text("Mark Food Item"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text("What would you like to do with this item?"),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              _markAsConsumed();
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Colors.green,
-            ),
-            child: const Text("Consumed"),
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('foodItems').doc(widget.documentId).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data == null) {
+          return Center(child: Text("No data available"));
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Display the food item name first
+              if (_foodItemData['productName'] != null && _foodItemData['productName'].isNotEmpty)
+                Text(
+                  _foodItemData['productName'],
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+              SizedBox(height: 16),
+
+              // Display the food item image
+              if (_foodItemData['productImage'] != null && _foodItemData['productImage'].isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Image.network(
+                    _foodItemData['productImage'],
+                    height: 150,
+                    width: 150,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+
+              // Display Food Item Fields with Icons and improved font sizes
+              if (_foodItemData['quantity'] != null && _foodItemData['quantity'] > 0)
+                Row(
+                  children: [
+                    Icon(Icons.confirmation_number, size: 24, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Quantity: ${_foodItemData['quantity']}', style: TextStyle(fontSize: 16)),
+                  ],
+                ),
+              if (_foodItemData['expiryDate'] != null)
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 24, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Text('Expiry Date: ${_formatExpiryDate(_foodItemData['expiryDate'])}', style: TextStyle(fontSize: 16)),
+                  ],
+                ),
+              if (_foodItemData['notes'] != null && _foodItemData['notes'].isNotEmpty)
+                Row(
+                  children: [
+                    Icon(Icons.note, size: 24, color: Colors.grey),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('Notes: ${_foodItemData['notes']}', style: TextStyle(fontSize: 16))),
+                  ],
+                ),
+              if (_foodItemData['storageLocation'] != null && _foodItemData['storageLocation'].isNotEmpty)
+                Row(
+                  children: [
+                    Icon(Icons.location_on, size: 24, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Storage Location: ${_foodItemData['storageLocation']}', style: TextStyle(fontSize: 16)),
+                  ],
+                ),
+
+              SizedBox(height: 24),
+
+              // Add Text Above Buttons
+              Text(
+                "Take action on this item",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+              SizedBox(height: 8),
+
+              // Buttons for Marking as Consumed or Discarded
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        _markAsConsumed();
+                        Navigator.pop(context);  // Close the dialog
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white, backgroundColor: Colors.green,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white),
+                          SizedBox(width: 8),
+                          const Text("Consumed"),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);  // Close the dialog
+                        _showDiscardReasonDialog();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white, backgroundColor: Colors.red,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.white),
+                          SizedBox(width: 8),
+                          const Text("Discarded"),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showDiscardReasonDialog();
-            },
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Colors.red,
-            ),
-            child: const Text("Discarded"),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: const Text("Cancel"),
-        ),
-      ],
+        );
+      },
     );
   }
 
+  // Show reason dialog for discarding
   void _showDiscardReasonDialog() {
     showDialog(
       context: context,
@@ -102,6 +206,7 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
     );
   }
 
+  // Mark item as discarded
   Future<void> _markAsDiscarded(String reason) async {
     final foodItemRef = FirebaseFirestore.instance
         .collection('foodItems')
@@ -128,6 +233,7 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
     }
   }
 
+  // Mark item as consumed
   Future<void> _markAsConsumed() async {
     final foodItemRef = FirebaseFirestore.instance
         .collection('foodItems')
@@ -151,5 +257,11 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
         );
       }
     }
+  }
+
+  // Format expiry date
+  String _formatExpiryDate(Timestamp timestamp) {
+    DateTime date = timestamp.toDate();
+    return "${date.day}/${date.month}/${date.year}";
   }
 }

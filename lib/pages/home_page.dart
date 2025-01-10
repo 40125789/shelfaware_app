@@ -300,13 +300,15 @@ class _HomePageState extends State<HomePage> {
 
                                     return InkWell(
                                       onTap: () {
-                                        showDialog(
+                                        showModalBottomSheet(
                                           context: context,
-                                          barrierDismissible:
-                                              true, // Allows the background to be tapped to close the dialog
+                                          isScrollControlled: true,
                                           builder: (BuildContext context) {
-                                            return MarkFoodDialog(
-                                              documentId: documentId,
+                                            return Container(
+                                              height: MediaQuery.of(context).size.height * 0.7,
+                                              child: MarkFoodDialog(
+                                                documentId: documentId,
+                                              ),
                                             );
                                           },
                                         );
