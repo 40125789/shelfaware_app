@@ -12,6 +12,7 @@ import 'package:shelfaware_app/components/side_drawer_menu.dart';
 import 'package:shelfaware_app/components/top_app_bar.dart';
 import 'package:shelfaware_app/components/filter_dropdown.dart'; // Import the new component
 import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
+import 'package:shelfaware_app/pages/location_page.dart';
 import 'package:shelfaware_app/pages/notification_page.dart';
 import 'package:shelfaware_app/pages/recipes_page.dart';
 import 'package:shelfaware_app/pages/favourites_page.dart';
@@ -168,7 +169,13 @@ class _HomePageState extends State<HomePage> {
       builder: (context, authController, child) {
         return Scaffold(
           appBar: TopAppBar(
-            onLocationPressed: () {},
+            onLocationPressed: () {
+Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => LocationPage()),
+            );
+
+            },
             onNotificationPressed:  onNotificationPressed,
             userId: user.uid,
                  // Total count of expiring items
@@ -452,7 +459,7 @@ class _HomePageState extends State<HomePage> {
     return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}";
   }
 
-  Future<void> _donateFoodItem(String id) async {
+ Future<void> _donateFoodItem(String id) async {
   try {
     // Fetch the food item document
     DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
@@ -475,8 +482,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    // Get the user's current location
-    final location = await getUserLocation();
+    // Get the user's location from Firestore or GeoLocator
+    final location = await _getUserLocation();
 
     // Ask if the user wants to add a photo
     bool takePhoto = await showDialog(
@@ -530,6 +537,7 @@ class _HomePageState extends State<HomePage> {
     // Prepare donation data
     final String donorId = FirebaseAuth.instance.currentUser!.uid;
     final String donorEmail = FirebaseAuth.instance.currentUser!.email!;
+
     final DocumentSnapshot userDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(donorId)
@@ -543,9 +551,16 @@ class _HomePageState extends State<HomePage> {
     foodItemData['donorEmail'] = donorEmail;
     foodItemData['donated'] = true;
     foodItemData['donatedAt'] = Timestamp.now();
-    foodItemData['location'] = GeoPoint(location.latitude, location.longitude);
     foodItemData['status'] = 'available';
     foodItemData['donationId'] = donationId;
+
+    // If location exists in the user's document, use that, otherwise use GeoLocator location
+    if (userDoc['location'] != null) {
+      GeoPoint userLocation = userDoc['location'];
+      foodItemData['location'] = GeoPoint(userLocation.latitude, userLocation.longitude);
+    } else {
+      foodItemData['location'] = GeoPoint(location.latitude, location.longitude);
+    }
 
     if (imageUrl != null) {
       foodItemData['imageUrl'] = imageUrl;
@@ -573,6 +588,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
 
 // Function to show a popup dialog when the item is expired
 void _showExpiredItemDialog() {
@@ -625,6 +641,10 @@ Future<void> _confirmDonation(String id) async {
   }
 }
 
+
+  Future<Position> _getUserLocation() async {
+    return await getUserLocation();
+  }
 
   String _formatExpiryDate(Timestamp expiryTimestamp) {
     DateTime expiryDate = expiryTimestamp.toDate();

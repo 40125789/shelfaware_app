@@ -5,20 +5,20 @@ import 'package:shelfaware_app/pages/expiring_items_page.dart'; // Import the Ex
 import 'package:shelfaware_app/services/data_fetcher.dart'; // Import the DataFetcher
 import 'package:shelfaware_app/models/food_item.dart'; // Import the FoodItem model
 import 'package:shelfaware_app/pages/expiring_items_page.dart';
-import 'package:shelfaware_app/services/notification_service.dart'; // Import the ExpiringItemsScreen
+import 'package:shelfaware_app/services/notification_service.dart'; 
+import 'package:shelfaware_app/pages/location_page.dart';
+
 
 class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
-  final VoidCallback onLocationPressed;
   final VoidCallback onNotificationPressed;
   final String userId;
 
   const TopAppBar({
     Key? key,
     this.title = '',
-    required this.onLocationPressed,
     required this.onNotificationPressed,
-    required this.userId,
+    required this.userId, required Null Function() onLocationPressed,
   }) : super(key: key);
 
   @override
@@ -47,6 +47,17 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
           backgroundColor: Colors.green,
           title: Text(title),
           actions: [
+            // Location Icon with Navigation to LocationPage
+            IconButton(
+              icon: Icon(Icons.location_on, color: Colors.grey[800]),
+              onPressed: () async {
+                // Navigate to LocationPage to let the user change their location
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LocationPage()),
+                );
+              },
+            ),
             // Notification Icon with Badge
             Stack(
               children: [

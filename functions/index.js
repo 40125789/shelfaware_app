@@ -61,6 +61,70 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
     }
   });
   
+  exports.sendNotificationOnExpiry = functions.firestore
+  .document("foodItems/{foodItemId}")
+  .onUpdate(async (change, context) => {
+    const db = admin.firestore();
+    const currentDate = admin.firestore.Timestamp.now();
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
+
+    // Check if expiryDate has changed and the item is now expired
+    if (
+      afterData.expiryDate.toMillis() < currentDate.toMillis() && // Check if expired
+      (!beforeData.notifiedExpired || !afterData.notifiedExpired) // Ensure notification hasn't been sent
+    ) {
+      const { userId, productName, expiryDate } = afterData;
+
+      if (!userId || !productName || !expiryDate) return;
+
+      try {
+        // Fetch the user document
+        const userDoc = await db.collection("users").doc(userId).get();
+        if (!userDoc.exists) return;
+
+        const userData = userDoc.data();
+        const fcmToken = userData.fcm_token;
+        if (!fcmToken) return;
+
+        // Save notification to Firestore
+        const notificationDoc = {
+          userId,
+          type: "expired", // Type of notification
+          title: "Food Item Expired",
+          body: `Your ${productName} has just expired! Please dispose of it appropriately.`,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          read: false,
+        };
+        await db.collection("notifications").add(notificationDoc);
+
+        // Send the push notification
+        const notificationPayload = {
+          notification: {
+            title: "Food Expired",
+            body: `Your ${productName} has just expired! Please dispose of it appropriately.`,
+          },
+          data: {
+            foodItemId: context.params.foodItemId,
+            expiryDate: expiryDate.toDate().toString(),
+          },
+          token: fcmToken,
+        };
+
+        await admin.messaging().send(notificationPayload);
+
+        // Mark the item as notified
+        await db.collection("foodItems").doc(context.params.foodItemId).update({
+          notifiedExpired: true,
+        });
+      } catch (error) {
+        console.error("Error sending notification for expired food item:", error);
+      }
+    }
+
+    return null;
+  });
+
   exports.sendMessageNotification = functions.firestore
   .document("chats/{chatId}/messages/{messageId}")
   .onCreate(async (snapshot, context) => {

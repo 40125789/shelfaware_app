@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 
@@ -15,14 +16,14 @@ class DonationMapScreen extends StatefulWidget {
   final String expiryDate;
   final String status;
   final String donorName;
-  final String chatId; // Unique chat ID
-  final String donorEmail; // Added donor email
-  final String donatorId; 
+  final String chatId;
+  final String donorEmail;
+  final String donatorId;
   final String donationId;
-  // Added donator ID
+  final String imageUrl;
+  final String donorImageUrl;  // Donor image URL
+  final DateTime donationTime; // Donation time
   String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-  // Added donor name
-  // Added status for the item
 
   DonationMapScreen({
     required this.donationLatitude,
@@ -32,13 +33,15 @@ class DonationMapScreen extends StatefulWidget {
     required this.productName,
     required this.expiryDate,
     required this.status,
-    required this.donorEmail, // Added donor email
-    required this.donatorId, // Added donator ID
+    required this.donorEmail,
+    required this.donatorId,
     required this.chatId,
     required this.userId,
     required this.donorName,
-    required String receiverEmail,
-   required this.donationId,
+    required this.donorImageUrl, // Donor image URL
+    required this.donationTime, // Donation time
+    required this.imageUrl,
+    required this.donationId, required receiverEmail,
   });
 
   @override
@@ -47,42 +50,38 @@ class DonationMapScreen extends StatefulWidget {
 
 class _DonationMapScreenState extends State<DonationMapScreen> {
   late GoogleMapController mapController;
-
-  // Markers for the donation and user
   late Marker donationMarker;
   late Marker userMarker;
-
-  late String address = '';
+  String address = 'Loading address...';  // Initialize with loading text
+  bool isMapExpanded = false;  // Manage the expanded state of the map
 
   @override
   void initState() {
     super.initState();
+    _initializeMarkers();
+    _getAddress();
+  }
 
-    // Donation marker (Blue marker for the donation location)
+  void _initializeMarkers() {
     donationMarker = Marker(
       markerId: MarkerId('donationLocation'),
       position: LatLng(widget.donationLatitude, widget.donationLongitude),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen), // Blue marker for donation
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
       infoWindow: InfoWindow(
         title: widget.productName,
         snippet: 'Expires on: ${widget.expiryDate}\nStatus: ${widget.status}',
       ),
-      onTap: _showDonationDetails, // Trigger the modal when tapped
+      onTap: _showDonationDetails,
     );
 
-    // User marker (Red marker for user's location)
     userMarker = Marker(
       markerId: MarkerId('userLocation'),
       position: LatLng(widget.userLatitude, widget.userLongitude),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed), // Red marker for user location
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       infoWindow: InfoWindow(title: 'Your Location'),
     );
-
-    // Get address for donation location
-    _getAddress();
   }
 
-  // Get the address from latitude and longitude
   void _getAddress() async {
     List<Placemark> placemarks = await placemarkFromCoordinates(
       widget.donationLatitude,
@@ -92,13 +91,11 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     if (placemarks.isNotEmpty) {
       Placemark placemark = placemarks[0];
       setState(() {
-        address =
-            '${placemark.thoroughfare}, ${placemark.locality}, ${placemark.postalCode}, ${placemark.country}';
+        address = '${placemark.locality}, ${placemark.country}';  // Simplified address
       });
     }
   }
 
-  // Show donation details when marker is tapped
   void _showDonationDetails() {
     showDialog(
       context: context,
@@ -107,7 +104,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
           itemName: widget.productName,
           formattedExpiryDate: widget.expiryDate,
           donorName: widget.donorName,
-          address: address.isEmpty ? 'Loading address...' : address, // Show loading until address is fetched
+          address: address,
           onContactDonor: () {
             Navigator.push(
               context,
@@ -118,7 +115,8 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                   receiverEmail: widget.donorEmail,
                   receiverId: widget.donatorId,
                   donationId: widget.donationId,
-                  donationName: widget.productName, chatId: '',
+                  donationName: widget.productName,
+                  chatId: widget.chatId,
                 ),
               ),
             );
@@ -133,39 +131,268 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     final LatLng donationLocation = LatLng(widget.donationLatitude, widget.donationLongitude);
     final LatLng userLocation = LatLng(widget.userLatitude, widget.userLongitude);
 
-    // Calculate the distance
     double distanceInMeters = Geolocator.distanceBetween(
       widget.userLatitude,
       widget.userLongitude,
       widget.donationLatitude,
       widget.donationLongitude,
     );
-    double distanceInKm = distanceInMeters / 1000; // Convert to km
+    double distanceInMiles = distanceInMeters / 1609.34; // Convert to miles
+
+    // Calculate time difference
+    final timeDiff = DateTime.now().difference(widget.donationTime);
+
+    // Check if the time difference is less than 24 hours
+    String timeAgo;
+    if (timeDiff.inHours < 24) {
+      timeAgo = '${timeDiff.inHours} hours ago';
+    } else {
+      // Calculate days if more than 24 hours have passed
+      int daysAgo = timeDiff.inDays;
+      timeAgo = '$daysAgo days ago';
+    }
+
+String _getTimeRemaining() {
+  DateTime? expiryDate;
+
+  try {
+    // Manually convert the "dd/MM/yyyy" format to "yyyy-MM-dd"
+    String formattedDate = widget.expiryDate;
+    List<String> dateParts = formattedDate.split('/');
+
+    if (dateParts.length == 3) {
+      // Reformat to "yyyy-MM-dd" format
+      formattedDate = '${dateParts[2]}-${dateParts[1]}-${dateParts[0]}';  // yyyy-MM-dd
+    }
+
+    // Now, use DateTime.parse() with the reformatted date
+    expiryDate = DateTime.parse(formattedDate);
+
+    // Check if expiryDate is null or invalid
+    if (expiryDate == null) {
+      return 'Invalid expiry date';
+    }
+
+  } catch (e) {
+    return 'Invalid expiry date'; // Return an error message if parsing fails
+  }
+
+  // Calculate the difference in hours between the expiry date and the current time
+  final int expiryDiffInHours = expiryDate.difference(DateTime.now()).inHours;
+
+  // Determine the color based on expiry
+  Color textColor;
+
+  // If the item is expired
+  if (expiryDiffInHours < 0) {
+    textColor = Colors.red;
+    return 'Expired';
+  }
+
+  // If the item expires in less than 24 hours
+  if (expiryDiffInHours < 24) {
+    textColor = Colors.orange;
+    return 'This item expires in less than a day';
+  }
+
+  // If the item expires in tomorrow
+  final int expiryDiffInDays = expiryDate.difference(DateTime.now()).inDays;
+  if (expiryDiffInDays == 1) {
+    textColor = Colors.yellow;
+    return 'This item expires tomorrow';
+  }
+
+  // If the item expires in more than 1 day
+  textColor = Colors.green;
+  return 'This item expires in: $expiryDiffInDays days';
+}
+
 
     return Scaffold(
-      appBar: AppBar(title: Text('Donation Location'), backgroundColor: Colors.green),
-      body: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: donationLocation,
-          zoom: 14.0, // Adjust zoom to make sure both markers are visible
+      appBar: AppBar(
+        title: Text('Product Details'),
+        backgroundColor: Colors.green,
+      ),
+      body: SingleChildScrollView(  // Make the whole body scrollable
+        child: Column(
+          children: [
+            // Donation image at the top
+  widget.imageUrl.isNotEmpty 
+  ? Container(
+      height: 200,
+      width: double.infinity,
+      child: Image.network(
+        widget.imageUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;  // Image is loaded, show it
+          } else {
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        (loadingProgress.expectedTotalBytes ?? 1)
+                    : null,
+              ),
+            );  // Show loading indicator while the image is loading
+          }
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            'assets/placeholder.png', // Placeholder image if error occurs
+            fit: BoxFit.cover,
+          );
+        },
+      ),
+    )
+  : Container(), 
+
+            // Donation details section
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Display donor image and name with added time
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundImage: NetworkImage(widget.donorImageUrl),
+                      ),
+                      SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.donorName,
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          Row(
+                            children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                          Text(
+                            ' Added ' + timeAgo,  // Display time since donation was added
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+                  SizedBox(height: 16),
+                  Text(
+                    widget.productName,
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                 Text(
+                 _getTimeRemaining(), // Display the time remaining
+                    style: TextStyle(fontSize: 18), 
+                  ),
+                  SizedBox(height: 4),
+                  Text('Status: ${widget.status}'),
+                  SizedBox(height: 12),
+                ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatPage(
+          donorName: widget.donorName,
+          userId: widget.userId,
+          receiverEmail: widget.donorEmail,
+          receiverId: widget.donatorId,
+          donationId: widget.donationId,
+          donationName: widget.productName,
+          chatId: widget.chatId,
         ),
-        onMapCreated: (GoogleMapController controller) {
-          mapController = controller;
-        },
-        markers: {
-          donationMarker,
-          userMarker, // Add user marker here
-        },
-        circles: {
-          Circle(
-            circleId: CircleId('radius'),
-            center: donationLocation,
-            radius: 500, // Define the radius in meters, e.g., 500 meters
-            strokeColor: Colors.blue.withOpacity(0.5),
-            strokeWidth: 2,
-            fillColor: Colors.blue.withOpacity(0.1),
-          ),
-        },
+      ),
+    );
+  },
+  child: Text('Contact Donor', style: TextStyle(color: Colors.white)),
+  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+),
+                  SizedBox(height: 16),
+                ],
+              ),
+            ),
+            // Location and distance section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'LOCATION',  // Only display the simplified location address
+                    style: TextStyle(fontSize: 14),
+                  ),
+                   Row(
+                children: [
+                  Icon(Icons.location_on, color: Colors.grey),
+                  Text(
+                    '${distanceInMiles.toStringAsFixed(2)} miles away',  // Display distance in miles
+                    style: TextStyle(fontSize: 12),
+                    
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+            SizedBox(height: 10),
+
+            // Map section with expandable functionality
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  isMapExpanded = !isMapExpanded;  // Toggle map expansion
+                });
+              },
+              child: Container(
+                height: isMapExpanded ? MediaQuery.of(context).size.height : 300,  // Expand map to full screen or fixed height
+                width: double.infinity,
+                child: GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: donationLocation,
+                    zoom: 14.0,
+                  ),
+                  onMapCreated: (GoogleMapController controller) {
+                    mapController = controller;
+                  },
+                  markers: {
+                    donationMarker,
+                    userMarker, // User's location marker
+                  },
+                  circles: {
+                    Circle(
+                      circleId: CircleId('radius'),
+                      center: donationLocation,
+                      radius: 500,  // Define radius (500 meters)
+                      strokeColor: Colors.blue.withOpacity(0.5),
+                      strokeWidth: 2,
+                      fillColor: Colors.blue.withOpacity(0.1),
+                    ),
+                  },
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+            IconButton(
+              icon: Icon(isMapExpanded ? Icons.remove : Icons.add),  // Change icon based on expansion state
+              onPressed: () {
+                setState(() {
+                  isMapExpanded = !isMapExpanded;
+                });
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

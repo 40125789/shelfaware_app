@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -121,17 +123,17 @@ class _DonationListViewState extends State<DonationListView> {
           }).toList();
         }
 
-         // Check if donations list is empty
-    if (donations.isEmpty) {
-      return Center(
-        child: Text(
-          'No donations match your filters!',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
-        ),
-      );
-    }
+        // Check if donations list is empty
+        if (donations.isEmpty) {
+          return Center(
+            child: Text(
+              'No donations match your filters!',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          );
+        }
 
- // Render ListView if donations are found
+        // Render ListView if donations are found
         return ListView.builder(
           itemCount: donations.length,
           itemBuilder: (context, index) {
@@ -219,31 +221,51 @@ class _DonationListViewState extends State<DonationListView> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DonationMapScreen(
-                            donationLatitude: latitude,
-                            donationLongitude: longitude,
-                            userLatitude: widget.currentLocation!.latitude,
-                            userLongitude: widget.currentLocation!.longitude,
-                            productName: productName,
-                            expiryDate: expiryDate != null
-                                ? DateFormat('dd/MM/yyyy')
-                                    .format(expiryDate.toDate())
-                                : 'Unknown',
-                            status: status,
-                            donorName: donorName,
-                            chatId: '',
-                            userId: '',
-                            receiverEmail: donation['donorEmail'],
-                            donatorId: donation['donorId'],
-                            donationId: donationId,
-                            donorEmail: donation['donorEmail'],
+                    onTap: () async {
+                      // Fetch the profile image URL
+                      var userData = await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(donation['donorId'])
+                          .get();
+                      String donorImageUrl = userData.exists
+                          ? userData['profileImageUrl'] ?? ''
+                          : '';
+
+                      try {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DonationMapScreen(
+                              donationLatitude: latitude,
+                              donationLongitude: longitude,
+                              userLatitude: widget.currentLocation!.latitude,
+                              userLongitude: widget.currentLocation!.longitude,
+                              productName: productName,
+                              expiryDate: expiryDate != null
+                                  ? DateFormat('dd/MM/yyyy')
+                                      .format(expiryDate.toDate())
+                                  : 'Unknown',
+                              status: status,
+                              donorName: donorName,
+                              chatId: '',
+                              userId: '',
+                              receiverEmail: donation['donorEmail'],
+                              donatorId: donation['donorId'],
+                              donationId: donationId,
+                              donorEmail: donation['donorEmail'],
+                              imageUrl:
+                                  donation['imageUrl']?.isNotEmpty ?? false
+                                      ? donation['imageUrl']
+                                      : 'assets/placeholder.png',
+                              donorImageUrl: donorImageUrl,
+                              donationTime: donation['addedOn'].toDate(),
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      } catch (e) {
+                        print('Error getting location: $e');
+                        // Optionally show a message to the user
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),

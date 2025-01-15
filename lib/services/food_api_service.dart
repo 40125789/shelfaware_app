@@ -18,12 +18,12 @@ class FoodApiService {
         print('Response data: $jsonResponse'); // Debug log for the response data
 
         if (jsonResponse['product'] != null) {
-          // Log the keys of the product to check if image_url exists
           final productData = jsonResponse['product'];
           print('Product Keys: ${productData.keys}'); // Log the keys
 
           String productName = productData['product_name'] ?? 'Unknown';
           String? imageUrl = productData['image_url'];
+          String? brandName = productData['brands']; // Extract brand name
 
           // Ensure the imageUrl is valid (if it exists)
           if (imageUrl != null && imageUrl.isNotEmpty) {
@@ -32,7 +32,18 @@ class FoodApiService {
             print('No image URL found');
           }
 
-          return ProductDetails(productName: productName, imageUrl: imageUrl);
+          // Ensure the brandName is valid (if it exists)
+          if (brandName != null && brandName.isNotEmpty) {
+            print('Brand Name: $brandName');
+          } else {
+            print('No brand name found');
+          }
+
+          return ProductDetails(
+            productName: productName,
+            imageUrl: imageUrl,
+            brandName: brandName, // Return brand name along with product details
+          );
         } else {
           print('Product not found for barcode: $barcode');
           return null;

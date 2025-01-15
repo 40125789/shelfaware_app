@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shelfaware_app/components/community_stats_tab.dart';
+import 'package:shelfaware_app/components/trends_tab.dart';
 import 'package:shelfaware_app/components/my_stats_tab.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,12 +13,20 @@ class StatisticsPage extends StatefulWidget {
 class _StatisticsPageState extends State<StatisticsPage> {
   // Get the current user's ID
   String? userId;
+  bool isWeekly = true;  // Default to weekly
 
   @override
   void initState() {
     super.initState();
     // Retrieve the user ID from FirebaseAuth
     userId = FirebaseAuth.instance.currentUser?.uid;
+  }
+
+  // Toggle view between weekly and monthly
+  void _toggleView(bool value) {
+    setState(() {
+      isWeekly = value;
+    });
   }
 
   @override
@@ -30,8 +38,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
           title: Text('Statistics'),
           bottom: TabBar(
             tabs: [
-              Tab(text: 'My Stats'),
-              Tab(text: 'Community Stats'),
+              Tab(text: 'Overview'),  // Change the tab text
+              Tab(text: 'Trends'),
             ],
           ),
         ),
@@ -39,7 +47,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           children: [
             // Pass the userId to MyStatsTab
             MyStatsTab(userId: userId ?? ''),  // Ensure userId is not null
-            CommunityStatsTab(),
+            TrendsTab(isWeekly: isWeekly, onToggle: _toggleView, userId: userId ??''), // Trends Tab with toggle
           ],
         ),
       ),

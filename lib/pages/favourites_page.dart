@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/pages/recipe_details_page.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+// Ensure this is imported correctly
 
 class FavoritesPage extends StatefulWidget {
   @override
@@ -87,17 +89,21 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Image container with AspectRatio
+                        // Cached Image Container
                         AspectRatio(
-                          aspectRatio: 16 /
-                              9, // You can adjust this ratio based on the images you have
+                          aspectRatio: 16 / 9,
                           child: ClipRRect(
-                            borderRadius:
-                                BorderRadius.vertical(top: Radius.circular(10)),
-                            child: Image.network(
-                              recipe['image'],
-                              fit: BoxFit
-                                  .cover, // Ensures the image covers the container while maintaining its aspect ratio
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(10),
+                            ),
+                            child: CachedNetworkImage(
+                              imageUrl: recipe['image'],
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Icons.error),
                             ),
                           ),
                         ),
@@ -108,17 +114,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
                             children: [
                               Text(
                                 recipe['label'],
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 2,
-                                overflow: TextOverflow
-                                    .ellipsis, // Prevent text overflow
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(
-                                  height:
-                                      8), // Space between text and any other widgets
+                              const SizedBox(height: 8),
                             ],
                           ),
                         ),

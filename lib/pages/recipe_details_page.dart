@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -106,85 +107,91 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(widget.recipe['image']),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 16.0,
-                  left: 16.0,
-                  right: 16.0,
-                  child: Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        widget.recipe['label'],
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              shadows: [
-                                Shadow(
-                                  blurRadius: 4.0,
-                                  color: Colors.black,
-                                  offset: Offset(2.0, 2.0),
-                                ),
-                              ],
-                            ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+child: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Stack(
+      children: [
+        Container(
+          width: double.infinity,
+          height: 250,
+          child: CachedNetworkImage(
+            imageUrl: widget.recipe['image'],
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+            errorWidget: (context, url, error) => Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+          ),
+        ),
+        Positioned(
+          bottom: 16.0,
+          left: 16.0,
+          right: 16.0,
+          child: Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(8.0),
             ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                widget.recipe['label'],
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 4.0,
+                          color: Colors.black,
+                          offset: Offset(2.0, 2.0),
+                        ),
+                      ],
+                    ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+
             const SizedBox(height: 16.0),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      if (isFavorite) {
-                        await removeFromFavorites();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Removed from favorites!')),
-                        );
-                      } else {
-                        await addToFavorites();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Added to favorites!')),
-                        );
-                      }
-                    },
-                    icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
-                    label: Text(isFavorite
-                        ? 'Remove from Favorites'
-                        : 'Add to Favorites'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
+                 ElevatedButton.icon(
+  onPressed: () async {
+    if (isFavorite) {
+      await removeFromFavorites();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Removed from favorites!')),
+      );
+    } else {
+      await addToFavorites();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Added to favorites!')),
+      );
+    }
+  },
+  icon: Icon(
+    isFavorite ? Icons.favorite : Icons.favorite_border,
+    color: Colors.white, // Ensures the icon is visible
+  ),
+  label: Text(
+    isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
+    style: const TextStyle(color: Colors.white), // Text color explicitly set
+  ),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Theme.of(context).colorScheme.secondary,
+    foregroundColor: Colors.white, // Ensures text and icon visibility
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8.0),
+    ),
+  ),
+),
+
                   const SizedBox(height: 16.0),
                   Text(
                     'Ingredients',

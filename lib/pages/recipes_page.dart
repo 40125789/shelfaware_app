@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/components/favourite_button_widget.dart';
 import 'package:shelfaware_app/services/recipe_service.dart';
 import 'package:shelfaware_app/pages/recipe_details_page.dart';
 
@@ -22,6 +24,7 @@ class _RecipesPageState extends State<RecipesPage> {
     _fetchFavorites();
   }
 
+  // Fetch user's favorite recipes from Firestore
   Future<void> _fetchFavorites() async {
     User? user = _auth.currentUser;
     if (user != null) {
@@ -31,58 +34,37 @@ class _RecipesPageState extends State<RecipesPage> {
           .get();
 
       setState(() {
-        favoriteRecipeIds = snapshot.docs.map((doc) => doc['recipeId'] as String).toList();
+        favoriteRecipeIds = snapshot.docs.map((doc) => doc['label'] as String).toList();
       });
     }
   }
 
-  Future<void> _toggleFavorite(Map<String, dynamic> recipe) async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      String? recipeId = recipe['id'];
-
-      // Check if recipeId is null
-      if (recipeId == null) {
-        print("Error: Recipe ID is null for recipe: ${recipe['label']}");
-        return;
-      }
-
-      if (!favoriteRecipeIds.contains(recipeId)) {
-        // Add to favorites
-        await _firestore.collection('favorites').add({
-          'userId': user.uid,
-          'recipeId': recipeId,
-          'label': recipe['label'],
-          'image': recipe['image'],
-          'ingredients': recipe['ingredients'],
-        });
-        setState(() {
-          favoriteRecipeIds.add(recipeId);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added to favorites!')),
-        );
-      } else {
-        // Remove from favorites
-        QuerySnapshot snapshot = await _firestore
-            .collection('favorites')
-            .where('userId', isEqualTo: user.uid)
-            .where('recipeId', isEqualTo: recipeId)
-            .get();
-
-        for (var doc in snapshot.docs) {
-          await doc.reference.delete();
-        }
-
-        setState(() {
-          favoriteRecipeIds.remove(recipeId);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed from favorites!')),
-        );
-      }
+ // Add this method to update the favorite status for a single recipe
+Future<void> _toggleFavorite(String recipeLabel) async {
+  User? user = _auth.currentUser;
+  if (user != null) {
+    if (favoriteRecipeIds.contains(recipeLabel)) {
+      // Remove from favorites
+      await _firestore.collection('favorites').doc(recipeLabel).delete();
+    } else {
+      // Add to favorites
+      await _firestore.collection('favorites').add({
+        'userId': user.uid,
+        'label': recipeLabel,
+      });
     }
+
+    // Update the local favorite list
+    setState(() {
+      if (favoriteRecipeIds.contains(recipeLabel)) {
+        favoriteRecipeIds.remove(recipeLabel);
+      } else {
+        favoriteRecipeIds.add(recipeLabel);
+      }
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +108,7 @@ class _RecipesPageState extends State<RecipesPage> {
               List<Map<String, dynamic>> recipes = recipeSnapshot.data!;
 
               return ListView.builder(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
                 shrinkWrap: true,
                 itemCount: recipes.length,
                 itemBuilder: (context, index) {
@@ -145,6 +127,9 @@ class _RecipesPageState extends State<RecipesPage> {
 
                   // Set a threshold for displaying the recipe (e.g., 10% match)
                   if (matchPercentage >= 10) {
+                    // Check if recipe is in favorites
+                    bool isFavorite = favoriteRecipeIds.contains(recipe['label']);
+
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -157,66 +142,69 @@ class _RecipesPageState extends State<RecipesPage> {
                           ),
                         );
                       },
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                              child: Image.network(
-                                recipe['image'],
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0), // Add spacing between cards
+                        child: Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                                child: CachedNetworkImage(
+                                  imageUrl: recipe['image'],
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  errorWidget: (context, url, error) => Icon(Icons.error),
+                                ),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          recipe['label'],
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            recipe['label'],
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        Text(
-                                          'Ingredients you have: $matchingIngredients of ${recipeIngredients.length} (${matchPercentage.toStringAsFixed(0)}%)',
-                                          style: TextStyle(color: Colors.grey),
-                                        ),
-                                      ],
+                                          Text(
+                                            'Ingredients you have: $matchingIngredients of ${recipeIngredients.length} (${matchPercentage.toStringAsFixed(0)}%)',
+                                            style: TextStyle(color: Colors.grey),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      favoriteRecipeIds.contains(recipe['id'])
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                    ),
-                                    color: Colors.red,
-                                    onPressed: () {
-                                      _toggleFavorite(recipe);
-                                    },
-                                  ),
-                                ],
+                                   FavoriteButton(
+  recipe: recipe,  // Pass the full recipe object
+  favoriteRecipeIds: favoriteRecipeIds,  // Pass the list of favorite recipe IDs  // Check if the recipe is in the favorites list  // Trigger a re-fetch of favorites when state changes
+  onFavoriteToggle: () => _toggleFavorite(recipe['label']),  // Call the function to toggle the favorite state
+  onFavoriteChanged: _fetchFavorites,  // Add the required onFavoriteChanged argument
+)
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );
+                    
                   } else {
                     return SizedBox.shrink();
                   }
