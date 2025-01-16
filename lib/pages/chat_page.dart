@@ -42,20 +42,44 @@ class _ChatPageState extends State<ChatPage> {
 
   String _currentStatus = 'available'; // Default status
 
-  @override
-  void initState() {
-    super.initState();
-    // Trigger scrolling to bottom once the page is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
-  }
+@override
+void initState() {
+  super.initState();
+  // Trigger scrolling to bottom and mark messages as read
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final String senderId = _auth.currentUser!.uid;
+    final String chatId = getChatId(widget.donationId, senderId, widget.receiverId);
+
+    await _markMessagesAsRead(chatId); // Mark messages as read
+    _scrollToBottom();
+  });
+}
+
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
+
+  Future<void> _markMessagesAsRead(String chatId) async {
+  try {
+    final messagesSnapshot = await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('receiverId', isEqualTo: _auth.currentUser!.uid)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    for (var doc in messagesSnapshot.docs) {
+      await doc.reference.update({'isRead': true});
+    }
+  } catch (e) {
+    print('Error marking messages as read: $e');
+  }
+}
+
 
   Future<void> _sendMessage() async {
   if (_messageController.text.isNotEmpty) {
