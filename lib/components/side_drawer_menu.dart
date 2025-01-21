@@ -252,7 +252,7 @@ Widget build(BuildContext context) {
         ),
         ListTile(
           leading: const Icon(Icons.food_bank),
-          title: const Text('My Donation Listings'),
+          title: const Text('Manage Donations'),
           onTap: () {
             final userId = FirebaseAuth.instance.currentUser!.uid;
             Navigator.push(

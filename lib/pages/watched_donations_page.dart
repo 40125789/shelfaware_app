@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:shelfaware_app/services/watched_donation_service.dart';
 
 class WatchedDonationsPage extends StatelessWidget {
@@ -64,9 +65,11 @@ class WatchedDonationsPage extends StatelessWidget {
                     contentPadding: EdgeInsets.all(16),
                     title: Text(
                       'Location unavailable for $productName',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    subtitle: Text("Expiry date: ${expiryDate?.toDate() ?? 'Unknown'}"),
+                    subtitle: Text(
+                        "Expiry date: ${expiryDate?.toDate() ?? 'Unknown'}"),
                     trailing: Text('$status'),
                   ),
                 );
@@ -122,15 +125,50 @@ class WatchedDonationsPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: InkWell(
-                      onTap: () {
-                        // Navigate to donation details screen
+                      onTap: () async {
+                        final donorData = await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(donorId)
+                            .get();
+
+                        final donorDataMap =
+                            donorData.data() as Map<String, dynamic>;
+                        final profilePicUrl = donorDataMap['profileImageUrl'];
+
+                        // Navigate to Donation Map screen with relevant data
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DonationMapScreen(
+                              donationLatitude: latitude,
+                              donationLongitude: longitude,
+                              userLatitude: currentLocation.latitude,
+                              userLongitude: currentLocation.longitude,
+                              productName: productName,
+                              expiryDate: DateFormat('yyyy-MM-dd')
+                                  .format(expiryDate!.toDate()),
+                              status: status,
+                              donorEmail: donorDataMap['email'] ?? 'Unknown',
+                              donatorId: donorId,
+                              chatId:
+                                  'chatId', // Replace with actual chatId if available
+                              userId: userId,
+                              donorName: donorName,
+                              donorImageUrl: profilePicUrl,
+                              donationTime: donationTime!.toDate(),
+                              imageUrl: imageUrl ?? '',
+                              donationId: donations[index].id,
+                              receiverEmail:
+                                  'receiverEmail', // Replace with actual receiverEmail if available
+                            ),
+                          ),
+                        );
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Donation Image (left side)
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: imageUrl != null && imageUrl.isNotEmpty
@@ -152,7 +190,6 @@ class WatchedDonationsPage extends StatelessWidget {
                                     ),
                             ),
                             SizedBox(width: 12),
-
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,8 +203,6 @@ class WatchedDonationsPage extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   SizedBox(height: 8),
-
-                                  // Donor's name and profile image
                                   Row(
                                     children: [
                                       FutureBuilder<DocumentSnapshot>(
@@ -176,34 +211,45 @@ class WatchedDonationsPage extends StatelessWidget {
                                             .doc(donorId)
                                             .get(),
                                         builder: (context, snapshot) {
-                                          if (snapshot.connectionState == 
+                                          if (snapshot.connectionState ==
                                               ConnectionState.waiting) {
                                             return CircleAvatar(
                                               radius: 18,
                                               backgroundColor: Colors.grey[300],
-                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 2),
                                             );
                                           }
-                                          if (snapshot.hasError || !snapshot.hasData) {
+                                          if (snapshot.hasError ||
+                                              !snapshot.hasData) {
                                             return CircleAvatar(
                                               radius: 18,
                                               backgroundColor: Colors.grey[300],
-                                              child: Icon(Icons.person, size: 18, color: Colors.grey),
+                                              child: Icon(Icons.person,
+                                                  size: 18, color: Colors.grey),
                                             );
                                           }
-                                          final donorData = snapshot.data!.data() as Map<String, dynamic>;
-                                          final profilePicUrl = donorData['profileImageUrl'] ?? null;
+                                          final donorData = snapshot.data!
+                                              .data() as Map<String, dynamic>;
+                                          final profilePicUrl =
+                                              donorData['profileImageUrl'] ??
+                                                  null;
 
                                           return CircleAvatar(
                                             radius: 18,
-                                            backgroundImage: profilePicUrl != null
-                                                ? CachedNetworkImageProvider(profilePicUrl)
+                                            backgroundImage: profilePicUrl !=
+                                                    null
+                                                ? CachedNetworkImageProvider(
+                                                    profilePicUrl)
                                                 : null,
-                                            backgroundColor: profilePicUrl == null
-                                                ? Colors.grey[300]
-                                                : Colors.transparent,
+                                            backgroundColor:
+                                                profilePicUrl == null
+                                                    ? Colors.grey[300]
+                                                    : Colors.transparent,
                                             child: profilePicUrl == null
-                                                ? Icon(Icons.person, size: 18, color: Colors.grey)
+                                                ? Icon(Icons.person,
+                                                    size: 18,
+                                                    color: Colors.grey)
                                                 : null,
                                           );
                                         },
@@ -220,8 +266,6 @@ class WatchedDonationsPage extends StatelessWidget {
                                     ],
                                   ),
                                   SizedBox(height: 8),
-
-                                  // Status and donation time
                                   Text(
                                     'Status: $status',
                                     style: TextStyle(
@@ -232,14 +276,16 @@ class WatchedDonationsPage extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   SizedBox(height: 8),
-
                                   Row(
                                     children: [
-                                      Icon(Icons.location_on, color: Colors.grey, size: 16),
+                                      Icon(Icons.location_on,
+                                          color: Colors.grey, size: 16),
                                       SizedBox(width: 4),
                                       Text(
                                         '$distanceText away',
-                                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[500]),
                                       ),
                                     ],
                                   ),
@@ -264,7 +310,8 @@ class WatchedDonationsPage extends StatelessWidget {
                           size: 24,
                         ),
                         onPressed: () async {
-                          await watchlistService.toggleWatchlist(donations[index].id, donation);
+                          await watchlistService.toggleWatchlist(
+                              donations[index].id, donation);
                         },
                       ),
                     ),

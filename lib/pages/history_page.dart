@@ -32,8 +32,7 @@ class _HistoryPageState extends State<HistoryPage> {
         MaterialPageRoute(
           builder: (context) => AddFoodItem(
             foodItem: selectedFoodItems.first,
-            isRecreated: true, foodItems: [],
-            // Pass selected items to AddFoodItem
+            isRecreated: true, foodItems: [], // Pass selected items to AddFoodItem
           ),
         ),
       );
@@ -131,20 +130,24 @@ class _HistoryPageState extends State<HistoryPage> {
               final formattedExpiryDate = DateFormat('dd MMM yyyy')
                   .format(foodItem.expiryDate.toDate());
 
-              // Icon based on status
+              // Determine the status and icon
+              String statusText = '';
               Icon statusIcon;
               Color iconColor;
 
               switch (foodItem.status) {
                 case 'consumed':
+                  statusText = 'Consumed';
                   statusIcon = Icon(Icons.check_circle, color: Colors.green);
                   iconColor = Colors.green;
                   break;
                 case 'discarded':
+                  statusText = 'Discarded';
                   statusIcon = Icon(Icons.delete, color: Colors.red);
                   iconColor = Colors.red;
                   break;
                 default:
+                  statusText = 'Pending';
                   statusIcon = Icon(Icons.pending, color: Colors.grey);
                   iconColor = Colors.grey;
               }
@@ -158,13 +161,29 @@ class _HistoryPageState extends State<HistoryPage> {
                     foodItem.productName,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  subtitle: Text(
-                    'Expiry: ${formattedExpiryDate}\nStatus: ${foodItem.status}',
-                    style: TextStyle(color: Colors.grey[600]),
+                  subtitle: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // Aligns text to the left and status to the right
+                    children: [
+                      Text(
+                        'Expiry: ${formattedExpiryDate}',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      // Display status with appropriate color
+                      Row(
+                        children: [
+                          statusIcon, // The icon next to the status
+                          SizedBox(width: 5),
+                          Text(
+                            statusText,
+                            style: TextStyle(color: iconColor),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                   trailing: _isRecreateMode
-                      ? null // Hide status icon in recreate mode
-                      : statusIcon, // Show status icon if not in recreate mode
+                      ? null // Hide the trailing icon in recreate mode
+                      : null, // No status icon in the trailing area
                   leading: _isRecreateMode
                       ? Checkbox(
                           value: _selectedItems.contains(index),

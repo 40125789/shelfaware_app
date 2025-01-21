@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
@@ -6,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
+import 'package:shelfaware_app/pages/donation_request_form.dart';
 
 class DonationMapScreen extends StatefulWidget {
   final double donationLatitude;
@@ -21,7 +23,7 @@ class DonationMapScreen extends StatefulWidget {
   final String donatorId;
   final String donationId;
   final String imageUrl;
-  final String donorImageUrl;  // Donor image URL
+  final String donorImageUrl; // Donor image URL
   final DateTime donationTime; // Donation time
   String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
@@ -41,7 +43,8 @@ class DonationMapScreen extends StatefulWidget {
     required this.donorImageUrl, // Donor image URL
     required this.donationTime, // Donation time
     required this.imageUrl,
-    required this.donationId, required receiverEmail,
+    required this.donationId,
+    required receiverEmail,
   });
 
   @override
@@ -52,14 +55,16 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
   late GoogleMapController mapController;
   late Marker donationMarker;
   late Marker userMarker;
-  String address = 'Loading address...';  // Initialize with loading text
-  bool isMapExpanded = false;  // Manage the expanded state of the map
+  String address = 'Loading address...'; // Initialize with loading text
+  bool isMapExpanded = false; // Manage the expanded state of the map
+  bool hasRequested = false;
 
   @override
   void initState() {
     super.initState();
     _initializeMarkers();
     _getAddress();
+    _checkIfAlreadyRequested();
   }
 
   void _initializeMarkers() {
@@ -91,10 +96,13 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     if (placemarks.isNotEmpty) {
       Placemark placemark = placemarks[0];
       setState(() {
-        address = '${placemark.locality}, ${placemark.country}';  // Simplified address
+        address =
+            '${placemark.locality}, ${placemark.country}'; // Simplified address
       });
     }
   }
+
+  
 
   void _showDonationDetails() {
     showDialog(
@@ -126,10 +134,39 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     );
   }
 
+  
+  // Check if the current user has already requested the item
+ Future<void> _checkIfAlreadyRequested() async {
+  try {
+    final donationRequestDoc = await FirebaseFirestore.instance
+        .collection('donationRequests')
+        .where('donationId', isEqualTo: widget.donationId)
+        .where('requesterId', isEqualTo: widget.userId)
+        .get();
+
+    if (donationRequestDoc.docs.isNotEmpty) {
+      setState(() {
+        hasRequested = true; // User has already requested the donation
+      });
+    } else {
+      setState(() {
+        hasRequested = false; // User has not requested the donation
+      });
+    }
+    print("Donation request checked: ${donationRequestDoc.docs.length} found.");
+  } catch (e) {
+    print('Error checking donation request: $e');
+    // Handle errors appropriately, maybe show a message to the user
+  }
+}
+
+
   @override
   Widget build(BuildContext context) {
-    final LatLng donationLocation = LatLng(widget.donationLatitude, widget.donationLongitude);
-    final LatLng userLocation = LatLng(widget.userLatitude, widget.userLongitude);
+    final LatLng donationLocation =
+        LatLng(widget.donationLatitude, widget.donationLongitude);
+    final LatLng userLocation =
+        LatLng(widget.userLatitude, widget.userLongitude);
 
     double distanceInMeters = Geolocator.distanceBetween(
       widget.userLatitude,
@@ -152,101 +189,102 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
       timeAgo = '$daysAgo days ago';
     }
 
-String _getTimeRemaining() {
-  DateTime? expiryDate;
+    String _getTimeRemaining() {
+      DateTime? expiryDate;
 
-  try {
-    // Manually convert the "dd/MM/yyyy" format to "yyyy-MM-dd"
-    String formattedDate = widget.expiryDate;
-    List<String> dateParts = formattedDate.split('/');
+      try {
+        // Manually convert the "dd/MM/yyyy" format to "yyyy-MM-dd"
+        String formattedDate = widget.expiryDate;
+        List<String> dateParts = formattedDate.split('/');
 
-    if (dateParts.length == 3) {
-      // Reformat to "yyyy-MM-dd" format
-      formattedDate = '${dateParts[2]}-${dateParts[1]}-${dateParts[0]}';  // yyyy-MM-dd
+        if (dateParts.length == 3) {
+          // Reformat to "yyyy-MM-dd" format
+          formattedDate =
+              '${dateParts[2]}-${dateParts[1]}-${dateParts[0]}'; // yyyy-MM-dd
+        }
+
+        // Now, use DateTime.parse() with the reformatted date
+        expiryDate = DateTime.parse(formattedDate);
+
+        // Check if expiryDate is null or invalid
+        if (expiryDate == null) {
+          return 'Invalid expiry date';
+        }
+      } catch (e) {
+        return 'Invalid expiry date'; // Return an error message if parsing fails
+      }
+
+      // Calculate the difference in hours between the expiry date and the current time
+      final int expiryDiffInHours =
+          expiryDate.difference(DateTime.now()).inHours;
+
+      // Determine the color based on expiry
+      Color textColor;
+
+      // If the item is expired
+      if (expiryDiffInHours < 0) {
+        textColor = Colors.red;
+        return 'Expired';
+      }
+
+      // If the item expires in less than 24 hours
+      if (expiryDiffInHours < 24) {
+        textColor = Colors.orange;
+        return 'This item expires in less than a day';
+      }
+
+      // If the item expires in tomorrow
+      final int expiryDiffInDays = expiryDate.difference(DateTime.now()).inDays;
+      if (expiryDiffInDays == 1) {
+        textColor = Colors.yellow;
+        return 'This item expires tomorrow';
+      }
+
+      // If the item expires in more than 1 day
+      textColor = Colors.green;
+      return 'This item expires in: $expiryDiffInDays days';
     }
-
-    // Now, use DateTime.parse() with the reformatted date
-    expiryDate = DateTime.parse(formattedDate);
-
-    // Check if expiryDate is null or invalid
-    if (expiryDate == null) {
-      return 'Invalid expiry date';
-    }
-
-  } catch (e) {
-    return 'Invalid expiry date'; // Return an error message if parsing fails
-  }
-
-  // Calculate the difference in hours between the expiry date and the current time
-  final int expiryDiffInHours = expiryDate.difference(DateTime.now()).inHours;
-
-  // Determine the color based on expiry
-  Color textColor;
-
-  // If the item is expired
-  if (expiryDiffInHours < 0) {
-    textColor = Colors.red;
-    return 'Expired';
-  }
-
-  // If the item expires in less than 24 hours
-  if (expiryDiffInHours < 24) {
-    textColor = Colors.orange;
-    return 'This item expires in less than a day';
-  }
-
-  // If the item expires in tomorrow
-  final int expiryDiffInDays = expiryDate.difference(DateTime.now()).inDays;
-  if (expiryDiffInDays == 1) {
-    textColor = Colors.yellow;
-    return 'This item expires tomorrow';
-  }
-
-  // If the item expires in more than 1 day
-  textColor = Colors.green;
-  return 'This item expires in: $expiryDiffInDays days';
-}
-
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Product Details'),
         backgroundColor: Colors.green,
       ),
-      body: SingleChildScrollView(  // Make the whole body scrollable
+      body: SingleChildScrollView(
+        // Make the whole body scrollable
         child: Column(
           children: [
             // Donation image at the top
-  widget.imageUrl.isNotEmpty 
-  ? Container(
-      height: 200,
-      width: double.infinity,
-      child: Image.network(
-        widget.imageUrl,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) {
-            return child;  // Image is loaded, show it
-          } else {
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                        (loadingProgress.expectedTotalBytes ?? 1)
-                    : null,
-              ),
-            );  // Show loading indicator while the image is loading
-          }
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Image.asset(
-            'assets/placeholder.png', // Placeholder image if error occurs
-            fit: BoxFit.cover,
-          );
-        },
-      ),
-    )
-  : Container(), 
+            widget.imageUrl.isNotEmpty
+                ? Container(
+                    height: 200,
+                    width: double.infinity,
+                    child: Image.network(
+                      widget.imageUrl,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) {
+                          return child; // Image is loaded, show it
+                        } else {
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      (loadingProgress.expectedTotalBytes ?? 1)
+                                  : null,
+                            ),
+                          ); // Show loading indicator while the image is loading
+                        }
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'assets/placeholder.png', // Placeholder image if error occurs
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    ),
+                  )
+                : Container(),
 
             // Donation details section
             Padding(
@@ -267,61 +305,117 @@ String _getTimeRemaining() {
                         children: [
                           Text(
                             widget.donorName,
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           Row(
                             children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 16,
-                            color: Colors.grey,
-                          ),
-                          Text(
-                            ' Added ' + timeAgo,  // Display time since donation was added
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                              Icon(
+                                Icons.access_time,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              Text(
+                                ' Added ' +
+                                    timeAgo, // Display time since donation was added
+                                style:
+                                    TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ],
                   ),
-                ],
-              ),
                   SizedBox(height: 16),
                   Text(
                     widget.productName,
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                 Text(
-                 _getTimeRemaining(), // Display the time remaining
-                    style: TextStyle(fontSize: 18), 
+                  Text(
+                    _getTimeRemaining(), // Display the time remaining
+                    style: TextStyle(fontSize: 18),
                   ),
                   SizedBox(height: 4),
                   Text('Status: ${widget.status}'),
                   SizedBox(height: 12),
-                ElevatedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatPage(
-          donorName: widget.donorName,
-          userId: widget.userId,
-          receiverEmail: widget.donorEmail,
-          receiverId: widget.donatorId,
-          donationId: widget.donationId,
-          donationName: widget.productName,
-          chatId: widget.chatId,
+                  Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    ElevatedButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatPage(
+              donorName: widget.donorName,
+              userId: widget.userId,
+              receiverEmail: widget.donorEmail,
+              receiverId: widget.donatorId,
+              donationId: widget.donationId,
+              donationName: widget.productName,
+              chatId: widget.chatId,
+            ),
+          ),
+        );
+      },
+      child: Text('Contact Donor', style: TextStyle(color: Colors.white)),
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+    ),
+    // Condition to check if the user has already requested
+    if (hasRequested)
+      Text(
+        "Already requested", 
+        style: TextStyle(fontSize: 16, color: Colors.grey),
+      )
+    else 
+      ElevatedButton(
+        onPressed: () async {
+          // When the user requests, add data to Firestore
+          await FirebaseFirestore.instance.collection('donationRequests').add({
+            'donationId': widget.donationId,
+            'requesterId': widget.userId,
+            'requestTime': FieldValue.serverTimestamp(),
+          });
+          
+          // Update UI after request
+          setState(() {
+            hasRequested = true; // User has successfully requested
+          });
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DonationRequestForm(
+                productName: widget.productName,
+                expiryDate: widget.expiryDate,
+                donationId: widget.donationId,
+                donorId: widget.donatorId,
+                status: widget.status,
+                donorName: widget.donorName,
+                donatorId: widget.donatorId,
+                donorImageUrl: widget.donorImageUrl,
+                imageUrl: widget.imageUrl,
+              ),
+            ),
+          );
+        },
+        child: Text(
+          'Request this item',
+          style: TextStyle(color: Colors.white),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
         ),
       ),
-    );
-  },
-  child: Text('Contact Donor', style: TextStyle(color: Colors.white)),
-  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+  ],
 ),
-                  SizedBox(height: 16),
+
+            SizedBox(height: 16),
                 ],
               ),
             ),
+
             // Location and distance section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -329,33 +423,34 @@ String _getTimeRemaining() {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'LOCATION',  // Only display the simplified location address
+                    'LOCATION', // Only display the simplified location address
                     style: TextStyle(fontSize: 14),
                   ),
-                   Row(
-                children: [
-                  Icon(Icons.location_on, color: Colors.grey),
-                  Text(
-                    '${distanceInMiles.toStringAsFixed(2)} miles away',  // Display distance in miles
-                    style: TextStyle(fontSize: 12),
-                    
+                  Row(
+                    children: [
+                      Icon(Icons.location_on, color: Colors.grey),
+                      Text(
+                        '${distanceInMiles.toStringAsFixed(2)} miles away', // Display distance in miles
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
                   ),
                 ],
               ),
-          ],
-        ),
-      ),
+            ),
             SizedBox(height: 10),
 
             // Map section with expandable functionality
             GestureDetector(
               onTap: () {
                 setState(() {
-                  isMapExpanded = !isMapExpanded;  // Toggle map expansion
+                  isMapExpanded = !isMapExpanded; // Toggle map expansion
                 });
               },
               child: Container(
-                height: isMapExpanded ? MediaQuery.of(context).size.height : 300,  // Expand map to full screen or fixed height
+                height: isMapExpanded
+                    ? MediaQuery.of(context).size.height
+                    : 300, // Expand map to full screen or fixed height
                 width: double.infinity,
                 child: GoogleMap(
                   initialCameraPosition: CameraPosition(
@@ -373,7 +468,7 @@ String _getTimeRemaining() {
                     Circle(
                       circleId: CircleId('radius'),
                       center: donationLocation,
-                      radius: 500,  // Define radius (500 meters)
+                      radius: 500, // Define radius (500 meters)
                       strokeColor: Colors.blue.withOpacity(0.5),
                       strokeWidth: 2,
                       fillColor: Colors.blue.withOpacity(0.1),
@@ -384,7 +479,9 @@ String _getTimeRemaining() {
             ),
             SizedBox(height: 10),
             IconButton(
-              icon: Icon(isMapExpanded ? Icons.remove : Icons.add),  // Change icon based on expansion state
+              icon: Icon(isMapExpanded
+                  ? Icons.remove
+                  : Icons.add), // Change icon based on expansion state
               onPressed: () {
                 setState(() {
                   isMapExpanded = !isMapExpanded;

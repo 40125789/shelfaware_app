@@ -25,6 +25,8 @@ import 'package:shelfaware_app/components/expiry_icon.dart'; // Import the expir
 import 'package:shelfaware_app/controllers/auth_controller.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shelfaware_app/components/mark_food_dialogue.dart';
+import 'package:lottie/lottie.dart'; 
+
 // Import the Mark Food Dialog page
 // Import the Mark Food Dialog page
 // Import the Flutter Slidable package
@@ -54,7 +56,7 @@ Future<Position> getUserLocation() async {
       desiredAccuracy: LocationAccuracy.high);
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   int expiringItemCount = 0;
   int expiredItemCount = 0;
   String firstName = '';
@@ -63,20 +65,24 @@ class _HomePageState extends State<HomePage> {
   late PageController _pageController;
   String selectedFilter = 'All';
   List<String> filterOptions = ['All'];
+  late AnimationController _controller;
 
   @override
   void initState() {
+
     super.initState();
     getUserData();
     _pageController = PageController();
     _fetchFilterOptions();
     _checkExpiryNotifications();
+    _controller = AnimationController(vsync: this);
   }
 
   bool _isToggled = false;
 
   @override
   void dispose() {
+    _controller.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -490,17 +496,62 @@ Navigator.push(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Add a photo?"),
-          content: Text(
-              "Would you like to take a photo of the food item? Items with photos tend to attract more interest."),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            "Would you like to add a photo?",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center, // Ensures title is centered
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Image with adjusted size and border for better presentation
+              Container(
+                height: 120,
+                width: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.grey, width: 1),
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/camera.png', // Your image path here
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              // Improved text with better alignment and styling
+              Text(
+                "Adding a photo of your food item can help attract more attention and assist others in assessing its quality. Photos make listings stand out and feel more trustworthy.",
+                textAlign: TextAlign.center, // Centers the content text
+                style: TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+            ],
+          ),
           actions: [
+            // Simplified actions with consistent styling
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text("No, skip"),
+              child: Text(
+                "No, skip",
+                style: TextStyle(color: Colors.blueAccent),
+              ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text("Yes, add photo"),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white, backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                "Yes, add photo",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -509,7 +560,35 @@ Navigator.push(
 
     String? imageUrl;
     if (takePhoto) {
-      // Allow the user to take a photo
+      // Show the Lottie loading animation dialog after the photo is taken
+      showDialog(
+        context: context,
+        barrierDismissible: false, // Prevent closing the dialog
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RepaintBoundary(
+                  child: Lottie.network(
+                    'https://lottie.host/726edc0a-86f8-4d94-95fc-3df9de90d8fe/c2E6eYh86Z.json',
+                    frameRate: FrameRate.max,
+                    repeat: true,
+                    animate: true,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  "Donating your food...",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Let user pick an image
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
@@ -518,20 +597,22 @@ Navigator.push(
       );
 
       if (image != null) {
-        // Upload the image to Firebase Storage
         final String userId = FirebaseAuth.instance.currentUser!.uid;
         final String imageName = "donation_${DateTime.now().millisecondsSinceEpoch}.jpg";
         final Reference storageRef = FirebaseStorage.instance
             .ref()
             .child('donation_images/$userId/$imageName');
         final TaskSnapshot snapshot = await storageRef.putFile(File(image.path)).whenComplete(() {});
+
+        // Get image URL after upload
         imageUrl = await snapshot.ref.getDownloadURL();
       } else {
-        // Notify user if no photo was taken
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("No photo captured. Proceeding without photo.")),
         );
       }
+
+      Navigator.pop(context); // Dismiss loading dialog after image upload
     }
 
     // Prepare donation data
@@ -577,7 +658,6 @@ Navigator.push(
       'myDonations': FieldValue.arrayUnion([donationId]),
     });
 
-    // Notify the user of success
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Item donated successfully.")),
     );
@@ -588,6 +668,7 @@ Navigator.push(
     );
   }
 }
+
 
 
 // Function to show a popup dialog when the item is expired

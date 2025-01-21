@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class DonationDetailsPage extends StatelessWidget {
   final String donationId;
@@ -13,6 +14,32 @@ class DonationDetailsPage extends StatelessWidget {
         .doc(donationId)
         .get();
     return donationDoc.exists ? donationDoc.data() as Map<String, dynamic> : {};
+  }
+
+  // Fetch donation requests for the given donationId
+  Stream<List<Map<String, dynamic>>> getDonationRequests() {
+    return FirebaseFirestore.instance
+        .collection('donationRequests')
+        .where('donationId', isEqualTo: donationId)
+        .snapshots()
+        .map((querySnapshot) {
+      return querySnapshot.docs.map((doc) {
+        return doc.exists
+            ? Map<String, dynamic>.from(doc.data() as Map<String, dynamic>)
+            : <String, dynamic>{};
+      }).toList();
+    });
+  }
+
+  // Fetch the requester name based on requesterId
+  Future<String> getRequesterName(String requesterId) async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(requesterId)
+        .get();
+    return userDoc.exists
+        ? (userDoc.data() as Map<String, dynamic>)['firstName'] ?? 'Unknown'
+        : 'Unknown';
   }
 
   @override
@@ -39,32 +66,301 @@ class DonationDetailsPage extends StatelessWidget {
 
           final donation = snapshot.data!;
 
+          // Get the product name and image URL
+          final productName =
+              donation['productName'] ?? 'No product name available';
+          final imageUrl = donation['imageUrl'] ?? '';
+
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Product Name: ${donation['productName'] ?? 'N/A'}", style: TextStyle(fontSize: 18)),
-                SizedBox(height: 10),
-                Text("Donated by: ${donation['donorName'] ?? 'N/A'}", style: TextStyle(fontSize: 16)),
-                SizedBox(height: 10),
-                Text("Donation Date: ${donation['donatedAt'].toDate()}"),
-                SizedBox(height: 10),
-                Text("Status: ${donation['status']}"),
+                // Image and Product Name Section (Smaller Image on Left with Text on Right)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 80, // Smaller image size
+                      height: 80,
+                      decoration: BoxDecoration(
+                        image: imageUrl.isNotEmpty
+                            ? DecorationImage(
+                                image: NetworkImage(imageUrl),
+                                fit: BoxFit.cover)
+                            : null,
+                        color: Colors.grey[300], // Fallback color if no image
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: imageUrl.isNotEmpty
+                          ? null
+                          : Center(
+                              child: Icon(Icons.image,
+                                  size: 30, color: Colors.white),
+                            ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            productName,
+                            style: TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                              "Added On: ${DateFormat('dd MMM yyyy').format(donation['donatedAt'].toDate())}"),
+                          SizedBox(height: 8),
+                          Text("Status: ${donation['status']}"),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 SizedBox(height: 20),
                 if (donation['status'] == 'available')
                   ElevatedButton(
                     onPressed: () {
                       // Allow the user to change the donation status or take action.
-                      // For example, you can provide a button to mark it as "Taken" or "Pending."
-                      // You can also allow them to update the donation info.
                     },
                     child: Text("Update Status or Manage Donation"),
                   ),
                 SizedBox(height: 20),
+
+                // Donation Requests Section
                 Text(
-                  "If you wish to interact with other users regarding this donation, check the chat page.",
-                  style: TextStyle(fontSize: 14),
+                  "Donation Requests for this item:",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+
+                // StreamBuilder to fetch and display the donation requests
+                Expanded(
+                  // Make donation requests scrollable
+                  child: StreamBuilder<List<Map<String, dynamic>>>( 
+                    stream: getDonationRequests(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return Center(child: Text("Error: ${snapshot.error}"));
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(child: Text("No requests found"));
+                      }
+
+                      final donationRequests = snapshot.data!;
+
+                      return ListView.builder(
+                        itemCount: donationRequests.length,
+                        itemBuilder: (context, index) {
+                          final request = donationRequests[index];
+                          final requesterId = request['requesterId'] ?? '';
+                          final pickupDateTime =
+                              request['pickupDateTime']?.toDate();
+                          final message = request['message'] ?? 'No message';
+                          final status = request['status'] ?? 'Pending';
+
+                          // Fetch requester's name asynchronously
+                          return FutureBuilder<String>(
+                            future: getRequesterName(requesterId),
+                            builder: (context, userSnapshot) {
+                              if (userSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+
+                              if (userSnapshot.hasError) {
+                                return Center(
+                                    child:
+                                        Text("Error fetching requester name"));
+                              }
+
+                              final requesterName =
+                                  userSnapshot.data ?? 'Unknown';
+
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                    vertical: 8, horizontal: 16),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundImage: NetworkImage(
+                                        request['requesterProfileImageUrl'] ??
+                                            ''),
+                                    backgroundColor: Colors.green,
+                                    child:
+                                        request['requesterProfileImageUrl'] == null
+                                            ? Icon(Icons.person,
+                                                color: Colors.white)
+                                            : null,
+                                  ),
+                                  title: Text("Requested by $requesterName"),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                          "Pickup Date & Time: ${DateFormat('dd MMM yyyy, HH:mm').format(pickupDateTime ?? DateTime.now())}",
+                                          style: TextStyle(color: Colors.grey)),
+                                      SizedBox(height: 5),
+                                    ],
+                                  ),
+                                  trailing: Icon(Icons.arrow_forward_ios),
+                                  onTap: () {
+                                    // Open the alert dialog to accept or decline the request
+                                    showDialog(
+  context: context,
+  builder: (BuildContext context) {
+ return AlertDialog(
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(16.0),  // Rounded corners
+  ),
+  backgroundColor: Colors.white,  // Background color for the dialog
+  title: Column(
+    children: [
+      Text(
+        "Request from $requesterName",
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[700],  // Changed to black as per your request
+        ),
+      ),
+      SizedBox(height: 8),
+      // Requester's profile picture with a little margin
+      CircleAvatar(
+        backgroundImage: NetworkImage(request['requesterProfileImageUrl'] ?? ''),
+        radius: 30,
+      ),
+    ],
+  ),
+  content: SingleChildScrollView(  // Added to ensure dialog size is limited and scrollable
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,  // Centered the entire content
+        children: [
+          // Pickup Date & Time with only the label being bold
+          Text(
+            "Pickup Date & Time",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          Text(
+            "${DateFormat('dd MMM yyyy, HH:mm').format(pickupDateTime ?? DateTime.now())}",
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            "Message:",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          SizedBox(height: 4),
+          // Centered message text
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),  // Added padding for message
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,  // Centered the message text
+            ),
+          ),
+        ],
+      ),
+    ),
+  ),
+  actions: [
+    Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        ElevatedButton(
+          onPressed: () async {
+            // Accept action
+            String requesterId = request['requesterId'];
+            DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(requesterId)
+                .get();
+            String requesterName = userSnapshot.exists
+                ? userSnapshot['firstName']
+                : 'Unknown';
+
+            // Update the donation and request status
+            await FirebaseFirestore.instance
+                .collection('donations')
+                .doc(donationId)
+                .update({
+              'status': 'Taken',
+              'assignedTo': requesterId,
+              'assignedToName': requesterName,
+            });
+
+            await FirebaseFirestore.instance
+                .collection('donationRequests')
+                .doc(request['requestId'])
+                .update({
+              'status': 'Accepted',
+              'assignedTo': requesterId,
+              'assignedToName': requesterName,
+            });
+
+            Navigator.pop(context);  // Close the dialog
+          },
+          child: Text("Accept", style: TextStyle(fontSize: 16, color: Colors.white)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green, minimumSize: Size(100, 40)),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            // Decline action
+            await FirebaseFirestore.instance
+                .collection('donationRequests')
+                .doc(request['requestId'])
+                .update({
+              'status': 'Declined',
+            });
+
+            Navigator.pop(context);  // Close the dialog
+          },
+          child: Text("Decline", style: TextStyle(fontSize: 16, color: Colors.white)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red, minimumSize: Size(100, 40)),
+                                            ),
+                                              ],
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

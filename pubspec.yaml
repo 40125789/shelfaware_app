@@ -75,6 +75,7 @@ dependencies:
   cloud_functions: ^5.2.0
   firebase_app_check: ^0.3.1+7
   shared_preferences: ^2.3.4
+  lottie: ^3.0.0
 
 
 
@@ -106,6 +107,10 @@ flutter:
   - assets/.env
   - assets/default_avatar.png
   - assets/placeholder.png
+  - assets/animations/donation_animation.json
+  - assets/camera.png
+  - assets/splashscreen/splashscreen.png
+  - assets/map_markers/current_location.png
 
 
 flutter_icons:
