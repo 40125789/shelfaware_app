@@ -2,6 +2,7 @@ const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
+
 exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").onRun(async () => {
   const db = admin.firestore();
   const currentDate = admin.firestore.Timestamp.now();
@@ -118,3 +119,201 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
       return null;
     }
   });
+
+  exports.sendDonationRequestNotification = functions.firestore
+    .document('donationRequests/{requestId}')
+    .onCreate(async (snapshot, context) => {
+        const requestData = snapshot.data();
+
+        if (!requestData || !requestData.donatorId || !requestData.requesterId || !requestData.productName) {
+            console.log("Missing necessary data.");
+            return null;
+        }
+
+        try {
+            // Extract necessary fields from the donation request
+            const { 
+                donatorId, 
+                productName, 
+                donorImageUrl, 
+                requesterId, 
+                requesterProfileImageUrl, 
+                message 
+            } = requestData;
+
+            // Fetch donor's FCM token from Firestore users collection
+            const donorDoc = await admin.firestore()
+                .collection('users')
+                .doc(donatorId)
+                .get();
+
+            if (!donorDoc.exists || !donorDoc.data().fcm_token) {
+                console.log("FCM token not found for donor.");
+                return null;
+            }
+
+            const fcmToken = donorDoc.data().fcm_token;
+
+            // Fetch the requester's document from Firestore to get their first name
+            const requesterDoc = await admin.firestore()
+                .collection('users')
+                .doc(requesterId)
+                .get();
+
+            if (!requesterDoc.exists) {
+                console.log("Requester document not found.");
+                return null;
+            }
+
+            const requesterFirstName = requesterDoc.data().firstName;
+
+            // Notification message
+            const notificationMessage = {
+                notification: {
+                    title: `New Request for ${productName} from ${requesterFirstName}`,
+                    body: `Message: ${message}`,
+                    image: requesterProfileImageUrl
+                },
+                token: fcmToken,
+                data: {
+                    requestId: context.params.requestId,
+                    requesterId: requesterId,
+                    requesterFirstName: requesterFirstName, // Added requester's first name
+                    requesterProfileImageUrl: requesterProfileImageUrl,
+                    donorImageUrl: donorImageUrl,
+                    productName: productName,
+                    message: message,
+                    pickupDateTime: requestData.pickupDateTime.toDate().toISOString()
+                }
+            };
+
+            // Send the notification
+            await admin.messaging().send(notificationMessage);
+            console.log(`Notification sent successfully to donor: ${donatorId}`);
+
+        } catch (error) {
+            console.error("Error sending notification:", error);
+        }
+
+        return null;
+    });
+
+    exports.updateDonorAverageRating = functions.firestore
+  .document("reviews/{reviewId}")
+  .onWrite(async (change, context) => {
+    const newValue = change.after.exists ? change.after.data() : null;
+    const donorId = newValue ? newValue.donorId : null;
+
+    if (!donorId) return null;
+
+    try {
+      const reviewsSnapshot = await admin.firestore()
+        .collection("reviews")
+        .where("donorId", "==", donorId)
+        .get();
+
+      let totalCommunicationRating = 0;
+      let totalFoodItemRating = 0;
+      let totalDonationProcessRating = 0;
+      let reviewCount = 0;
+
+      reviewsSnapshot.forEach(doc => {
+        const communicationRating = doc.data().communicationRating;
+        const foodItemRating = doc.data().foodItemRating;
+        const donationProcessRating = doc.data().donationProcessRating;
+
+        // Skip reviews with invalid ratings
+        if (
+          communicationRating !== null && communicationRating !== undefined &&
+          foodItemRating !== null && foodItemRating !== undefined &&
+          donationProcessRating !== null && donationProcessRating !== undefined
+        ) {
+          totalCommunicationRating += communicationRating;
+          totalFoodItemRating += foodItemRating;
+          totalDonationProcessRating += donationProcessRating;
+          reviewCount++;
+        }
+      });
+
+      // Ensure there's at least one valid review to calculate the average
+      const avgCommunicationRating = reviewCount > 0 ? totalCommunicationRating / reviewCount : 0;
+      const avgFoodItemRating = reviewCount > 0 ? totalFoodItemRating / reviewCount : 0;
+      const avgDonationProcessRating = reviewCount > 0 ? totalDonationProcessRating / reviewCount : 0;
+
+      // Calculate the overall average rating
+      const overallAverageRating = (avgCommunicationRating + avgFoodItemRating + avgDonationProcessRating) / 3;
+
+      // Round the overall average rating to 1 decimal place
+      const roundedAverageRating = Math.round(overallAverageRating * 10) / 10;
+
+      await admin.firestore().collection("users").doc(donorId).set({
+        averageRating: roundedAverageRating,
+        reviewCount: reviewCount
+      }, { merge: true });
+
+    } catch (error) {
+      console.error("Error updating donor rating:", error);
+    }
+
+    return null;
+  });
+
+// Trigger when the donation request status changes to "Accepted"
+exports.sendRequestAcceptedNotification = functions.firestore
+    .document('donationRequests/{requestId}')
+    .onUpdate(async (change, context) => {
+        // Get the new and old values of the donation request document
+        const newValue = change.after.data();
+        const oldValue = change.before.data();
+
+        // Check if the status has changed to "Accepted"
+        if (newValue.status === 'Accepted' && oldValue.status !== 'Accepted') {
+            const requesterId = newValue.requesterId;
+            const assignedToName = newValue.assignedToName;
+            const productName = newValue.productName;
+            const pickupDateTime = newValue.pickupDateTime.toDate(); // Format the date without UTC
+          
+
+            // Retrieve the requester data from the 'users' collection (or wherever user data is stored)
+            const userRef = admin.firestore().collection('users').doc(requesterId);
+            const userSnapshot = await userRef.get();
+            
+            if (!userSnapshot.exists) {
+                console.log('User not found');
+                return null;
+            }
+
+            const user = userSnapshot.data();
+            const requesterToken = user.fcm_token;  // Assuming the user document has an FCM token field
+
+            if (!requesterToken) {
+                console.log('No FCM token found for the user');
+                return null;
+            }
+
+           // Create the message body with the necessary details
+           const messageBody = `${assignedToName}, your request for ${productName} has been accepted!\nYour pickup time is: ${pickupDateTime} as selected`;
+
+
+            // Send a notification to the requester
+            const message = {
+                notification: {
+                    title: 'Donation Request Accepted',
+                    body: messageBody,
+                },
+                token: requesterToken,
+            };
+
+            try {
+                // Send the notification using Firebase Cloud Messaging (FCM)
+                await admin.messaging().send(message);
+                console.log('Notification sent successfully.');
+            } catch (error) {
+                console.error('Error sending notification: ', error);
+            }
+
+            return null;
+        }
+
+        return null;  // If the status hasn't changed to "Accepted", do nothing
+    });

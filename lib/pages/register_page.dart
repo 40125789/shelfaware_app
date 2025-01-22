@@ -80,13 +80,18 @@ class _RegisterPageState extends State<RegisterPage> {
   // Get the current user's UID
   final String uid = FirebaseAuth.instance.currentUser!.uid;
 
+  // Get the current timestamp
+  final Timestamp joinDate = Timestamp.now();
+
   // Save user data with UID as the document ID
   await FirebaseFirestore.instance.collection('users').doc(uid).set({
     'firstName': firstName,
     'lastName': lastName,
     'email': email,
+    'joinDate': joinDate, // Add the join date field with current timestamp
   });
 }
+
 
 
   //error message to user

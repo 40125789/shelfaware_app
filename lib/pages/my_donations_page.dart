@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shelfaware_app/pages/chat_page.dart';
+import 'package:shelfaware_app/pages/star_review_page.dart';
 import 'donation_detail_page.dart';
 import 'package:intl/intl.dart';
 
@@ -189,80 +191,176 @@ class MyDonationsPage extends StatelessWidget {
               },
             ),
             // Tab for Sent Donation Requests
-            StreamBuilder<List<Map<String, dynamic>>>( 
-              stream: getSentDonationRequests(userId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+           // Tab for Sent Donation Requests
+StreamBuilder<List<Map<String, dynamic>>>( 
+  stream: getSentDonationRequests(userId),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-                if (snapshot.hasError) {
-                  return Center(child: Text("Error: ${snapshot.error}"));
-                }
+    if (snapshot.hasError) {
+      return Center(child: Text("Error: \${snapshot.error}"));
+    }
 
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text("No sent donation requests"));
-                }
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      return const Center(child: Text("No sent donation requests"));
+    }
 
-                final donationRequests = snapshot.data!;
+    final donationRequests = snapshot.data!;
 
-                return ListView.builder(
-                  itemCount: donationRequests.length,
-                  itemBuilder: (context, index) {
-                    final request = donationRequests[index];
-                    final productName = request['productName'] ?? 'Unnamed Product';
-                    final requestDate = request['requestDate']?.toDate();
-                    final status = request['status'] ?? 'Pending';
-                    final pickupDateTime = request['pickupDateTime']?.toDate();
+    return ListView.builder(
+      itemCount: donationRequests.length,
+      itemBuilder: (context, index) {
+        final request = donationRequests[index];
+        final productName = request['productName'] ?? 'Unnamed Product';
+        final requestDate = request['requestDate']?.toDate();
+        final status = request['status'] ?? 'Pending';
+        final pickupDateTime = request['pickupDateTime']?.toDate();
+        final donationPhotoUrl = request['imageUrl'] ?? ''; // Image URL from Firebase
 
-                    // Format dates
-                    final formattedRequestDate = requestDate != null
-                        ? DateFormat('dd MMM yyyy, HH:mm').format(requestDate)
-                        : 'Unknown Date';
-                    final formattedPickupDate = pickupDateTime != null
-                        ? DateFormat('dd MMM yyyy, HH:mm').format(pickupDateTime)
-                        : 'Unknown Pickup Date';
+        // Format dates
+        final formattedRequestDate = requestDate != null
+            ? DateFormat('dd MMM yyyy, HH:mm').format(requestDate)
+            : 'Unknown Date';
+        final formattedPickupDate = pickupDateTime != null
+            ? DateFormat('dd MMM yyyy, HH:mm').format(pickupDateTime)
+            : 'Unknown Pickup Date';
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      child: ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Colors.green,
-                          child: Icon(Icons.food_bank, color: Colors.white),
-                        ),
-                        title: Text(
-                          productName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Status: $status", style: const TextStyle(color: Colors.grey)),
-                            Text("Request Date: $formattedRequestDate", style: const TextStyle(color: Colors.grey)),
-                            Text("Pickup Date: $formattedPickupDate", style: const TextStyle(color: Colors.grey)),
-                          ],
-                        ),
-                      
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DonationDetailsPage(
-                                donation: request,
-                                donationId: request['donationId'] ?? '',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                );
-              },
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.green,
+              backgroundImage: donationPhotoUrl.isNotEmpty
+                  ? NetworkImage(donationPhotoUrl)
+                  : null,
+              child: donationPhotoUrl.isEmpty
+                  ? Icon(Icons.food_bank, color: Colors.white)
+                  : null,
             ),
+            title: Text(
+              productName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Request status: $status", style: const TextStyle(color: Colors.grey)),
+                Text("Request Date: $formattedRequestDate", style: const TextStyle(color: Colors.grey)),
+                Text("Pickup Date: $formattedPickupDate", style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+      onTap: () {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.message, color: Colors.blue),
+            title: const Text('Message Donor'),
+            onTap: () {
+              Navigator.pop(context); // Close bottom sheet before navigation
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance.collection('donations').doc(request['donationId']).get(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+                        return Scaffold(
+                          appBar: AppBar(title: const Text('Error')),
+                          body: const Center(child: Text('Donation not found')),
+                        );
+                      }
+
+                      final donationData = snapshot.data!.data() as Map<String, dynamic>;
+
+                      return ChatPage(
+                        donorName: donationData['donorName'] ?? 'Unknown',
+                        userId: donationData['userId'] ?? '',
+                        receiverEmail: donationData['donorEmail'] ?? '',
+                        receiverId: donationData['donorId'] ?? '',
+                        donationId: request['donationId'] ?? '',
+                        donationName: donationData['productName'] ?? 'Unnamed Item',
+                        chatId: '',
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.cancel, color: Colors.red),
+            title: const Text('Withdraw Request'),
+           
+            onTap: () async {
+              Navigator.pop(context); // Close bottom sheet before action
+              await withdrawDonationRequest(context, request['requestId']);
+            },
+          ),
+         if (status == "Accepted") 
+  ListTile(
+    leading: const Icon(Icons.star_rate, color: Colors.green),
+    title: const Text('Leave a Review'),
+    onTap: () {
+      Navigator.pop(context);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ReviewPage(
+            donorId: request['donatorId'] ?? '',
+            donationId: request['donationId'] ?? '',  
+            donationImage: request['imageUrl'] ?? '',  
+            donationName: request['productName'] ?? '', 
+            donorImageUrl: request['donorImageUrl'] ?? '', 
+            donorName: request['donorName'] ?? '',
+          ),
+        ),
+      );
+    },
+  ),
+
+        ],
+      );
+    },
+  );
+},
+
+          ),
+        );
+      },
+    );
+  },
+),
           ],
         ),
       ),
     );
   }
 }
+
+Future<void> withdrawDonationRequest(BuildContext context, String requestId) async {
+  try {
+    await FirebaseFirestore.instance.collection('donationRequests').doc(requestId).delete();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Donation request withdrawn successfully')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error withdrawing request: $e')),
+    );
+  }
+}
+
+    

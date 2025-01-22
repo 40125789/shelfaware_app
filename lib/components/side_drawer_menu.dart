@@ -11,6 +11,7 @@ import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/groups_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
+import 'package:shelfaware_app/pages/my_profile.dart';
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
 
 
@@ -121,9 +122,20 @@ Widget build(BuildContext context) {
     child: ListView(
       padding: EdgeInsets.zero,
       children: <Widget>[
-        // Profile Picture Section
+        // Profile Picture Section/navigation to user profile
         Padding(
           padding: const EdgeInsets.all(16.0),
+          child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(userId: uid),
+                  ),
+                );
+              },
+
+                     // Navigate to ProfilePage
           child: Row(
             children: [
               GestureDetector(
@@ -160,13 +172,16 @@ Widget build(BuildContext context) {
                         fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const Text(
-                    "Edit Profile Picture",
-                    style: TextStyle(fontSize: 14, color: Colors.blue),
+                    "My Profile",
+                    style: TextStyle(fontSize: 18, 
+                    fontWeight: FontWeight.normal,
+                    color: Colors.green),
                   ),
                 ],
               ),
             ],
           ),
+        ),
         ),
         const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 

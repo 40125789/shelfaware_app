@@ -25,7 +25,7 @@ import 'package:shelfaware_app/components/expiry_icon.dart'; // Import the expir
 import 'package:shelfaware_app/controllers/auth_controller.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shelfaware_app/components/mark_food_dialogue.dart';
-import 'package:lottie/lottie.dart'; 
+import 'package:lottie/lottie.dart';
 
 // Import the Mark Food Dialog page
 // Import the Mark Food Dialog page
@@ -69,7 +69,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void initState() {
-
     super.initState();
     getUserData();
     _pageController = PageController();
@@ -137,18 +136,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
-
   void onNotificationPressed() {
     Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => NotificationPage(userId: user.uid),
-            ),
-          );
+      context,
+      MaterialPageRoute(
+        builder: (context) => NotificationPage(userId: user.uid),
+      ),
+    );
   }
-
-    
-  
 
   Future<void> _fetchFilterOptions() async {
     try {
@@ -176,15 +171,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         return Scaffold(
           appBar: TopAppBar(
             onLocationPressed: () {
-Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => LocationPage()),
-            );
-
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => LocationPage()),
+              );
             },
-            onNotificationPressed:  onNotificationPressed,
+            onNotificationPressed: onNotificationPressed,
             userId: user.uid,
-                 // Total count of expiring items
+            // Total count of expiring items
           ),
           drawer: CustomDrawer(
             firstName: firstName,
@@ -197,7 +191,8 @@ Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => FavoritesPage()),
               );
-            }, onNavigateToDonationWatchList: () {  },
+            },
+            onNavigateToDonationWatchList: () {},
           ),
           body: PageView(
             controller: _pageController,
@@ -287,143 +282,251 @@ Navigator.push(
                                           'No food items match the selected filter.'));
                                 }
 
+                                // Group items by expiry date category
+                                final groupedItems =
+                                    <String, List<QueryDocumentSnapshot>>{
+                                  'Expired': [],
+                                  'Expiring Soon': [],
+                                  'Fresh': []
+                                };
+
+                                final now = DateTime.now();
+
+                                for (var item in filteredItems) {
+                                  final data =
+                                      item.data() as Map<String, dynamic>;
+                                  final expiryTimestamp =
+                                      data['expiryDate'] as Timestamp;
+                                  final expiryDate = expiryTimestamp.toDate();
+                                  final difference =
+                                      expiryDate.difference(now).inDays;
+
+                                  // Classify based on expiry date
+                                  if (difference < 0) {
+                                    groupedItems['Expired']!
+                                        .add(item); // Expired items
+                                  } else if (difference <= 7) {
+                                    groupedItems['Expiring Soon']!
+                                        .add(item); // Expiring within 7 days
+                                  } else {
+                                    groupedItems['Fresh']!
+                                        .add(item); // Fresh items
+                                  }
+                                }
+
                                 return ListView(
-                                  children: filteredItems.map((document) {
-                                    final data =
-                                        document.data() as Map<String, dynamic>;
-                                    final expiryTimestamp =
-                                        data['expiryDate'] as Timestamp;
+                                  children: groupedItems.keys.map((category) {
+                                    // Get the count of items in each category
+                                    int itemCount =
+                                        groupedItems[category]!.length;
 
-                                    String? fetchedFoodType = data['category'];
-                                    FoodCategory foodCategory;
-
-                                    if (fetchedFoodType != null) {
-                                      foodCategory =
-                                          FoodCategory.values.firstWhere(
-                                        (e) =>
-                                            e.toString().split('.').last ==
-                                            fetchedFoodType,
-                                        orElse: () => FoodCategory.values.first,
-                                      );
-                                    } else {
-                                      foodCategory = FoodCategory.values.first;
+                                    // Color each category differently
+                                    Color categoryColor;
+                                    switch (category) {
+                                      case 'Expired':
+                                        categoryColor =
+                                            Colors.red; // Red for expired items
+                                        break;
+                                      case 'Expiring Soon':
+                                        categoryColor = Colors
+                                            .orange; // Orange for items expiring soon
+                                        break;
+                                      case 'Fresh':
+                                        categoryColor = Colors
+                                            .green; // Green for fresh items
+                                        break;
+                                      default:
+                                        categoryColor =
+                                            Colors.blueAccent; // Default color
                                     }
 
-                                    String documentId = document.id;
-
-                                    return InkWell(
-                                      onTap: () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          builder: (BuildContext context) {
-                                            return Container(
-                                              height: MediaQuery.of(context).size.height * 0.7,
-                                              child: MarkFoodDialog(
-                                                documentId: documentId,
+                                    // For each category, create an expandable tile with a colored header only
+                                    return ExpansionTile(
+                                      tilePadding: EdgeInsets
+                                          .zero, // Remove padding to make the header stick to the edge
+                                      title: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8.0, horizontal: 16.0),
+                                        decoration: BoxDecoration(
+                                          color: categoryColor,
+                                          borderRadius: BorderRadius.circular(
+                                              12), // Rounded corners
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              category, // The category name
+                                              style: const TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors
+                                                    .white, // White text on colored background
                                               ),
+                                            ),
+                                            Text(
+                                              '($itemCount)', // Display the item count in each category
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors
+                                                    .white, // White text on colored background
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      children: groupedItems[category]!
+                                          .map((document) {
+                                        final data = document.data()
+                                            as Map<String, dynamic>;
+                                        final expiryTimestamp =
+                                            data['expiryDate'] as Timestamp;
+
+                                        String? fetchedFoodType =
+                                            data['category'];
+                                        FoodCategory foodCategory;
+
+                                        if (fetchedFoodType != null) {
+                                          foodCategory =
+                                              FoodCategory.values.firstWhere(
+                                            (e) =>
+                                                e.toString().split('.').last ==
+                                                fetchedFoodType,
+                                            orElse: () =>
+                                                FoodCategory.values.first,
+                                          );
+                                        } else {
+                                          foodCategory =
+                                              FoodCategory.values.first;
+                                        }
+
+                                        String documentId = document.id;
+
+                                        return InkWell(
+                                          onTap: () {
+                                            showModalBottomSheet(
+                                              context: context,
+                                              isScrollControlled: true,
+                                              builder: (BuildContext context) {
+                                                return Container(
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.7,
+                                                  child: MarkFoodDialog(
+                                                    documentId: documentId,
+                                                  ),
+                                                );
+                                              },
                                             );
                                           },
-                                        );
-                                      },
-                                      child: Card(
-                                        elevation: 3,
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 8.0),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        child: ListTile(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(50),
-                                          ),
-                                          leading: SizedBox(
-                                            width: 40,
-                                            height: 40,
-                                            child: Icon(
-                                                FoodCategoryIcons.getIcon(
-                                                    foodCategory)),
-                                          ),
-                                          title: Text(
-                                            data['productName'] ?? 'No Name',
-                                            style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          subtitle: Text(
-                                            "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}",
-                                          ),
-                                          trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SizedBox(
-                                                width: 60,
-                                                height: 60,
-                                                child: ExpiryIcon(
-                                                    expiryTimestamp:
-                                                        expiryTimestamp),
+                                          child: Card(
+                                            elevation: 3,
+                                            margin: const EdgeInsets.symmetric(
+                                                vertical: 8.0),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: ListTile(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(50),
                                               ),
-                                              PopupMenuButton<String>(
-                                                icon: Icon(Icons.more_vert),
-                                                onSelected: (String value) {
-                                                  if (value == 'edit') {
-                                                    _editFoodItem(documentId);
-                                                  } else if (value ==
-                                                      'delete') {
-                                                    _deleteFoodItem(context, documentId);
-                                                  } else if (value ==
-                                                      'donate') {
-                                                    _confirmDonation(
-                                                        documentId);
-                                                  }
-                                                },
-                                                itemBuilder:
-                                                    (BuildContext context) => [
-                                                  PopupMenuItem<String>(
-                                                    value: 'edit',
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(Icons.edit),
-                                                        SizedBox(width: 8),
-                                                        Text('Edit'),
-                                                      ],
-                                                    ),
+                                              leading: SizedBox(
+                                                width: 40,
+                                                height: 40,
+                                                child: Icon(
+                                                    FoodCategoryIcons.getIcon(
+                                                        foodCategory)),
+                                              ),
+                                              title: Text(
+                                                data['productName'] ??
+                                                    'No Name',
+                                                style: const TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              subtitle: Text(
+                                                "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}",
+                                              ),
+                                              trailing: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 60,
+                                                    height: 60,
+                                                    child: ExpiryIcon(
+                                                        expiryTimestamp:
+                                                            expiryTimestamp),
                                                   ),
-                                                  PopupMenuItem<String>(
-                                                    value: 'delete',
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(Icons.delete),
-                                                        SizedBox(width: 8),
-                                                        Text('Delete'),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  PopupMenuItem<String>(
-                                                    value: 'donate',
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(Icons
-                                                            .volunteer_activism),
-                                                        SizedBox(width: 8),
-                                                        Text('Donate'),
-                                                      ],
-                                                    ),
+                                                  PopupMenuButton<String>(
+                                                    icon: Icon(Icons.more_vert),
+                                                    onSelected: (String value) {
+                                                      if (value == 'edit') {
+                                                        _editFoodItem(
+                                                            documentId);
+                                                      } else if (value ==
+                                                          'delete') {
+                                                        _deleteFoodItem(context,
+                                                            documentId);
+                                                      } else if (value ==
+                                                          'donate') {
+                                                        _confirmDonation(
+                                                            documentId);
+                                                      }
+                                                    },
+                                                    itemBuilder: (BuildContext
+                                                            context) =>
+                                                        [
+                                                      PopupMenuItem<String>(
+                                                        value: 'edit',
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(Icons.edit),
+                                                            SizedBox(width: 8),
+                                                            Text('Edit'),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      PopupMenuItem<String>(
+                                                        value: 'delete',
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(Icons.delete),
+                                                            SizedBox(width: 8),
+                                                            Text('Delete'),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      PopupMenuItem<String>(
+                                                        value: 'donate',
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(Icons
+                                                                .volunteer_activism),
+                                                            SizedBox(width: 8),
+                                                            Text('Donate'),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ],
                                               ),
-                                            ],
+                                            ),
                                           ),
-                                        ),
-                                      ),
+                                        );
+                                      }).toList(),
                                     );
                                   }).toList(),
                                 );
                               },
                             ),
-                          ),
+                          )
                   ],
                 ),
               ),
@@ -447,7 +550,10 @@ Navigator.push(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AddFoodItem(foodItems: [],)),
+                MaterialPageRoute(
+                    builder: (context) => AddFoodItem(
+                          foodItems: [],
+                        )),
               );
             },
             child: const Icon(Icons.add),
@@ -465,263 +571,271 @@ Navigator.push(
     return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}";
   }
 
- Future<void> _donateFoodItem(String id) async {
-  try {
-    // Fetch the food item document
-    DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
-        .collection('foodItems')
-        .doc(id)
-        .get();
+  Future<void> _donateFoodItem(String id) async {
+    try {
+      // Fetch the food item document
+      DocumentSnapshot foodItemDoc = await FirebaseFirestore.instance
+          .collection('foodItems')
+          .doc(id)
+          .get();
 
-    if (!foodItemDoc.exists) {
-      throw Exception("Food item not found.");
+      if (!foodItemDoc.exists) {
+        throw Exception("Food item not found.");
+      }
+
+      // Get food item data
+      Map<String, dynamic> foodItemData =
+          foodItemDoc.data() as Map<String, dynamic>;
+
+      // Check if the item is expired
+      Timestamp expiryTimestamp = foodItemData['expiryDate'];
+      DateTime expiryDate = expiryTimestamp.toDate();
+      if (expiryDate.isBefore(DateTime.now())) {
+        _showExpiredItemDialog();
+        return;
+      }
+
+      // Get the user's location from Firestore or GeoLocator
+      final location = await _getUserLocation();
+
+      // Ask if the user wants to add a photo
+      bool takePhoto = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Text(
+              "Would you like to add a photo?",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center, // Ensures title is centered
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Image with adjusted size and border for better presentation
+                Container(
+                  height: 120,
+                  width: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey, width: 1),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/camera.png', // Your image path here
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                // Improved text with better alignment and styling
+                Text(
+                  "Adding a photo of your food item can help attract more attention and assist others in assessing its quality. Photos make listings stand out and feel more trustworthy.",
+                  textAlign: TextAlign.center, // Centers the content text
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+              ],
+            ),
+            actions: [
+              // Simplified actions with consistent styling
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(
+                  "No, skip",
+                  style: TextStyle(color: Colors.blueAccent),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  "Yes, add photo",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      String? imageUrl;
+      if (takePhoto) {
+        // Show the Lottie loading animation dialog after the photo is taken
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Prevent closing the dialog
+          builder: (BuildContext context) {
+            return AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RepaintBoundary(
+                    child: Lottie.network(
+                      'https://lottie.host/726edc0a-86f8-4d94-95fc-3df9de90d8fe/c2E6eYh86Z.json',
+                      frameRate: FrameRate.max,
+                      repeat: true,
+                      animate: true,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    "Donating your food...",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+
+        // Let user pick an image
+        final picker = ImagePicker();
+        final XFile? image = await picker.pickImage(
+          source: ImageSource.camera,
+          maxWidth: 800,
+          maxHeight: 800,
+        );
+
+        if (image != null) {
+          final String userId = FirebaseAuth.instance.currentUser!.uid;
+          final String imageName =
+              "donation_${DateTime.now().millisecondsSinceEpoch}.jpg";
+          final Reference storageRef = FirebaseStorage.instance
+              .ref()
+              .child('donation_images/$userId/$imageName');
+          final TaskSnapshot snapshot =
+              await storageRef.putFile(File(image.path)).whenComplete(() {});
+
+          // Get image URL after upload
+          imageUrl = await snapshot.ref.getDownloadURL();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text("No photo captured. Proceeding without photo.")),
+          );
+        }
+
+        Navigator.pop(context); // Dismiss loading dialog after image upload
+      }
+
+      // Prepare donation data
+      final String donorId = FirebaseAuth.instance.currentUser!.uid;
+      final String donorEmail = FirebaseAuth.instance.currentUser!.email!;
+
+      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(donorId)
+          .get();
+      final String donorName = userDoc['firstName'];
+
+      final String donationId =
+          FirebaseFirestore.instance.collection('donations').doc().id;
+
+      foodItemData['donorId'] = donorId;
+      foodItemData['donorName'] = donorName;
+      foodItemData['donorEmail'] = donorEmail;
+      foodItemData['donated'] = true;
+      foodItemData['donatedAt'] = Timestamp.now();
+      foodItemData['status'] = 'available';
+      foodItemData['donationId'] = donationId;
+
+      // If location exists in the user's document, use that, otherwise use GeoLocator location
+      if (userDoc['location'] != null) {
+        GeoPoint userLocation = userDoc['location'];
+        foodItemData['location'] =
+            GeoPoint(userLocation.latitude, userLocation.longitude);
+      } else {
+        foodItemData['location'] =
+            GeoPoint(location.latitude, location.longitude);
+      }
+
+      if (imageUrl != null) {
+        foodItemData['imageUrl'] = imageUrl;
+      }
+
+      // Add the item to the donations collection
+      await FirebaseFirestore.instance
+          .collection('donations')
+          .doc(donationId)
+          .set(foodItemData);
+
+      // Remove the item from the foodItems collection
+      await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
+
+      // Update the user's document with the new donation
+      await FirebaseFirestore.instance.collection('users').doc(donorId).update({
+        'myDonations': FieldValue.arrayUnion([donationId]),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Item donated successfully.")),
+      );
+    } catch (e) {
+      print('Error donating food item: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to donate item: $e")),
+      );
     }
+  }
 
-    // Get food item data
-    Map<String, dynamic> foodItemData = foodItemDoc.data() as Map<String, dynamic>;
-
-    // Check if the item is expired
-    Timestamp expiryTimestamp = foodItemData['expiryDate'];
-    DateTime expiryDate = expiryTimestamp.toDate();
-    if (expiryDate.isBefore(DateTime.now())) {
-      _showExpiredItemDialog();
-      return;
-    }
-
-    // Get the user's location from Firestore or GeoLocator
-    final location = await _getUserLocation();
-
-    // Ask if the user wants to add a photo
-    bool takePhoto = await showDialog(
+// Function to show a popup dialog when the item is expired
+  void _showExpiredItemDialog() {
+    showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: Text(
-            "Would you like to add a photo?",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center, // Ensures title is centered
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Image with adjusted size and border for better presentation
-              Container(
-                height: 120,
-                width: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey, width: 1),
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/camera.png', // Your image path here
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              // Improved text with better alignment and styling
-              Text(
-                "Adding a photo of your food item can help attract more attention and assist others in assessing its quality. Photos make listings stand out and feel more trustworthy.",
-                textAlign: TextAlign.center, // Centers the content text
-                style: TextStyle(fontSize: 14, color: Colors.black87),
-              ),
-            ],
-          ),
+          title: Text("Donation Alert!"),
+          content: Text("This item has expired and cannot be donated."),
           actions: [
-            // Simplified actions with consistent styling
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                "No, skip",
-                style: TextStyle(color: Colors.blueAccent),
-              ),
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
             ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white, backgroundColor: Colors.green,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                "Yes, add photo",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmDonation(String id) async {
+    bool? confirm = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm Donation"),
+          content: Text("Are you sure you want to donate this item?"),
+          actions: [
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop(false); // Return false
+              },
+            ),
+            TextButton(
+              child: Text("Donate"),
+              onPressed: () {
+                Navigator.of(context).pop(true); // Return true
+              },
             ),
           ],
         );
       },
     );
 
-    String? imageUrl;
-    if (takePhoto) {
-      // Show the Lottie loading animation dialog after the photo is taken
-      showDialog(
-        context: context,
-        barrierDismissible: false, // Prevent closing the dialog
-        builder: (BuildContext context) {
-          return AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RepaintBoundary(
-                  child: Lottie.network(
-                    'https://lottie.host/726edc0a-86f8-4d94-95fc-3df9de90d8fe/c2E6eYh86Z.json',
-                    frameRate: FrameRate.max,
-                    repeat: true,
-                    animate: true,
-                  ),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  "Donating your food...",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-
-      // Let user pick an image
-      final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 800,
-        maxHeight: 800,
-      );
-
-      if (image != null) {
-        final String userId = FirebaseAuth.instance.currentUser!.uid;
-        final String imageName = "donation_${DateTime.now().millisecondsSinceEpoch}.jpg";
-        final Reference storageRef = FirebaseStorage.instance
-            .ref()
-            .child('donation_images/$userId/$imageName');
-        final TaskSnapshot snapshot = await storageRef.putFile(File(image.path)).whenComplete(() {});
-
-        // Get image URL after upload
-        imageUrl = await snapshot.ref.getDownloadURL();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("No photo captured. Proceeding without photo.")),
-        );
-      }
-
-      Navigator.pop(context); // Dismiss loading dialog after image upload
+    if (confirm == true) {
+      await _donateFoodItem(id); // Proceed with donation if confirmed
     }
-
-    // Prepare donation data
-    final String donorId = FirebaseAuth.instance.currentUser!.uid;
-    final String donorEmail = FirebaseAuth.instance.currentUser!.email!;
-
-    final DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(donorId)
-        .get();
-    final String donorName = userDoc['firstName'];
-
-    final String donationId = FirebaseFirestore.instance.collection('donations').doc().id;
-
-    foodItemData['donorId'] = donorId;
-    foodItemData['donorName'] = donorName;
-    foodItemData['donorEmail'] = donorEmail;
-    foodItemData['donated'] = true;
-    foodItemData['donatedAt'] = Timestamp.now();
-    foodItemData['status'] = 'available';
-    foodItemData['donationId'] = donationId;
-
-    // If location exists in the user's document, use that, otherwise use GeoLocator location
-    if (userDoc['location'] != null) {
-      GeoPoint userLocation = userDoc['location'];
-      foodItemData['location'] = GeoPoint(userLocation.latitude, userLocation.longitude);
-    } else {
-      foodItemData['location'] = GeoPoint(location.latitude, location.longitude);
-    }
-
-    if (imageUrl != null) {
-      foodItemData['imageUrl'] = imageUrl;
-    }
-
-    // Add the item to the donations collection
-    await FirebaseFirestore.instance.collection('donations').doc(donationId).set(foodItemData);
-
-    // Remove the item from the foodItems collection
-    await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
-
-    // Update the user's document with the new donation
-    await FirebaseFirestore.instance.collection('users').doc(donorId).update({
-      'myDonations': FieldValue.arrayUnion([donationId]),
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Item donated successfully.")),
-    );
-  } catch (e) {
-    print('Error donating food item: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Failed to donate item: $e")),
-    );
   }
-}
-
-
-
-// Function to show a popup dialog when the item is expired
-void _showExpiredItemDialog() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text("Donation Alert!"),
-        content: Text("This item has expired and cannot be donated."),
-        actions: [
-          TextButton(
-            child: Text("OK"),
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
-
-Future<void> _confirmDonation(String id) async {
-  bool? confirm = await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text("Confirm Donation"),
-        content: Text("Are you sure you want to donate this item?"),
-        actions: [
-          TextButton(
-            child: Text("Cancel"),
-            onPressed: () {
-              Navigator.of(context).pop(false); // Return false
-            },
-          ),
-          TextButton(
-            child: Text("Donate"),
-            onPressed: () {
-              Navigator.of(context).pop(true); // Return true
-            },
-          ),
-        ],
-      );
-    },
-  );
-
-  if (confirm == true) {
-    await _donateFoodItem(id); // Proceed with donation if confirmed
-  }
-}
-
 
   Future<Position> _getUserLocation() async {
     return await getUserLocation();
@@ -743,11 +857,9 @@ Future<void> _confirmDonation(String id) async {
       return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}'; // Fresh items
     }
   }
-  
+
   void _editFoodItem(String documentId) {}
 }
-
-
 
 Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
   bool? confirm = await showDialog(
@@ -755,7 +867,8 @@ Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text("Confirm Deletion"),
-        content: Text("Are you sure you want to delete this item? This action cannot be undone."),
+        content: Text(
+            "Are you sure you want to delete this item? This action cannot be undone."),
         actions: [
           TextButton(
             child: Text("Cancel"),

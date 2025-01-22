@@ -78,20 +78,36 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
     }
   }
 
-  Future<void> _launchURL(String url) async {
-    if (url.isEmpty ||
-        (!url.startsWith('http://') && !url.startsWith('https://'))) {
-      print('Invalid URL: $url');
-      throw 'Could not launch URL: $url';
-    }
 
-    if (await canLaunch(url)) {
-      await launch(url);
+
+Future<void> _launchURL(String url) async {
+  if (url.isEmpty || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+    print('Invalid URL: $url');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Invalid URL: $url')),
+    );
+    return;
+  }
+
+  try {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunch(url)) {  // Use canLaunch() instead of canLaunchUrl
+      await launch(url, forceSafariVC: false, forceWebView: false);  // Use launch() instead of launchUrl
     } else {
       print('Could not launch URL: $url');
-      throw 'Could not launch $url';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open the URL: $url')),
+      );
     }
+  } catch (e) {
+    print('Error opening URL: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error opening URL: $url')),
+    );
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -219,21 +235,16 @@ child: Column(
                         child: Text(instruction, style: const TextStyle(fontSize: 16)),
                       )),
                   if (instructionsUrl.isNotEmpty)
-                    ElevatedButton(
-                      onPressed: () {
-                        _launchURL(instructionsUrl).catchError((e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(
-                                    'Could not open URL: $instructionsUrl')),
-                          );
-                        });
-                      },
-                      child: const Text('View Full Instructions'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
+                   ElevatedButton(
+  onPressed: () {
+    _launchURL(instructionsUrl);
+  },
+  child: const Text('View Full Instructions'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Theme.of(context).colorScheme.primary,
+  ),
+)
+
                 ],
               ),
             ),
@@ -243,3 +254,13 @@ child: Column(
     );
   }
 }
+                    
+                
+              
+            
+          
+        
+      
+    
+
+

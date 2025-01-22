@@ -339,7 +339,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                   SizedBox(height: 4),
                   Text('Status: ${widget.status}'),
                   SizedBox(height: 12),
-                  Row(
+     Row(
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
   children: [
     ElevatedButton(
@@ -362,22 +362,15 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
       child: Text('Contact Donor', style: TextStyle(color: Colors.white)),
       style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
     ),
-    // Condition to check if the user has already requested
+    // Check if the user has already requested the item and display message accordingly
     if (hasRequested)
       Text(
-        "Already requested", 
+        "Already requested",
         style: TextStyle(fontSize: 16, color: Colors.grey),
       )
     else 
       ElevatedButton(
-        onPressed: () async {
-          // When the user requests, add data to Firestore
-          await FirebaseFirestore.instance.collection('donationRequests').add({
-            'donationId': widget.donationId,
-            'requesterId': widget.userId,
-            'requestTime': FieldValue.serverTimestamp(),
-          });
-          
+        onPressed: () {
           // Update UI after request
           setState(() {
             hasRequested = true; // User has successfully requested
@@ -410,7 +403,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
       ),
   ],
 ),
-
+            
             SizedBox(height: 16),
                 ],
               ),
