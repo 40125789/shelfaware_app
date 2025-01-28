@@ -248,7 +248,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Product Details'),
-        backgroundColor: Colors.green,
+      
       ),
       body: SingleChildScrollView(
         // Make the whole body scrollable

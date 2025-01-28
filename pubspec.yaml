@@ -73,11 +73,15 @@ dependencies:
   latlong2: ^0.8.0
   cached_network_image: ^3.0.0
   cloud_functions: ^5.2.0
-  firebase_app_check: ^0.3.1+7
+  firebase_app_check: ^0.3.2+1
   shared_preferences: ^2.3.4
   lottie: ^3.0.0
   flutter_riverpod: ^2.6.1
   flutter_rating_bar: ^4.0.1
+  fuzzy: ^0.5.1
+  flutter_html: ^3.0.0-beta.2
+  profanity_filter: ^2.0.0
+  
 
 
 
@@ -113,6 +117,7 @@ flutter:
   - assets/camera.png
   - assets/splashscreen/splashscreen.png
   - assets/map_markers/current_location.png
+  - assets/login.png
 
 
 flutter_icons:

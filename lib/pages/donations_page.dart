@@ -400,88 +400,93 @@ Future<void> _getUserLocationFromFirestore(String userId) async {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Text('Donations'),
-            Spacer(), // Push the filter button to the right
-            IconButton(
-              icon: Row(
-                children: [
-                  Icon(Icons.filter_alt_rounded), // Filter icon
-                  SizedBox(width: 4), // Space between the icon and text
-                  Text('Filter', style: TextStyle(fontSize: 16)), // Filter text
-                ],
-              ),
-              onPressed: _showFilterDialog, // Your filter dialog function
-              tooltip: 'Filter Donations',
-            ),
-          ],
-        ),
-        bottom: TabBar(
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: Column(
+      children: [
+        // TabBar inside the body
+        TabBar(
           controller: _tabController,
           tabs: [
             Tab(text: 'Donations List'),
             Tab(text: 'Donations Map'),
           ],
         ),
-      ),
-
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                TabBarView(
-                  physics:
-                      NeverScrollableScrollPhysics(), // Disable swipe gestures
-                  controller: _tabController,
+        // Custom row for the filter button below the TabBar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Adjust padding as needed
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end, // Align to the right
+            children: [
+              IconButton(
+                icon: Row(
                   children: [
-                    DonationListView(
-                        filterExpiringSoon: _filterExpiringSoon,
-                        filterNewlyAdded: _filterNewlyAdded,
-                        filterDistance: _filterDistance,
-                        currentLocation: _currentLocation),
-                    GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: _currentLocation ?? LatLng(0, 0),
-                        zoom: 14,
-                      ),
-                      markers: _markers,
-                      onMapCreated: (GoogleMapController controller) {
-                        _googleMapController = controller;
-                      },
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: true,
-                      zoomGesturesEnabled: true,
-                      onTap: (LatLng latLng) {
-                        // You can implement a custom tap behavior here
-                      },
+                    Icon(Icons.filter_alt_rounded), // Filter icon
+                    SizedBox(width: 4), // Space between the icon and text
+                    Text('Filter', style: TextStyle(fontSize: 16)), // Filter text
+                  ],
+                ),
+                onPressed: _showFilterDialog, // Your filter dialog function
+                tooltip: 'Filter Donations',
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : Stack(
+                  children: [
+                    TabBarView(
+                      physics: NeverScrollableScrollPhysics(), // Disable swipe gestures
+                      controller: _tabController,
+                      children: [
+                        DonationListView(
+                            filterExpiringSoon: _filterExpiringSoon,
+                            filterNewlyAdded: _filterNewlyAdded,
+                            filterDistance: _filterDistance,
+                            currentLocation: _currentLocation),
+                        GoogleMap(
+                          initialCameraPosition: CameraPosition(
+                            target: _currentLocation ?? LatLng(0, 0),
+                            zoom: 14,
+                          ),
+                          markers: _markers,
+                          onMapCreated: (GoogleMapController controller) {
+                            _googleMapController = controller;
+                          },
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: true,
+                          zoomGesturesEnabled: true,
+                          onTap: (LatLng latLng) {
+                            // You can implement a custom tap behavior here
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-
-      floatingActionButton:
-          _tabController.index == 1 // Check if the selected tab is the map tab
-              ? Align(
-                  alignment: Alignment.bottomLeft, // Align to the bottom left
-                  child: Padding(
-                    padding: const EdgeInsets.all(
-                        16.0), // Add some padding around the button
-                    child: FloatingActionButton(
-                      onPressed: _launchFoodBankMap,
-                      child: Icon(Icons.map),
-                      tooltip: 'Find Nearby Food Banks',
-                    ),
+        ),
+      ],
+    ),
+    floatingActionButton:
+        _tabController.index == 1 // Check if the selected tab is the map tab
+            ? Align(
+                alignment: Alignment.bottomLeft, // Align to the bottom left
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0), // Add some padding around the button
+                  child: FloatingActionButton(
+                    onPressed: _launchFoodBankMap,
+                    child: Icon(Icons.map),
+                    tooltip: 'Find Nearby Food Banks',
                   ),
-                )
-              : null, // Don't show the button on the donations list page
-    );
-  }
+                ),
+              )
+            : null, // Don't show the button on the donations list page
+  );  
+}
+  
 }
 
 void _updateMarkers(List<DonationLocation> donations) {}

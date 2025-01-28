@@ -35,7 +35,7 @@ class ChatListPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chats'),
-        backgroundColor: Colors.green,
+       
       ),
       body: StreamBuilder(
         stream: _firestore
@@ -134,7 +134,7 @@ Widget _buildChatListItemWidget(
       style: TextStyle(
         fontWeight: FontWeight.bold, // Make the name bold
         fontSize: 16, // Increase font size
-        color: Colors.black87, // Make the name a dark color to stand out
+         // Make the name a dark color to stand out
       ),
     ),
     subtitle: Text(

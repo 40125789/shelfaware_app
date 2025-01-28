@@ -10,8 +10,7 @@ class FavoriteButton extends StatefulWidget {
   FavoriteButton({
     required this.recipe,
     required this.favoriteRecipeIds,
-    required this.onFavoriteChanged, 
-    required Future<void> Function() onFavoriteToggle,
+    required this.onFavoriteChanged,
   });
 
   @override
@@ -24,51 +23,53 @@ class _FavoriteButtonState extends State<FavoriteButton> {
   @override
   void initState() {
     super.initState();
-    // Check if the recipe is already in favorites
-    isFavorite = widget.favoriteRecipeIds.contains(widget.recipe['label']);
+    // Check if the recipe is already a favorite
+    isFavorite = widget.favoriteRecipeIds.contains(widget.recipe['id'].toString());
   }
 
+  // Toggle favorite state
   void _toggleFavorite() async {
     User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final recipeId = widget.recipe['label'];
 
-      // Add or remove from favorites
+    if (user != null) {
+      final recipeId = widget.recipe['id'].toString();
+      final title = widget.recipe['title'];
+      final image = widget.recipe['image'];
+      final sourceUrl = widget.recipe['sourceUrl'];
+
+      final favoritesCollection = FirebaseFirestore.instance.collection('favourites');
+
+      // Check if the recipe is already a favorite
+      final favoriteDocRef = favoritesCollection.doc('${user.uid}_$recipeId');
+
       if (isFavorite) {
-        // Remove from favorites
-        await FirebaseFirestore.instance
-            .collection('favorites')
-            .where('userId', isEqualTo: user.uid)
-            .where('label', isEqualTo: recipeId)
-            .get()
-            .then((snapshot) async {
-          for (var doc in snapshot.docs) {
-            await doc.reference.delete();
-          }
-        });
+        // Remove recipe from favorites
+        await favoriteDocRef.delete();
       } else {
-        // Add to favorites
-        await FirebaseFirestore.instance.collection('favorites').add({
+        // Add recipe to Firestore favorites with a unique document ID
+        await favoriteDocRef.set({
           'userId': user.uid,
-          'label': recipeId,
-          'image': widget.recipe['image'],
-          'ingredients': widget.recipe['ingredients'],
-          'instructions': widget.recipe['instructions'],
-          'url': widget.recipe['url'],
+          'recipeId': recipeId,
+          'title': title,
+          'image': image,
+          'sourceUrl': sourceUrl,
+          'timestamp': FieldValue.serverTimestamp(), // For sorting later
         });
       }
 
-      // Update local state
+      // Update local state and notify parent widget
       setState(() {
         isFavorite = !isFavorite;
       });
 
-      // Directly update the parent without calling onFavoriteChanged
+      // Update the parent with the latest favorite recipe list
       if (isFavorite) {
         widget.favoriteRecipeIds.add(recipeId);
       } else {
         widget.favoriteRecipeIds.remove(recipeId);
       }
+
+      widget.onFavoriteChanged();
     }
   }
 

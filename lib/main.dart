@@ -6,6 +6,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:shelfaware_app/api/firebase_api.dart';
 import 'package:shelfaware_app/controllers/expiring_items_controller.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
+import 'package:shelfaware_app/pages/settings_page.dart';
+import 'package:shelfaware_app/providers/settings_provider.dart';
 import 'package:shelfaware_app/services/notification_handler.dart';
 import 'firebase_options.dart';
 import 'pages/auth_page.dart';
@@ -23,6 +25,19 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize Firebase App Check
+await FirebaseAppCheck.instance.activate(
+  androidProvider: AndroidProvider.debug,
+);
+
+FirebaseAppCheck.instance.getToken(true).then((token) {
+  print("App Check Debug Token: $token");
+}).catchError((e) {
+  print("Error fetching App Check token: $e");
+});
+
+
 
   // Initialize Firebase Messaging
   FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -75,6 +90,8 @@ void main() async {
   );
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
+  
+
   // Run the app
   runApp(
     MultiProvider(
@@ -82,6 +99,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => AuthController()),
         ChangeNotifierProvider(create: (context) => BottomNavController()),
         ChangeNotifierProvider(create: (context) => ExpiringItemsController()),
+        ChangeNotifierProvider(create: (context) => SettingsProvider()), 
       ],
       child: const MyApp(),
     ),
@@ -129,19 +147,61 @@ class MyApp extends StatelessWidget {
     final notificationHandler = NotificationHandler(context: context);
 
     notificationHandler.initialize();
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'ShelfAware',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor:
-              Colors.greenAccent, // You can choose your primary color here
-          primary: Colors.green,
-          secondary: Colors.lightGreen,
-          // Primary color for your app
+
+    // Get the dark mode status
+    bool isDarkMode = Provider.of<SettingsProvider>(context).isDarkMode;
+
+ return MaterialApp(
+  debugShowCheckedModeBanner: false,
+  title: 'ShelfAware',
+  theme: ThemeData(
+    // Customize the AppBar theme
+    appBarTheme: AppBarTheme(
+      backgroundColor: isDarkMode ? Colors.black : Colors.green, // Black in dark mode, green in light mode
+      iconTheme: IconThemeData(color: isDarkMode ? Colors.white : Colors.black), // Icon color in AppBar
+      elevation: 0, // Optional: Remove shadow for flat look
+    ),
+    brightness: isDarkMode ? Brightness.dark : Brightness.light, // Set brightness
+    scaffoldBackgroundColor: isDarkMode ? Colors.black : Colors.white, // Scaffold background color
+    primaryColor: isDarkMode ? Colors.black : Colors.green, // Primary color
+    visualDensity: VisualDensity.adaptivePlatformDensity,
+
+    // Customize text field theme to fix purple text in dark mode
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: isDarkMode ? Colors.grey[900] : Colors.grey[200], // Darker fill color in dark mode
+      hintStyle: TextStyle(
+        color: isDarkMode ? Colors.grey[400] : Colors.grey[600], // Hint text color
+      ),
+      labelStyle: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.black, // Label text color
+      ),
+      errorStyle: TextStyle(
+        color: Colors.redAccent, // Error text color
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: isDarkMode ? Colors.grey : Colors.black, // Border color when enabled
         ),
       ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: isDarkMode ? Colors.green : Colors.blue, // Border color when focused
+        ),
+      ),
+    ),
+    textTheme: TextTheme(
+      bodyMedium: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.black, // Set text color based on theme
+      ),
+    ),
+  ),
+  darkTheme: ThemeData(
+    brightness: Brightness.dark,
+  ),
+  themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light, // Apply theme dynamically
+
+      // Otherwise, use light theme
       home: AuthPage(),
       routes: {
         '/chat': (context) => ChatPage(
@@ -153,6 +213,8 @@ class MyApp extends StatelessWidget {
               donorName: 'donorName',
               chatId: 'chatId',
             ), // Define route for the chat page
+            
+        '/settings': (context) => SettingsPage(), 
       },
     );
   }

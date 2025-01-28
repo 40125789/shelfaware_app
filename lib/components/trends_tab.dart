@@ -9,6 +9,9 @@ import 'package:shelfaware_app/components/line_chart.dart';
 import 'package:shelfaware_app/components/card_tiles.dart';
 // Assuming you're using the pie_chart package
 
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';  // Make sure you have the fl_chart package
+
 class TrendsTab extends StatelessWidget {
   final bool isWeekly;
   final Function(bool) onToggle;
@@ -58,85 +61,91 @@ class TrendsTab extends StatelessWidget {
 
           return Column(
             children: [
-       Row(
-  mainAxisAlignment: MainAxisAlignment.center,
-  children: [
-    // Weekly Button
-    Padding(
-      padding: const EdgeInsets.all(8.0), // Adds padding around the button
-      child: GestureDetector(
-        onTap: () => onToggle(true),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300), // Animation duration
-          curve: Curves.easeInOut, // Smooth animation
-          decoration: BoxDecoration(
-            color: isWeekly ? Colors.green : Colors.grey.shade300, // Background color
-            borderRadius: BorderRadius.circular(8), // Rounded corners
-            boxShadow: [
-              if (isWeekly) // Add shadow only if selected
-                BoxShadow(
-                  color: Colors.greenAccent.withOpacity(0.5),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), // Internal padding
-          child: Text(
-            "Weekly",
-            style: TextStyle(
-              color: isWeekly ? Colors.white : Colors.black, // Text color
-              fontWeight: isWeekly ? FontWeight.bold : FontWeight.normal, // Bold for selected
-              fontSize: 16,
-            ),
-          ),
-        ),
-      ),
-    ),
-    // Monthly Button
-    Padding(
-      padding: const EdgeInsets.all(8.0), // Adds padding around the button
-      child: GestureDetector(
-        onTap: () => onToggle(false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300), // Animation duration
-          curve: Curves.easeInOut, // Smooth animation
-          decoration: BoxDecoration(
-            color: !isWeekly ? Colors.green : Colors.grey.shade300, // Background color
-            borderRadius: BorderRadius.circular(8), // Rounded corners
-            boxShadow: [
-              if (!isWeekly) // Add shadow only if selected
-                BoxShadow(
-                  color: Colors.greenAccent.withOpacity(0.5),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), // Internal padding
-          child: Text(
-            "Monthly",
-            style: TextStyle(
-              color: !isWeekly ? Colors.white : Colors.black, // Text color
-              fontWeight: !isWeekly ? FontWeight.bold : FontWeight.normal, // Bold for selected
-              fontSize: 16,
-            ),
-          ),
-        ),
-      ),
-    ),
-  ],
-),
+              // Toggle buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GestureDetector(
+                      onTap: () => onToggle(true),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        decoration: BoxDecoration(
+                          color: isWeekly ? Colors.green : Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            if (isWeekly)
+                              BoxShadow(
+                                color: Colors.greenAccent.withOpacity(0.5),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        child: Text(
+                          "Weekly",
+                          style: TextStyle(
+                            color: isWeekly ? Colors.white : Colors.black,
+                            fontWeight: isWeekly ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GestureDetector(
+                      onTap: () => onToggle(false),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        decoration: BoxDecoration(
+                          color: !isWeekly ? Colors.green : Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            if (!isWeekly)
+                              BoxShadow(
+                                color: Colors.greenAccent.withOpacity(0.5),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        child: Text(
+                          "Monthly",
+                          style: TextStyle(
+                            color: !isWeekly ? Colors.white : Colors.black,
+                            fontWeight: !isWeekly ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               
               SizedBox(height: 8),
-              Container(
-                height: 250,
-                child: LineChartWidget(
-                  isWeekly: isWeekly,
-                  lineChartData: lineChartData,
-                  userId: userId,
+              
+              // Scrollable Line Chart
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal, // Make the chart scrollable horizontally
+                child: Container(
+                  width: 800, // Make sure the container is wide enough to scroll
+                  height: 250,
+                  child: LineChartWidget(
+                    isWeekly: isWeekly,
+                    lineChartData: lineChartData,
+                    userId: userId,
+                  ),
                 ),
               ),
+              
               Expanded(
                 child: CardTiles(
                   isWeekly: isWeekly,
@@ -147,8 +156,7 @@ class TrendsTab extends StatelessWidget {
             ],
           );
         } else {
-          return Center(
-              child: Text('No trends data available for this period.'));
+          return Center(child: Text('No trends data available for this period.'));
         }
       },
     );
@@ -168,11 +176,10 @@ class TrendsTab extends StatelessWidget {
         spots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b);
     FlSpot highestSpot = spots.firstWhere((spot) => spot.y == highestValue);
 
-    // Convert the x-axis value to a month name (1 = January, 2 = February, etc.)
     String periodLabel = period == 'weekly'
         ? 'Week ${highestSpot.x.toInt()}'
         : monthNameFromNumber(
-            highestSpot.x.toInt()); // Get month name from number
+            highestSpot.x.toInt());
 
     return {
       'period': periodLabel,
@@ -181,22 +188,11 @@ class TrendsTab extends StatelessWidget {
     };
   }
 
-// Helper function to convert a month number to the month name
   String monthNameFromNumber(int monthNumber) {
     const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
+      'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
     ];
-    return monthNames[monthNumber - 1]; // Adjust for 1-indexed months
+    return monthNames[monthNumber - 1];
   }
 }
+

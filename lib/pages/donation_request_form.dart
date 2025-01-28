@@ -141,7 +141,7 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Donation Request Form'),
-        backgroundColor: Colors.green,
+    
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -193,7 +193,7 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
                             SizedBox(width: 8),
                             Text(
                               'From ${widget.donorName}',
-                              style: TextStyle(fontSize: 16, color: Colors.black),
+                              style: TextStyle(fontSize: 16),
                             ),
                           ],
                         ),

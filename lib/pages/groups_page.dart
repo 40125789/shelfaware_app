@@ -315,7 +315,6 @@ class _GroupsPageState extends State<GroupsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Groups'),
-        backgroundColor: Colors.green,
         actions: [
           IconButton(
             icon: Icon(Icons.person_add),

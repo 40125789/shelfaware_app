@@ -12,6 +12,7 @@ import 'package:shelfaware_app/pages/groups_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
 import 'package:shelfaware_app/pages/my_profile.dart';
+import 'package:shelfaware_app/pages/settings_page.dart';
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
 
 
@@ -286,8 +287,13 @@ Widget build(BuildContext context) {
           title: const Text('Settings'),
           onTap: () {
             // Define action for Settings
+      Navigator.pushNamed(context, '/settings');
           },
         ),
+          
+        
+      
+        
         const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
         // Drawer List Items - Logout Section

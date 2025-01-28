@@ -43,7 +43,7 @@ class MyDonationsPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Manage Donations"),
-          backgroundColor: Colors.green,
+         
           bottom: const TabBar(
             tabs: [
               Tab(text: 'My Donations'),
@@ -177,8 +177,8 @@ class MyDonationsPage extends StatelessWidget {
                                           ),
                                         ),
                                       );
-                                    },
-                                  ),
+                                      }
+                                    ),
                                 ],
                               ),
                             ),
@@ -193,18 +193,18 @@ class MyDonationsPage extends StatelessWidget {
             // Tab for Sent Donation Requests
            // Tab for Sent Donation Requests
 StreamBuilder<List<Map<String, dynamic>>>( 
-  stream: getSentDonationRequests(userId),
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: CircularProgressIndicator());
+  stream: getSentDonationRequests(userId), 
+  builder: (context, snapshot) { 
+    if (snapshot.connectionState == ConnectionState.waiting) { 
+      return const Center(child: CircularProgressIndicator()); 
     }
 
-    if (snapshot.hasError) {
-      return Center(child: Text("Error: \${snapshot.error}"));
+    if (snapshot.hasError) { 
+      return Center(child: Text("Error: ${snapshot.error}")); 
     }
 
-    if (!snapshot.hasData || snapshot.data!.isEmpty) {
-      return const Center(child: Text("No sent donation requests"));
+    if (!snapshot.hasData || snapshot.data!.isEmpty) { 
+      return const Center(child: Text("No sent donation requests")); 
     }
 
     final donationRequests = snapshot.data!;
@@ -218,6 +218,7 @@ StreamBuilder<List<Map<String, dynamic>>>(
         final status = request['status'] ?? 'Pending';
         final pickupDateTime = request['pickupDateTime']?.toDate();
         final donationPhotoUrl = request['imageUrl'] ?? ''; // Image URL from Firebase
+        final hasLeftReview = request['hasLeftReview'] ?? false; // Check if user has left a review
 
         // Format dates
         final formattedRequestDate = requestDate != null
@@ -251,86 +252,107 @@ StreamBuilder<List<Map<String, dynamic>>>(
                 Text("Pickup Date: $formattedPickupDate", style: const TextStyle(color: Colors.grey)),
               ],
             ),
-      onTap: () {
-  showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.message, color: Colors.blue),
-            title: const Text('Message Donor'),
             onTap: () {
-              Navigator.pop(context); // Close bottom sheet before navigation
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance.collection('donations').doc(request['donationId']).get(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Scaffold(
-                          body: Center(child: CircularProgressIndicator()),
-                        );
-                      }
+              showModalBottomSheet(
+                context: context,
+                builder: (context) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.message, color: Colors.blue),
+                        title: const Text('Message Donor'),
+                        onTap: () {
+                          Navigator.pop(context); // Close bottom sheet before navigation
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FutureBuilder<DocumentSnapshot>(
+                                future: FirebaseFirestore.instance.collection('donations').doc(request['donationId']).get(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return const Scaffold(
+                                      body: Center(child: CircularProgressIndicator()),
+                                    );
+                                  }
 
-                      if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
-                        return Scaffold(
-                          appBar: AppBar(title: const Text('Error')),
-                          body: const Center(child: Text('Donation not found')),
-                        );
-                      }
+                                  if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+                                    return Scaffold(
+                                      appBar: AppBar(title: const Text('Error')),
+                                      body: const Center(child: Text('Donation not found')),
+                                    );
+                                  }
 
-                      final donationData = snapshot.data!.data() as Map<String, dynamic>;
+                                  final donationData = snapshot.data!.data() as Map<String, dynamic>;
 
-                      return ChatPage(
-                        donorName: donationData['donorName'] ?? 'Unknown',
-                        userId: donationData['userId'] ?? '',
-                        receiverEmail: donationData['donorEmail'] ?? '',
-                        receiverId: donationData['donorId'] ?? '',
-                        donationId: request['donationId'] ?? '',
-                        donationName: donationData['productName'] ?? 'Unnamed Item',
-                        chatId: '',
-                      );
-                    },
-                  ),
-                ),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.cancel, color: Colors.red),
-            title: const Text('Withdraw Request'),
-           
-            onTap: () async {
-              Navigator.pop(context); // Close bottom sheet before action
-              await withdrawDonationRequest(context, request['requestId']);
-            },
-          ),
-         if (status == "Accepted") 
-  ListTile(
-    leading: const Icon(Icons.star_rate, color: Colors.green),
-    title: const Text('Leave a Review'),
-    onTap: () {
-      Navigator.pop(context);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ReviewPage(
-            donorId: request['donatorId'] ?? '',
-            donationId: request['donationId'] ?? '',  
-            donationImage: request['imageUrl'] ?? '',  
-            donationName: request['productName'] ?? '', 
-            donorImageUrl: request['donorImageUrl'] ?? '', 
-            donorName: request['donorName'] ?? '',
-          ),
-        ),
-      );
-    },
-  ),
+                                  return ChatPage(
+                                    donorName: donationData['donorName'] ?? 'Unknown',
+                                    userId: donationData['userId'] ?? '',
+                                    receiverEmail: donationData['donorEmail'] ?? '',
+                                    receiverId: donationData['donorId'] ?? '',
+                                    donationId: request['donationId'] ?? '',
+                                    donationName: donationData['productName'] ?? 'Unnamed Item',
+                                    chatId: '',
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(),
+                      if (status != "Accepted") // Only allow withdrawal if status is not "Accepted"
+                        ListTile(
+                          leading: const Icon(Icons.cancel, color: Colors.red),
+                          title: const Text('Withdraw Request'),
+                          onTap: () async {
+                            Navigator.pop(context); // Close bottom sheet before action
+                            await withdrawDonationRequest(context, request['requestId']);
+                          },
+                        ),
+                      if (status == "Accepted") // Disable withdrawal option
+                        ListTile(
+                          leading: const Icon(Icons.block, color: Colors.grey),
+                          title: const Text('Withdraw Request (Unavailable)'),
+                          onTap: null, // No action
+                        ),
+                      if (status == "Accepted" && !hasLeftReview) // Show "Leave a Review" only when request is accepted and review is not left
+                        ListTile(
+                          leading: const Icon(Icons.star_rate, color: Colors.green),
+                          title: const Text('Leave a Review'),
+                          onTap: () async {
+                            final hasReviewed = await hasUserAlreadyReviewed(request['donationId'], userId);
 
+                            if (hasReviewed) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('You have already left a review for this donation.')),
+                              );
+                            } else {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ReviewPage(
+                                    donorId: request['donatorId'] ?? '',
+                                    donationId: request['donationId'] ?? '',
+                                    donationImage: request['imageUrl'] ?? '',
+                                    donationName: request['productName'] ?? '',
+                                    donorImageUrl: request['donorImageUrl'] ?? '',
+                                    donorName: request['donorName'] ?? '', 
+                                    isEditing: false, // Pass flag to indicate new review
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      if (hasLeftReview) // Grey out "Leave a Review" with a message if already reviewed
+                        ListTile(
+                          leading: const Icon(Icons.star_rate, color: Colors.grey),
+                          title: const Text('Leave a Review (Already Done)', style: TextStyle(color: Colors.grey)),
+                          subtitle: const Text("You've already left a review!", style: TextStyle(color: Colors.grey)),
+                          onTap: null, // No action
+            ),
         ],
       );
     },
@@ -362,5 +384,16 @@ Future<void> withdrawDonationRequest(BuildContext context, String requestId) asy
     );
   }
 }
+
+Future<bool> hasUserAlreadyReviewed(String donationId, String userId) async {
+  final querySnapshot = await FirebaseFirestore.instance
+      .collection('reviews')
+      .where('donationId', isEqualTo: donationId)
+      .where('reviewerId', isEqualTo: userId)
+      .get();
+
+  return querySnapshot.docs.isNotEmpty; // If there's any document, the user has reviewed
+}
+
 
     

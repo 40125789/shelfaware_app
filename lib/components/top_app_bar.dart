@@ -29,7 +29,6 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           // Show loading indicator while fetching data
           return AppBar(
-            backgroundColor: Colors.green,
             title: Text(title),
             actions: [
               Padding(
@@ -44,7 +43,6 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
         int unreadCount = snapshot.data ?? 0;
 
         return AppBar(
-          backgroundColor: Colors.green,
           title: Text(title),
           actions: [
             // Location Icon with Navigation to LocationPage

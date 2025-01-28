@@ -15,42 +15,29 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  //text editing controller
   final emailController = TextEditingController();
-
   final passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
-  //Sign in Function
   void signUserIn() async {
-    //show loading circle
     showDialog(
       context: context,
-      builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    //try sign in
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      //pop the loading circle
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-      //pop the loading circle
       Navigator.pop(context);
-
-      //show error message
       showErrorMessage(e.code);
     }
   }
 
-//error message to user
   void showErrorMessage(String message) {
     showDialog(
       context: context,
@@ -60,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
           title: Center(
             child: Text(
               message,
-              style: TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         );
@@ -71,25 +58,22 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
+        child: SingleChildScrollView( // Wrap with SingleChildScrollView
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 25),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 25),
-
-                //logo
-                const Icon(
-                  Icons.account_circle,
-                  size: 100,
-                  color: Colors.green,
+                // Logo
+                Image.asset(
+                  'assets/login.png', // Path to your image
+                  width: 120,  // Adjust the size if needed
+                  height: 140,
                 ),
+                const SizedBox(height: 5),
 
-                const SizedBox(height: 20),
-
-                //Text
+                // Welcome text
                 Text(
                   'Welcome back!',
                   style: TextStyle(
@@ -97,128 +81,120 @@ class _LoginPageState extends State<LoginPage> {
                     fontSize: 16,
                   ),
                 ),
+                const SizedBox(height: 15),
 
-                const SizedBox(height: 25),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Email text field
+                    MyTextField(
+                      controller: emailController,
+                      hintText: 'Email',
+                      obscureText: false, 
+                      suffixIcon: null, 
+                    ),
+                    const SizedBox(height: 0), // Reduced spacing
 
-                //email textfield
-                MyTextField(
-                  controller: emailController,
-                  hintText: 'Email',
-                  obscureText: false,
-                ),
-
-                //password textfield
-                MyTextField(
-                  controller: passwordController,
-                  hintText: 'Password',
-                  obscureText: true,
-                ),
-
-                SizedBox(height: 10),
-
-                //forgot password?
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (context) {
-                            return const ResetPasswordPage();
-                          }));
+                    // Password text field with visibility toggle
+                    MyTextField(
+                      controller: passwordController,
+                      hintText: 'Password',
+                      obscureText: _obscurePassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
                         },
-                        child: Text('Forgot password?',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            )),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+
+                // Forgot password
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ResetPasswordPage()),
+                    ),
+                    child: const Text(
+                      'Forgot password?',
+                      style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
+                const SizedBox(height: 15), // Reduced spacing
 
-                const SizedBox(height: 25),
-
-                //sign in button
+                // Sign-in button
                 MyButton(
                   text: "Sign in",
                   onTap: signUserIn,
                 ),
 
-                const SizedBox(height: 50),
-
-                //or continue with Google
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          thickness: 0.5,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        child: Text(
-                          'or continue with',
-                          style: TextStyle(color: Colors.grey[700]),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(
-                          thickness: 0.5,
-                          color: Colors.grey[400],
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 50),
-
-                //google signin button
+                // Divider with text
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    //google icon
-                    SquareTile(
-                        onTap: () => AuthService().signInWithGoogle(),
-                        imagePath: 'lib/images/google.png'),
-
-                    SizedBox(width: 25),
-
-                    //Facebook icon
-                    SquareTile(
-                        onTap: () {}, imagePath: 'lib/images/facebook.png'),
+                    Expanded(
+                      child: Divider(
+                        thickness: 0.5,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Text(
+                        'or continue with',
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        thickness: 0.5,
+                        color: Colors.grey[400],
+                      ),
+                    ),
                   ],
                 ),
+                const SizedBox(height: 20),
 
-                const SizedBox(height: 50),
-
-                //not a member? sign up
+                // Social login buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      'Not a member?',
-                      style: TextStyle(color: Colors.grey[700]),
+                    SquareTile(
+                      onTap: () => AuthService().signInWithGoogle(),
+                      imagePath: 'lib/images/google.png',
                     ),
+                    const SizedBox(width: 20),
+                    SquareTile(
+                      onTap: () {},
+                      imagePath: 'lib/images/facebook.png',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Register link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Not a member?', style: TextStyle(color: Colors.grey[700])),
                     const SizedBox(width: 4),
                     GestureDetector(
                       onTap: widget.onTap,
                       child: const Text(
                         'Register Now',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
@@ -227,3 +203,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+

@@ -103,7 +103,6 @@ class _NotificationPageState extends State<NotificationPage> {
           child: Scaffold(
             appBar: AppBar(
               title: Text('Notifications'),
-              backgroundColor: Colors.green,
               actions: [
                 TextButton(
                   onPressed: () async {

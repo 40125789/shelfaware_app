@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:shelfaware_app/services/chat_service.dart';
 import 'package:shelfaware_app/models/message.dart';
 import 'package:intl/intl.dart';
+import 'package:profanity_filter/profanity_filter.dart';
 
 class ChatPage extends StatefulWidget {
   final String receiverEmail;
@@ -39,6 +40,7 @@ class _ChatPageState extends State<ChatPage> {
   final ChatService _chatService = ChatService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
+  final ProfanityFilter _profanityFilter = ProfanityFilter();
 
   String _currentStatus = 'available'; // Default status
 
@@ -81,27 +83,39 @@ void initState() {
 }
 
 
-  Future<void> _sendMessage() async {
-  if (_messageController.text.isNotEmpty) {
-    final String senderId = _auth.currentUser!.uid;
-    final String chatId = getChatId(widget.donationId, senderId, widget.receiverId);
+Future<void> _sendMessage() async {
+  String message = _messageController.text;
 
-    await _chatService.sendMessage(
-      widget.donationId,
-      _messageController.text,
-      widget.receiverId,
-      widget.receiverEmail,
-      widget.donationName,
-    );
+  if (message.isNotEmpty) {
+    // Check for profanity before sending
+    bool hasProfanity = _profanityFilter.hasProfanity(message);
 
-    _messageController.clear();
+    if (hasProfanity) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your message contains inappropriate language!')),
+      );
+    } else {
+      final String senderId = _auth.currentUser!.uid;
+      final String chatId = getChatId(widget.donationId, senderId, widget.receiverId);
 
-    // Scroll after UI update
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
+      await _chatService.sendMessage(
+        widget.donationId,
+        message,
+        widget.receiverId,
+        widget.receiverEmail,
+        widget.donationName,
+      );
+
+      _messageController.clear();
+
+      // Scroll after UI update
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
+    }
   }
 }
+
 
 
   String getChatId(String donationId, String userId, String receiverId) {
@@ -182,7 +196,7 @@ void _scrollToBottom() {
             Text("Chat with ${widget.donorName}"),
           ],
         ),
-        backgroundColor: Colors.green,
+      
       ),
       body: Column(
         children: [
@@ -195,68 +209,70 @@ void _scrollToBottom() {
   }
 
   Widget _buildDonationDetailsHeader(BuildContext context) {
-    final bool isDonator = widget.userId == _auth.currentUser!.uid;
+  // Check if the current user is the receiver (not the donor)
+  final bool isReceiver = widget.receiverId == _auth.currentUser!.uid;
 
-    return Container(
-      width: double.infinity,
-      color: Colors.grey.shade200,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Donation Details",
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Donation Details",
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
-          const SizedBox(height: 4),
-          Text(
-            "Product Name: ${widget.donationName}",
-            style: const TextStyle(fontSize: 14),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "Product Name: ${widget.donationName}",
+          style: const TextStyle(fontSize: 14),
+        ),
+        Text(
+          "Donor Email: ${widget.receiverEmail}",
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+        ),
+        // Only show the 'Update Status' row if the current user is the receiver
+        if (isReceiver) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Text(
+                "Update Status: ",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              DropdownButton<String>(
+                value: _currentStatus,
+                onChanged: (String? newStatus) {
+                  if (newStatus != null) {
+                    _updateDonationStatus(context, newStatus);
+                  }
+                },
+                items: const [
+                  DropdownMenuItem(
+                    value: 'available',
+                    child: Text('Available'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'claimed',
+                    child: Text('Claimed'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'completed',
+                    child: Text('Completed'),
+                  ),
+                ],
+              ),
+            ],
           ),
-          Text(
-            "Donor Email: ${widget.receiverEmail}",
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-          ),
-          if (isDonator) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Text(
-                  "Update Status: ",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                DropdownButton<String>(
-                  value: _currentStatus,
-                  onChanged: (String? newStatus) {
-                    if (newStatus != null) {
-                      _updateDonationStatus(context, newStatus);
-                    }
-                  },
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'available',
-                      child: Text('Available'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'claimed',
-                      child: Text('Claimed'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'completed',
-                      child: Text('Completed'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
         ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
+
 
   Widget _buildMessageList(String chatId) {
   return StreamBuilder(

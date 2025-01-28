@@ -5,7 +5,8 @@ import 'package:intl/intl.dart';
 class DonationDetailsPage extends StatelessWidget {
   final String donationId;
 
-  DonationDetailsPage({required this.donationId, required Map<String, dynamic> donation});
+  DonationDetailsPage(
+      {required this.donationId, required Map<String, dynamic> donation});
 
   // Fetch donation details based on the donationId
   Future<Map<String, dynamic>> getDonationDetails() async {
@@ -47,7 +48,6 @@ class DonationDetailsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("Donation Details"),
-        backgroundColor: Colors.green,
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: getDonationDetails(),
@@ -139,7 +139,7 @@ class DonationDetailsPage extends StatelessWidget {
                 // StreamBuilder to fetch and display the donation requests
                 Expanded(
                   // Make donation requests scrollable
-                  child: StreamBuilder<List<Map<String, dynamic>>>( 
+                  child: StreamBuilder<List<Map<String, dynamic>>>(
                     stream: getDonationRequests(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -195,7 +195,8 @@ class DonationDetailsPage extends StatelessWidget {
                                             ''),
                                     backgroundColor: Colors.green,
                                     child:
-                                        request['requesterProfileImageUrl'] == null
+                                        request['requesterProfileImageUrl'] ==
+                                                null
                                             ? Icon(Icons.person,
                                                 color: Colors.white)
                                             : null,
@@ -213,145 +214,256 @@ class DonationDetailsPage extends StatelessWidget {
                                   ),
                                   trailing: Icon(Icons.arrow_forward_ios),
                                   onTap: () {
-                                    // Open the alert dialog to accept or decline the request
-                                    showDialog(
-  context: context,
-  builder: (BuildContext context) {
- return AlertDialog(
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(16.0),  // Rounded corners
-  ),
-  backgroundColor: Colors.white,  // Background color for the dialog
-  title: Column(
-    children: [
-      Text(
-        "Request from $requesterName",
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey[700],  // Changed to black as per your request
+                                   // Before showing the dialog, check if the donation has already been taken
+if (donation['status'] == 'Taken') {
+  // Show an alert indicating the request cannot be accepted
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),  // Rounded corners for the dialog
         ),
-      ),
-      SizedBox(height: 8),
-      // Requester's profile picture with a little margin
-      CircleAvatar(
-        backgroundImage: NetworkImage(request['requesterProfileImageUrl'] ?? ''),
-        radius: 30,
-      ),
-    ],
-  ),
-  content: SingleChildScrollView(  // Added to ensure dialog size is limited and scrollable
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,  // Centered the entire content
-        children: [
-          // Pickup Date & Time with only the label being bold
-          Text(
-            "Pickup Date & Time",
+        backgroundColor: Colors.white,  // Background color for the dialog
+        title: Center(  // Title centered
+          child: Text(
+            "Donation already taken",
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+              color: Colors.grey[700],  // Grey color for the title
             ),
           ),
-          Text(
-            "${DateFormat('dd MMM yyyy, HH:mm').format(pickupDateTime ?? DateTime.now())}",
+        ),
+        content: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          child: Text(
+            "This donation has already been assigned to someone.",
+            textAlign: TextAlign.center,  // Centered text
             style: TextStyle(
               fontSize: 16,
-              color: Colors.black87,
+              color: Colors.grey[600],  // Grey color for the content text
             ),
           ),
-          SizedBox(height: 8),
-          Text(
-            "Message:",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
-            ),
-          ),
-          SizedBox(height: 4),
-          // Centered message text
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),  // Added padding for message
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // Close the dialog
+            },
             child: Text(
-              message,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,  // Centered the message text
+              "OK",
+              style: TextStyle(fontSize: 16, color: Colors.white),  // White text for the button
             ),
-          ),
-        ],
-      ),
-    ),
-  ),
-  actions: [
-    Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        ElevatedButton(
-          onPressed: () async {
-            // Accept action
-            String requesterId = request['requesterId'];
-            DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
-                .collection('users')
-                .doc(requesterId)
-                .get();
-            String requesterName = userSnapshot.exists
-                ? userSnapshot['firstName']
-                : 'Unknown';
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green, // Green background for the button
+              minimumSize: Size(100, 40),
+            ),
+    
 
-            // Update the donation and request status
-            await FirebaseFirestore.instance
-                .collection('donations')
-                .doc(donationId)
-                .update({
-              'status': 'Taken',
-              'assignedTo': requesterId,
-              'assignedToName': requesterName,
-            });
-
-            await FirebaseFirestore.instance
-                .collection('donationRequests')
-                .doc(request['requestId'])
-                .update({
-              'status': 'Accepted',
-              'assignedTo': requesterId,
-              'assignedToName': requesterName,
-            });
-
-            Navigator.pop(context);  // Close the dialog
-          },
-          child: Text("Accept", style: TextStyle(fontSize: 16, color: Colors.white)),
-          style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green, minimumSize: Size(100, 40)),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            // Decline action
-            await FirebaseFirestore.instance
-                .collection('donationRequests')
-                .doc(request['requestId'])
-                .update({
-              'status': 'Declined',
-            });
-
-            Navigator.pop(context);  // Close the dialog
-          },
-          child: Text("Decline", style: TextStyle(fontSize: 16, color: Colors.white)),
-          style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red, minimumSize: Size(100, 40)),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    } else {
+                                      // Open the alert dialog to accept or decline the request
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      16.0), // Rounded corners
                                             ),
+                                            backgroundColor: Colors
+                                                .white, // Background color for the dialog
+                                            title: Column(
+                                              children: [
+                                                Text(
+                                                  "Request from $requesterName",
+                                                  style: TextStyle(
+                                                    fontSize: 22,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.grey[
+                                                        700], // Changed to black as per your request
+                                                  ),
+                                                ),
+                                                SizedBox(height: 8),
+                                                // Requester's profile picture with a little margin
+                                                CircleAvatar(
+                                                  backgroundImage: NetworkImage(
+                                                      request['requesterProfileImageUrl'] ??
+                                                          ''),
+                                                  radius: 30,
+                                                ),
                                               ],
                                             ),
-                                          ],
-                                        );
-                                      },
-                                    );
+                                            content: SingleChildScrollView(
+                                              // Added to ensure dialog size is limited and scrollable
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 16.0),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .center, // Centered the entire content
+                                                  children: [
+                                                    // Pickup Date & Time with only the label being bold
+                                                    Text(
+                                                      "Pickup Date & Time",
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.grey[700],
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      "${DateFormat('dd MMM yyyy, HH:mm').format(pickupDateTime ?? DateTime.now())}",
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                    SizedBox(height: 8),
+                                                    Text(
+                                                      "Message:",
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.grey[700],
+                                                      ),
+                                                    ),
+                                                    SizedBox(height: 4),
+                                                    // Centered message text
+                                                    Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal:
+                                                              16.0), // Added padding for message
+                                                      child: Text(
+                                                        message,
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          color: Colors.black87,
+                                                          height: 1.4,
+                                                        ),
+                                                        textAlign: TextAlign
+                                                            .center, // Centered the message text
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            actions: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                children: [
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      // Accept action
+                                                      String requesterId =
+                                                          request[
+                                                              'requesterId'];
+                                                      DocumentSnapshot
+                                                          userSnapshot =
+                                                          await FirebaseFirestore
+                                                              .instance
+                                                              .collection(
+                                                                  'users')
+                                                              .doc(requesterId)
+                                                              .get();
+                                                      String requesterName =
+                                                          userSnapshot.exists
+                                                              ? userSnapshot[
+                                                                  'firstName']
+                                                              : 'Unknown';
+
+                                                      // Update the donation and request status
+                                                      await FirebaseFirestore
+                                                          .instance
+                                                          .collection(
+                                                              'donations')
+                                                          .doc(donationId)
+                                                          .update({
+                                                        'status': 'Taken',
+                                                        'assignedTo':
+                                                            requesterId,
+                                                        'assignedToName':
+                                                            requesterName,
+                                                      });
+
+                                                      await FirebaseFirestore
+                                                          .instance
+                                                          .collection(
+                                                              'donationRequests')
+                                                          .doc(request[
+                                                              'requestId'])
+                                                          .update({
+                                                        'status': 'Accepted',
+                                                        'assignedTo':
+                                                            requesterId,
+                                                        'assignedToName':
+                                                            requesterName,
+                                                      });
+
+                                                      Navigator.pop(
+                                                          context); // Close the dialog
+                                                    },
+                                                    child: Text("Accept",
+                                                        style: TextStyle(
+                                                            fontSize: 16,
+                                                            color:
+                                                                Colors.white)),
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                            backgroundColor:
+                                                                Colors.green,
+                                                            minimumSize:
+                                                                Size(100, 40)),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      // Decline action
+                                                      await FirebaseFirestore
+                                                          .instance
+                                                          .collection(
+                                                              'donationRequests')
+                                                          .doc(request[
+                                                              'requestId'])
+                                                          .update({
+                                                        'status': 'Declined',
+                                                      });
+
+                                                      Navigator.pop(
+                                                          context); // Close the dialog
+                                                    },
+                                                    child: Text("Decline",
+                                                        style: TextStyle(
+                                                            fontSize: 16,
+                                                            color:
+                                                                Colors.white)),
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                            backgroundColor:
+                                                                Colors.red,
+                                                            minimumSize:
+                                                                Size(100, 40)),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    }
                                   },
                                 ),
                               );

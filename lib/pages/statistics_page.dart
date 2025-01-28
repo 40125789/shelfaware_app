@@ -29,28 +29,32 @@ class _StatisticsPageState extends State<StatisticsPage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Statistics'),
-          bottom: TabBar(
+ @override
+Widget build(BuildContext context) {
+  return DefaultTabController(
+    length: 2,
+    child: Scaffold(
+      body: Column(
+        children: [
+          // Directly add TabBar in the body instead of AppBar
+          TabBar(
             tabs: [
               Tab(text: 'Overview'),  // Change the tab text
               Tab(text: 'Trends'),
             ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            // Pass the userId to MyStatsTab
-            MyStatsTab(userId: userId ?? ''),  // Ensure userId is not null
-            TrendsTab(isWeekly: isWeekly, onToggle: _toggleView, userId: userId ??''), // Trends Tab with toggle
-          ],
-        ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                // Pass the userId to MyStatsTab
+                MyStatsTab(userId: userId ?? ''),  // Ensure userId is not null
+                TrendsTab(isWeekly: isWeekly, onToggle: _toggleView, userId: userId ?? ''), // Trends Tab with toggle
+              ],
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

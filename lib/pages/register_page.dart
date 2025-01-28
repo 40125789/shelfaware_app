@@ -15,7 +15,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  //text editing controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
@@ -32,9 +31,7 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  //Sign up Function
   void signUserUp() async {
-    //show loading circle
     showDialog(
       context: context,
       builder: (context) {
@@ -44,57 +41,41 @@ class _RegisterPageState extends State<RegisterPage> {
       },
     );
 
-    //try creating the user account
     try {
-      //check if passwords match
       if (passwordController.text == confirmPasswordController.text) {
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: emailController.text,
           password: passwordController.text,
         );
 
-        // After successful signup, add the user details to Firestore
         addUserDetails(
           firstNameController.text.trim(),
           lastNameController.text.trim(),
           emailController.text.trim(),
         );
       } else {
-        //show error message
         showErrorMessage('Passwords do not match');
       }
 
-      //pop the loading circle
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-      //pop the loading circle
       Navigator.pop(context);
-
-      //show error message
       showErrorMessage(e.code);
     }
   }
 
-  // Function to add user details to Firestore
   Future<void> addUserDetails(String firstName, String lastName, String email) async {
-  // Get the current user's UID
-  final String uid = FirebaseAuth.instance.currentUser!.uid;
+    final String uid = FirebaseAuth.instance.currentUser!.uid;
+    final Timestamp joinDate = Timestamp.now();
 
-  // Get the current timestamp
-  final Timestamp joinDate = Timestamp.now();
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'firstName': firstName,
+      'lastName': lastName,
+      'email': email,
+      'joinDate': joinDate,
+    });
+  }
 
-  // Save user data with UID as the document ID
-  await FirebaseFirestore.instance.collection('users').doc(uid).set({
-    'firstName': firstName,
-    'lastName': lastName,
-    'email': email,
-    'joinDate': joinDate, // Add the join date field with current timestamp
-  });
-}
-
-
-
-  //error message to user
   void showErrorMessage(String message) {
     showDialog(
       context: context,
@@ -118,82 +99,52 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: Colors.grey[300],
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 25),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 25),
-
-                //logo
                 const Icon(
                   Icons.account_circle,
-                  size: 100,
+                  size: 80,
                   color: Colors.green,
                 ),
-
-                const SizedBox(height: 20),
-
-                //Text
                 Text(
-                  'Lets make an account!',
+                  'Let\'s make an account!',
                   style: TextStyle(
                     color: Colors.grey[700],
                     fontSize: 16,
                   ),
                 ),
-
-                const SizedBox(height: 25),
-
-                //first name textfield
                 MyTextField(
                   controller: firstNameController,
                   hintText: 'First Name',
                   obscureText: false,
                 ),
-
-                //last name textfield
                 MyTextField(
                   controller: lastNameController,
                   hintText: 'Last Name',
                   obscureText: false,
                 ),
-
-                //email textfield
                 MyTextField(
                   controller: emailController,
                   hintText: 'Email',
                   obscureText: false,
                 ),
-
-                const SizedBox(height: 10),
-
-                //password textfield
                 MyTextField(
                   controller: passwordController,
                   hintText: 'Password',
                   obscureText: true,
                 ),
-
-                const SizedBox(height: 10),
-
-                //confirm password textfield
                 MyTextField(
                   controller: confirmPasswordController,
                   hintText: 'Confirm Password',
                   obscureText: true,
                 ),
-
-                const SizedBox(height: 25),
-
-                //sign in button
                 MyButton(
                   text: "Sign up",
                   onTap: signUserUp,
                 ),
-
-                const SizedBox(height: 50),
-
-                //or continue with Google
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
@@ -220,32 +171,20 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 50),
-
-                //google signin button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    //google icon
                     SquareTile(
                       onTap: () => AuthService().signInWithGoogle(),
                       imagePath: 'lib/images/google.png',
                     ),
-
-                    const SizedBox(width: 25),
-
-                    //Facebook icon
+                    const SizedBox(width: 20),
                     SquareTile(
                       onTap: () {},
                       imagePath: 'lib/images/facebook.png',
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 50),
-
-                //not a member? sign up
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -253,7 +192,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       'Already have an account?',
                       style: TextStyle(color: Colors.grey[700]),
                     ),
-                    const SizedBox(width: 4),
                     GestureDetector(
                       onTap: widget.onTap,
                       child: const Text(
@@ -274,4 +212,3 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
-

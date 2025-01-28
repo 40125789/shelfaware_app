@@ -2,265 +2,173 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/models/recipe_model.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_html/flutter_html.dart';  // Import flutter_html package
 
-class RecipeDetailPage extends StatefulWidget {
-  final Map<String, dynamic> recipe;
-  final Function() onFavoritesChanged;
+import 'package:fuzzy/fuzzy.dart'; // Import the fuzzy package
 
-  RecipeDetailPage({required this.recipe, required this.onFavoritesChanged});
+class RecipeDetailsPage extends StatefulWidget {
+  final Recipe recipe;
+  final VoidCallback onFavoritesChanged;
+  final List<String> matchedIngredients;  // List of ingredients the user has
+
+  const RecipeDetailsPage({
+    Key? key,
+    required this.recipe,
+    required this.onFavoritesChanged,
+    required this.matchedIngredients,
+  }) : super(key: key);
 
   @override
-  _RecipeDetailPageState createState() => _RecipeDetailPageState();
+  _RecipeDetailsPageState createState() => _RecipeDetailsPageState();
 }
 
-class _RecipeDetailPageState extends State<RecipeDetailPage> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool isFavorite = false;
+class _RecipeDetailsPageState extends State<RecipeDetailsPage> {
+  bool _isFavorite = false;
+  late Fuzzy fuzzyMatcher;  // Instance of Fuzzy class
 
   @override
   void initState() {
     super.initState();
-    _checkIfFavorite();
+    _isFavorite = _checkIfFavorite(widget.recipe);
+    fuzzyMatcher = Fuzzy(widget.matchedIngredients); // Initialize Fuzzy matcher with matched ingredients
   }
 
-  Future<void> _checkIfFavorite() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      QuerySnapshot snapshot = await _firestore
-          .collection('favorites')
-          .where('userId', isEqualTo: user.uid)
-          .where('label', isEqualTo: widget.recipe['label'])
-          .get();
-
-      setState(() {
-        isFavorite = snapshot.docs.isNotEmpty;
-      });
-    }
+  bool _checkIfFavorite(Recipe recipe) {
+    return false; // Placeholder return
   }
 
-  Future<void> addToFavorites() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      await _firestore.collection('favorites').add({
-        'userId': user.uid,
-        'label': widget.recipe['label'],
-        'image': widget.recipe['image'],
-        'ingredients': widget.recipe['ingredients'],
-        'instructions': widget.recipe['instructions'],
-        'url': widget.recipe['url'],
-      });
-      setState(() {
-        isFavorite = true;
-      });
-      widget.onFavoritesChanged();
-    }
+  void _toggleFavorite() {
+    setState(() {
+      _isFavorite = !_isFavorite;
+    });
+    widget.onFavoritesChanged(); // Notify parent to update favorite state globally
   }
-
-  Future<void> removeFromFavorites() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      QuerySnapshot snapshot = await _firestore
-          .collection('favorites')
-          .where('userId', isEqualTo: user.uid)
-          .where('label', isEqualTo: widget.recipe['label'])
-          .get();
-
-      for (var doc in snapshot.docs) {
-        await doc.reference.delete();
-      }
-
-      setState(() {
-        isFavorite = false;
-      });
-      widget.onFavoritesChanged();
-    }
-  }
-
-
-
-Future<void> _launchURL(String url) async {
-  if (url.isEmpty || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-    print('Invalid URL: $url');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid URL: $url')),
-    );
-    return;
-  }
-
-  try {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunch(url)) {  // Use canLaunch() instead of canLaunchUrl
-      await launch(url, forceSafariVC: false, forceWebView: false);  // Use launch() instead of launchUrl
-    } else {
-      print('Could not launch URL: $url');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open the URL: $url')),
-      );
-    }
-  } catch (e) {
-    print('Error opening URL: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error opening URL: $url')),
-    );
-  }
-}
-
-
 
   @override
   Widget build(BuildContext context) {
-    List<String> ingredients = List<String>.from(widget.recipe['ingredients']);
-    List<String> instructions =
-        List<String>.from(widget.recipe['instructions'] ?? []);
-    String instructionsUrl = widget.recipe['url'] ?? '';
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recipe Details'),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        title: Text('Recipe Details'),
       ),
-      body: SingleChildScrollView(
-child: Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          height: 250,
-          child: CachedNetworkImage(
-            imageUrl: widget.recipe['image'],
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-            errorWidget: (context, url, error) => Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-          ),
-        ),
-        Positioned(
-          bottom: 16.0,
-          left: 16.0,
-          right: 16.0,
-          child: Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                widget.recipe['label'],
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 4.0,
-                          color: Colors.black,
-                          offset: Offset(2.0, 2.0),
-                        ),
-                      ],
-                    ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-
-            const SizedBox(height: 16.0),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: Padding(
+        padding: const EdgeInsets.all(10),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
                 children: [
-                 ElevatedButton.icon(
-  onPressed: () async {
-    if (isFavorite) {
-      await removeFromFavorites();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Removed from favorites!')),
-      );
-    } else {
-      await addToFavorites();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Added to favorites!')),
-      );
-    }
-  },
-  icon: Icon(
-    isFavorite ? Icons.favorite : Icons.favorite_border,
-    color: Colors.white, // Ensures the icon is visible
-  ),
-  label: Text(
-    isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
-    style: const TextStyle(color: Colors.white), // Text color explicitly set
-  ),
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Theme.of(context).colorScheme.secondary,
-    foregroundColor: Colors.white, // Ensures text and icon visibility
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8.0),
-    ),
-  ),
-),
-
-                  const SizedBox(height: 16.0),
-                  Text(
-                    'Ingredients',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.network(
+                      widget.recipe.imageUrl,
+                      height: 250,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  const SizedBox(height: 8.0),
-                  ...ingredients.map((ingredient) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
-                        child: Text(ingredient, style: const TextStyle(fontSize: 16)),
-                      )),
-                  const SizedBox(height: 16.0),
-                  Text(
-                    'Instructions',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                  Positioned(
+                    bottom: 10,
+                    left: 10,
+                    right: 10,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.recipe.title,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                              softWrap: true,
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              _isFavorite ? Icons.favorite : Icons.favorite_border,
+                              color: Colors.red,
+                            ),
+                            onPressed: _toggleFavorite,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8.0),
-                  ...instructions.map((instruction) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Text(instruction, style: const TextStyle(fontSize: 16)),
-                      )),
-                  if (instructionsUrl.isNotEmpty)
-                   ElevatedButton(
-  onPressed: () {
-    _launchURL(instructionsUrl);
-  },
-  child: const Text('View Full Instructions'),
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Theme.of(context).colorScheme.primary,
-  ),
-)
-
                 ],
               ),
-            ),
-          ],
+              SizedBox(height: 20),
+
+              // Ingredients Section
+              Text(
+                'Ingredients:',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green[800]),
+              ),
+              SizedBox(height: 10),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: widget.recipe.ingredients.length,
+                itemBuilder: (context, index) {
+                  final ingredient = widget.recipe.ingredients[index];
+
+                  // Use fuzzy matching to check if the ingredient name is similar to any of the matched ingredients
+                  bool isMatched = fuzzyMatcher.search(ingredient.name).isNotEmpty;
+
+                  return Card(
+                    margin: EdgeInsets.symmetric(vertical: 5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${ingredient.amount} ${ingredient.unit} ${ingredient.name}',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          // Show check or empty circle based on match
+                          Icon(
+                            isMatched ? Icons.check_circle : Icons.circle_outlined,
+                            color: isMatched ? Colors.green : Colors.grey,
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              SizedBox(height: 20),
+
+              // Instructions Section
+              Text(
+                'Instructions:',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green[800]),
+              ),
+              SizedBox(height: 10),
+              Html(
+                data: widget.recipe.instructions, // Pass the HTML content here
+                style: {
+                  "body": Style(fontSize: FontSize(16), lineHeight: LineHeight(1.5)), // Customize HTML rendering style
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-                    
-                
-              
-            
-          
-        
-      
-    
-
 

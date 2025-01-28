@@ -23,7 +23,6 @@ class WatchedDonationsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Watched Donations'),
-        backgroundColor: Colors.green,
       ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance

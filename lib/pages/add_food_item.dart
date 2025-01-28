@@ -291,7 +291,7 @@ void _showProductDialog(ProductDetails product) async {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Food Item'),
-        backgroundColor: Colors.green,
+     
        
         
       ),

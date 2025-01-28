@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/models/recipe_model.dart';
 import 'package:shelfaware_app/pages/recipe_details_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 // Ensure this is imported correctly
@@ -54,7 +55,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
       appBar: AppBar(
         title: const Text('Favorite Recipes'),
         centerTitle: true,
-        backgroundColor: Colors.green,
       ),
       body: _favorites.isEmpty
           ? const Center(child: Text('No favorites yet.'))
@@ -71,12 +71,12 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => RecipeDetailPage(
-                          recipe: recipe,
+                        builder: (context) => RecipeDetailsPage(
+                          recipe: Recipe(id: recipe['id'], title: recipe['label'], imageUrl: recipe['image'], ingredients: recipe['ingredients'].join(', '), sourceUrl: recipe ['sourceUrl'], summary: ''),
                           onFavoritesChanged: () {
                             // Refresh the favorites list after changing favorites
                             _fetchFavorites();
-                          },
+                          }, matchedIngredients: [], 
                         ),
                       ),
                     );

@@ -18,7 +18,7 @@ class ReviewPage extends StatefulWidget {
     required this.donationImage,
     required this.donationName,
     required this.donorImageUrl,
-    required this.donorName,
+    required this.donorName, required bool isEditing,
   });
 
   @override
@@ -30,7 +30,7 @@ class _ReviewPageState extends State<ReviewPage> {
   double foodItemRating = 0;
   double donationProcessRating = 0;
 
-  // Function to submit the review to Firestore
+  // Function to submit or update the review to Firestore
   Future<void> submitReview({
     required String donorId,
     required String donationId,
@@ -38,27 +38,36 @@ class _ReviewPageState extends State<ReviewPage> {
     required double communicationRating,
     required double foodItemRating,
     required double donationProcessRating,
+    String? reviewId, // For update case
   }) async {
     try {
-      // Get the current timestamp
       Timestamp timestamp = Timestamp.now();
 
-      // Add the review to the 'reviews' collection
-      await FirebaseFirestore.instance.collection('reviews').add({
-        'donorId': donorId,
-        'donationId': donationId,
-        'reviewerId': userId, // Current logged-in user's ID
-        'communicationRating': communicationRating,
-        'foodItemRating': foodItemRating,
-        'donationProcessRating': donationProcessRating,
-        'timestamp': timestamp,
-      });
+      // If reviewId is null, it's a new review, otherwise, it's an update
+      if (reviewId == null) {
+        // Add new review
+        await FirebaseFirestore.instance.collection('reviews').add({
+          'donorId': donorId,
+          'donationId': donationId,
+          'reviewerId': userId, // Current logged-in user's ID
+          'communicationRating': communicationRating,
+          'foodItemRating': foodItemRating,
+          'donationProcessRating': donationProcessRating,
+          'timestamp': timestamp,
+        });
+      } else {
+        // Update existing review
+        await FirebaseFirestore.instance.collection('reviews').doc(reviewId).update({
+          'communicationRating': communicationRating,
+          'foodItemRating': foodItemRating,
+          'donationProcessRating': donationProcessRating,
+          'timestamp': timestamp,
+        });
+      }
 
-      // Optionally, you can call the Cloud Function to update the donor's rating
-      // The function will handle the average calculation in Firebase Cloud Functions
-      print('Review submitted successfully!');
+      print('Review submitted/updated successfully!');
     } catch (e) {
-      print('Error submitting review: $e');
+      print('Error submitting/updating review: $e');
     }
   }
 
@@ -68,19 +77,58 @@ class _ReviewPageState extends State<ReviewPage> {
     return user?.uid;
   }
 
+  // Function to check if a review already exists for the current user
+  Future<Map<String, dynamic>?> getExistingReview(String donationId, String donorId, String userId) async {
+    try {
+      // Query Firestore for the review
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('reviews')
+          .where('donationId', isEqualTo: donationId)
+          .where('donorId', isEqualTo: donorId)
+          .where('reviewerId', isEqualTo: userId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        // Return the first review found (there should only be one)
+        return querySnapshot.docs.first.data() as Map<String, dynamic>;
+      }
+    } catch (e) {
+      print('Error fetching existing review: $e');
+    }
+    return null;
+  }
+
   void _submitFeedback() async {
     if (communicationRating > 0 && foodItemRating > 0 && donationProcessRating > 0) {
       String? userId = await getCurrentUserId();
 
       if (userId != null) {
-        await submitReview(
-          donorId: widget.donorId,
-          donationId: widget.donationId,
-          userId: userId,
-          communicationRating: communicationRating,
-          foodItemRating: foodItemRating,
-          donationProcessRating: donationProcessRating,
-        );
+        // Check if a review already exists for this user
+        var existingReview = await getExistingReview(widget.donationId, widget.donorId, userId);
+
+        if (existingReview != null) {
+          // Update the review
+          String reviewId = existingReview['id'];  // Assuming 'id' is the document ID
+          await submitReview(
+            donorId: widget.donorId,
+            donationId: widget.donationId,
+            userId: userId,
+            communicationRating: communicationRating,
+            foodItemRating: foodItemRating,
+            donationProcessRating: donationProcessRating,
+            reviewId: reviewId, // Pass the review ID to update the existing review
+          );
+        } else {
+          // Submit new review
+          await submitReview(
+            donorId: widget.donorId,
+            donationId: widget.donationId,
+            userId: userId,
+            communicationRating: communicationRating,
+            foodItemRating: foodItemRating,
+            donationProcessRating: donationProcessRating,
+          );
+        }
 
         showDialog(
           context: context,
@@ -98,7 +146,7 @@ class _ReviewPageState extends State<ReviewPage> {
                     repeat: false,
                   ),
                   SizedBox(height: 10),
-                  Text('Your feedback has been submitted successfully!')
+                  Text('Your feedback has been submitted/updated successfully!')
                 ],
               ),
               actions: <Widget>[
@@ -121,6 +169,29 @@ class _ReviewPageState extends State<ReviewPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please provide ratings for all categories.')),
       );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillReview();
+  }
+
+  // Prefill the review form if a review already exists
+  Future<void> _prefillReview() async {
+    String? userId = await getCurrentUserId();
+
+    if (userId != null) {
+      var existingReview = await getExistingReview(widget.donationId, widget.donorId, userId);
+
+      if (existingReview != null) {
+        setState(() {
+          communicationRating = existingReview['communicationRating'] ?? 0;
+          foodItemRating = existingReview['foodItemRating'] ?? 0;
+          donationProcessRating = existingReview['donationProcessRating'] ?? 0;
+        });
+      }
     }
   }
 
@@ -150,7 +221,7 @@ class _ReviewPageState extends State<ReviewPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Leave a Review'),
-        backgroundColor: Colors.green,
+       
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -172,13 +243,11 @@ class _ReviewPageState extends State<ReviewPage> {
               ),
             ),
             SizedBox(height: 10),
-
             Text(
               'Review for:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 5),
-
             Row(
               children: [
                 CircleAvatar(
@@ -192,30 +261,25 @@ class _ReviewPageState extends State<ReviewPage> {
                 ),
               ],
             ),
-
             SizedBox(height: 20),
-
             buildRatingSection('How would you rate the communication?', communicationRating, (rating) {
               setState(() {
                 communicationRating = rating;
               });
             }),
             SizedBox(height: 20),
-
             buildRatingSection('How would you rate the food items?', foodItemRating, (rating) {
               setState(() {
                 foodItemRating = rating;
               });
             }),
             SizedBox(height: 20),
-
             buildRatingSection('How easy was the donation process?', donationProcessRating, (rating) {
               setState(() {
                 donationProcessRating = rating;
               });
             }),
             SizedBox(height: 40),
-
             Center(
               child: ElevatedButton(
                 onPressed: communicationRating > 0 && foodItemRating > 0 && donationProcessRating > 0

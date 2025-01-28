@@ -223,7 +223,6 @@ class _LocationPageState extends State<LocationPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Location'),
-        backgroundColor: Colors.green,
       ),
       body: Stack(
         children: [
@@ -278,7 +277,7 @@ class _LocationPageState extends State<LocationPage> {
                 controller: _addressController,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white, 
+                
                   labelText: 'Search Address',
                   suffixIcon: Icon(Icons.search),
                 ),

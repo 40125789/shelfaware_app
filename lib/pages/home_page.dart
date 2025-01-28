@@ -27,6 +27,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shelfaware_app/components/mark_food_dialogue.dart';
 import 'package:lottie/lottie.dart';
 
+
 // Import the Mark Food Dialog page
 // Import the Mark Food Dialog page
 // Import the Flutter Slidable package
@@ -57,8 +58,6 @@ Future<Position> getUserLocation() async {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  int expiringItemCount = 0;
-  int expiredItemCount = 0;
   String firstName = '';
   String lastName = '';
   final user = FirebaseAuth.instance.currentUser!;
@@ -66,6 +65,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String selectedFilter = 'All';
   List<String> filterOptions = ['All'];
   late AnimationController _controller;
+  int _currentPage = 0;
 
   @override
   void initState() {
@@ -73,7 +73,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     getUserData();
     _pageController = PageController();
     _fetchFilterOptions();
-    _checkExpiryNotifications();
     _controller = AnimationController(vsync: this);
   }
 
@@ -102,39 +101,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _checkExpiryNotifications() async {
-    try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('foodItems')
-          .where('userId', isEqualTo: user.uid)
-          .get();
+  
 
-      int expiringSoonCount = 0;
-      int expiredCount = 0;
-      DateTime today = DateTime.now();
-
-      for (var doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        Timestamp expiryTimestamp = data['expiryDate'];
-        DateTime expiryDate = expiryTimestamp.toDate();
-
-        if (expiryDate.isBefore(today) &&
-            expiryDate.difference(today).inDays <= 0) {
-          expiredCount++; // Increment for expired items
-        } else if (expiryDate.isAfter(today) &&
-            expiryDate.difference(today).inDays <= 3) {
-          expiringSoonCount++; // Increment for items expiring soon
-        }
-      }
-
-      setState(() {
-        expiringItemCount = expiringSoonCount;
-        expiredItemCount = expiredCount;
-      });
-    } catch (e) {
-      print('Error checking expiry notifications: $e');
-    }
-  }
 
   void onNotificationPressed() {
     Navigator.push(
@@ -178,8 +146,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             },
             onNotificationPressed: onNotificationPressed,
             userId: user.uid,
-            // Total count of expiring items
-          ),
+            title: getAppbarTitle(_currentPage),
+          ), // Dynamic title based on the toggle state
+          // Total count of expiring items
+
           drawer: CustomDrawer(
             firstName: firstName,
             lastName: lastName,
@@ -195,346 +165,365 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             onNavigateToDonationWatchList: () {},
           ),
           body: PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Row containing the filter dropdown (left) and toggle button (right)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment
-                          .spaceBetween, // Align items on both sides
-                      children: [
-                        // Filter Dropdown on the left
-                        FilterDropdown(
-                          selectedFilter: selectedFilter,
-                          filterOptions: filterOptions,
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedFilter = newValue!;
-                            });
-                          },
-                        ),
-                        // Row for the toggle button and its label on the right
-                        Row(
-                          children: [
-                            Text(
-                              _isToggled
-                                  ? "Calendar view"
-                                  : "List view", // Dynamic text based on the toggle state
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            Switch(
-                              value: _isToggled,
-                              onChanged: (bool value) {
-                                setState(() {
-                                  _isToggled = value;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Row containing the filter dropdown (left) and toggle button (right)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment
+                            .spaceBetween, // Align items on both sides
+                        children: [
+                          // Filter Dropdown on the left
+                          FilterDropdown(
+                            selectedFilter: selectedFilter,
+                            filterOptions: filterOptions,
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                selectedFilter = newValue!;
+                              });
+                            },
+                          ),
+                          // Row for the toggle button and its label on the right
+                          Row(
+                            children: [
+                              Text(
+                                _isToggled
+                                    ? "Calendar view"
+                                    : "List view", // Dynamic text based on the toggle state
+                                style: TextStyle(fontSize: 16),
+                              ),
+                              Switch(
+                                value: _isToggled,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    _isToggled = value;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
 
-                    // Conditionally show either the list view or the calendar view
-                    _isToggled
-                        ? SizedBox(
-                            height: 400, // Adjust height of the calendar view
-                            child: CalendarView(user, userId: user.uid),
-                          )
-                        : Expanded(
-                            child: StreamBuilder<QuerySnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('foodItems')
-                                  .where('userId', isEqualTo: user.uid)
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
-                                }
-                                if (snapshot.hasError) {
-                                  return const Center(
-                                      child: Text('Error fetching food items'));
-                                }
-                                if (!snapshot.hasData ||
-                                    snapshot.data!.docs.isEmpty) {
-                                  return const Center(
-                                      child: Text('No food items found'));
-                                }
-
-                                final filteredItems = selectedFilter == 'All'
-                                    ? snapshot.data!.docs
-                                    : snapshot.data!.docs.where((doc) {
-                                        return doc['category'] ==
-                                            selectedFilter;
-                                      }).toList();
-
-                                if (filteredItems.isEmpty) {
-                                  return const Center(
-                                      child: Text(
-                                          'No food items match the selected filter.'));
-                                }
-
-                                // Group items by expiry date category
-                                final groupedItems =
-                                    <String, List<QueryDocumentSnapshot>>{
-                                  'Expired': [],
-                                  'Expiring Soon': [],
-                                  'Fresh': []
-                                };
-
-                                final now = DateTime.now();
-
-                                for (var item in filteredItems) {
-                                  final data =
-                                      item.data() as Map<String, dynamic>;
-                                  final expiryTimestamp =
-                                      data['expiryDate'] as Timestamp;
-                                  final expiryDate = expiryTimestamp.toDate();
-                                  final difference =
-                                      expiryDate.difference(now).inDays;
-
-                                  // Classify based on expiry date
-                                  if (difference < 0) {
-                                    groupedItems['Expired']!
-                                        .add(item); // Expired items
-                                  } else if (difference <= 7) {
-                                    groupedItems['Expiring Soon']!
-                                        .add(item); // Expiring within 7 days
-                                  } else {
-                                    groupedItems['Fresh']!
-                                        .add(item); // Fresh items
+                      // Conditionally show either the list view or the calendar view
+                      _isToggled
+                          ? SizedBox(
+                              height: 400, // Adjust height of the calendar view
+                              child: CalendarView(user, userId: user.uid),
+                            )
+                          : Expanded(
+                              child: StreamBuilder<QuerySnapshot>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('foodItems')
+                                    .where('userId', isEqualTo: user.uid)
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
                                   }
-                                }
+                                  if (snapshot.hasError) {
+                                    return const Center(
+                                        child:
+                                            Text('Error fetching food items'));
+                                  }
+                                  if (!snapshot.hasData ||
+                                      snapshot.data!.docs.isEmpty) {
+                                    return const Center(
+                                        child: Text('No food items found'));
+                                  }
 
-                                return ListView(
-                                  children: groupedItems.keys.map((category) {
-                                    // Get the count of items in each category
-                                    int itemCount =
-                                        groupedItems[category]!.length;
+                                  final filteredItems = selectedFilter == 'All'
+                                      ? snapshot.data!.docs
+                                      : snapshot.data!.docs.where((doc) {
+                                          return doc['category'] ==
+                                              selectedFilter;
+                                        }).toList();
 
-                                    // Color each category differently
-                                    Color categoryColor;
-                                    switch (category) {
-                                      case 'Expired':
-                                        categoryColor =
-                                            Colors.red; // Red for expired items
-                                        break;
-                                      case 'Expiring Soon':
-                                        categoryColor = Colors
-                                            .orange; // Orange for items expiring soon
-                                        break;
-                                      case 'Fresh':
-                                        categoryColor = Colors
-                                            .green; // Green for fresh items
-                                        break;
-                                      default:
-                                        categoryColor =
-                                            Colors.blueAccent; // Default color
+                                  if (filteredItems.isEmpty) {
+                                    return const Center(
+                                        child: Text(
+                                            'No food items match the selected filter.'));
+                                  }
+
+                                  // Group items by expiry date category
+                                  final groupedItems =
+                                      <String, List<QueryDocumentSnapshot>>{
+                                    'Expired': [],
+                                    'Expiring Soon': [],
+                                    'Fresh': []
+                                  };
+
+                                  final now = DateTime.now();
+
+                                  for (var item in filteredItems) {
+                                    final data =
+                                        item.data() as Map<String, dynamic>;
+                                    final expiryTimestamp =
+                                        data['expiryDate'] as Timestamp;
+                                    final expiryDate = expiryTimestamp.toDate();
+                                    final difference =
+                                        expiryDate.difference(now).inDays;
+
+                                    // Classify based on expiry date
+                                    if (difference < 0) {
+                                      groupedItems['Expired']!
+                                          .add(item); // Expired items
+                                    } else if (difference <= 4) {
+                                      groupedItems['Expiring Soon']!
+                                          .add(item); // Expiring within 7 days
+                                    } else {
+                                      groupedItems['Fresh']!
+                                          .add(item); // Fresh items
                                     }
+                                  }
 
-                                    // For each category, create an expandable tile with a colored header only
-                                    return ExpansionTile(
-                                      tilePadding: EdgeInsets
-                                          .zero, // Remove padding to make the header stick to the edge
-                                      title: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 8.0, horizontal: 16.0),
-                                        decoration: BoxDecoration(
-                                          color: categoryColor,
-                                          borderRadius: BorderRadius.circular(
-                                              12), // Rounded corners
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              category, // The category name
-                                              style: const TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors
-                                                    .white, // White text on colored background
+                                  return ListView(
+                                    children: groupedItems.keys.map((category) {
+                                      // Get the count of items in each category
+                                      int itemCount =
+                                          groupedItems[category]!.length;
+
+                                      // Color each category differently
+                                      Color categoryColor;
+                                      switch (category) {
+                                        case 'Expired':
+                                          categoryColor = Colors
+                                              .red; // Red for expired items
+                                          break;
+                                        case 'Expiring Soon':
+                                          categoryColor = Colors
+                                              .orange; // Orange for items expiring soon
+                                          break;
+                                        case 'Fresh':
+                                          categoryColor = Colors
+                                              .green; // Green for fresh items
+                                          break;
+                                        default:
+                                          categoryColor = Colors
+                                              .blueAccent; // Default color
+                                      }
+
+                                      // For each category, create an expandable tile with a colored header only
+                                      return ExpansionTile(
+                                        tilePadding: EdgeInsets
+                                            .zero, // Remove padding to make the header stick to the edge
+                                        title: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 8.0, horizontal: 16.0),
+                                          decoration: BoxDecoration(
+                                            color: categoryColor,
+                                            borderRadius: BorderRadius.circular(
+                                                12), // Rounded corners
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                category, // The category name
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors
+                                                      .white, // White text on colored background
+                                                ),
                                               ),
-                                            ),
-                                            Text(
-                                              '($itemCount)', // Display the item count in each category
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors
-                                                    .white, // White text on colored background
+                                              Text(
+                                                '($itemCount)', // Display the item count in each category
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors
+                                                      .white, // White text on colored background
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      children: groupedItems[category]!
-                                          .map((document) {
-                                        final data = document.data()
-                                            as Map<String, dynamic>;
-                                        final expiryTimestamp =
-                                            data['expiryDate'] as Timestamp;
+                                        children: groupedItems[category]!
+                                            .map((document) {
+                                          final data = document.data()
+                                              as Map<String, dynamic>;
+                                          final expiryTimestamp =
+                                              data['expiryDate'] as Timestamp;
 
-                                        String? fetchedFoodType =
-                                            data['category'];
-                                        FoodCategory foodCategory;
+                                          String? fetchedFoodType =
+                                              data['category'];
+                                          FoodCategory foodCategory;
 
-                                        if (fetchedFoodType != null) {
-                                          foodCategory =
-                                              FoodCategory.values.firstWhere(
-                                            (e) =>
-                                                e.toString().split('.').last ==
-                                                fetchedFoodType,
-                                            orElse: () =>
-                                                FoodCategory.values.first,
-                                          );
-                                        } else {
-                                          foodCategory =
-                                              FoodCategory.values.first;
-                                        }
-
-                                        String documentId = document.id;
-
-                                        return InkWell(
-                                          onTap: () {
-                                            showModalBottomSheet(
-                                              context: context,
-                                              isScrollControlled: true,
-                                              builder: (BuildContext context) {
-                                                return Container(
-                                                  height: MediaQuery.of(context)
-                                                          .size
-                                                          .height *
-                                                      0.7,
-                                                  child: MarkFoodDialog(
-                                                    documentId: documentId,
-                                                  ),
-                                                );
-                                              },
+                                          if (fetchedFoodType != null) {
+                                            foodCategory =
+                                                FoodCategory.values.firstWhere(
+                                              (e) =>
+                                                  e
+                                                      .toString()
+                                                      .split('.')
+                                                      .last ==
+                                                  fetchedFoodType,
+                                              orElse: () =>
+                                                  FoodCategory.values.first,
                                             );
-                                          },
-                                          child: Card(
-                                            elevation: 3,
-                                            margin: const EdgeInsets.symmetric(
-                                                vertical: 8.0),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            child: ListTile(
+                                          } else {
+                                            foodCategory =
+                                                FoodCategory.values.first;
+                                          }
+
+                                          String documentId = document.id;
+
+                                          return InkWell(
+                                            onTap: () {
+                                              showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return Container(
+                                                    height:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.7,
+                                                    child: MarkFoodDialog(
+                                                      documentId: documentId,
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                            child: Card(
+                                              elevation: 3,
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 8.0),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
-                                                    BorderRadius.circular(50),
+                                                    BorderRadius.circular(10),
                                               ),
-                                              leading: SizedBox(
-                                                width: 40,
-                                                height: 40,
-                                                child: Icon(
-                                                    FoodCategoryIcons.getIcon(
-                                                        foodCategory)),
-                                              ),
-                                              title: Text(
-                                                data['productName'] ??
-                                                    'No Name',
-                                                style: const TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                              subtitle: Text(
-                                                "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}",
-                                              ),
-                                              trailing: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  SizedBox(
-                                                    width: 60,
-                                                    height: 60,
-                                                    child: ExpiryIcon(
-                                                        expiryTimestamp:
-                                                            expiryTimestamp),
-                                                  ),
-                                                  PopupMenuButton<String>(
-                                                    icon: Icon(Icons.more_vert),
-                                                    onSelected: (String value) {
-                                                      if (value == 'edit') {
-                                                        _editFoodItem(
-                                                            documentId);
-                                                      } else if (value ==
-                                                          'delete') {
-                                                        _deleteFoodItem(context,
-                                                            documentId);
-                                                      } else if (value ==
-                                                          'donate') {
-                                                        _confirmDonation(
-                                                            documentId);
-                                                      }
-                                                    },
-                                                    itemBuilder: (BuildContext
-                                                            context) =>
-                                                        [
-                                                      PopupMenuItem<String>(
-                                                        value: 'edit',
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons.edit),
-                                                            SizedBox(width: 8),
-                                                            Text('Edit'),
-                                                          ],
+                                              child: ListTile(
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(50),
+                                                ),
+                                                leading: SizedBox(
+                                                  width: 40,
+                                                  height: 40,
+                                                  child: Icon(
+                                                      FoodCategoryIcons.getIcon(
+                                                          foodCategory)),
+                                                ),
+                                                title: Text(
+                                                  data['productName'] ??
+                                                      'No Name',
+                                                  style: const TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                                subtitle: Text(
+                                                  "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}",
+                                                ),
+                                                trailing: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 60,
+                                                      height: 60,
+                                                      child: ExpiryIcon(
+                                                          expiryTimestamp:
+                                                              expiryTimestamp),
+                                                    ),
+                                                    PopupMenuButton<String>(
+                                                      icon:
+                                                          Icon(Icons.more_vert),
+                                                      onSelected:
+                                                          (String value) {
+                                                        if (value == 'edit') {
+                                                          _editFoodItem(
+                                                              documentId);
+                                                        } else if (value ==
+                                                            'delete') {
+                                                          _deleteFoodItem(
+                                                              context,
+                                                              documentId);
+                                                        } else if (value ==
+                                                            'donate') {
+                                                          _confirmDonation(
+                                                              documentId);
+                                                        }
+                                                      },
+                                                      itemBuilder: (BuildContext
+                                                              context) =>
+                                                          [
+                                                        PopupMenuItem<String>(
+                                                          value: 'edit',
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(Icons.edit),
+                                                              SizedBox(
+                                                                  width: 8),
+                                                              Text('Edit'),
+                                                            ],
+                                                          ),
                                                         ),
-                                                      ),
-                                                      PopupMenuItem<String>(
-                                                        value: 'delete',
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons.delete),
-                                                            SizedBox(width: 8),
-                                                            Text('Delete'),
-                                                          ],
+                                                        PopupMenuItem<String>(
+                                                          value: 'delete',
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(
+                                                                  Icons.delete),
+                                                              SizedBox(
+                                                                  width: 8),
+                                                              Text('Delete'),
+                                                            ],
+                                                          ),
                                                         ),
-                                                      ),
-                                                      PopupMenuItem<String>(
-                                                        value: 'donate',
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons
-                                                                .volunteer_activism),
-                                                            SizedBox(width: 8),
-                                                            Text('Donate'),
-                                                          ],
+                                                        PopupMenuItem<String>(
+                                                          value: 'donate',
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(Icons
+                                                                  .volunteer_activism),
+                                                              SizedBox(
+                                                                  width: 8),
+                                                              Text('Donate'),
+                                                            ],
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    );
-                                  }).toList(),
-                                );
-                              },
-                            ),
-                          )
-                  ],
+                                          );
+                                        }).toList(),
+                                      );
+                                    }).toList(),
+                                  );
+                                },
+                              ),
+                            )
+                    ],
+                  ),
                 ),
-              ),
-              RecipesPage(),
-              DonationsPage(),
-              StatisticsPage(),
-            ],
-          ),
+                RecipesPage(),
+                DonationsPage(),
+                StatisticsPage(),
+              ],
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+              }),
           bottomNavigationBar: Consumer<BottomNavController>(
             builder: (context, controller, child) {
               return BottomNavigationBarComponent(
@@ -557,7 +546,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               );
             },
             child: const Icon(Icons.add),
-            backgroundColor: Colors.green,
             elevation: 6.0,
             shape: const CircleBorder(),
           ),
@@ -851,7 +839,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       return 'Expired'; // If expired, show 'Expired'
     } else if (daysDifference == 0) {
       return 'Expires today'; // If it expires today
-    } else if (daysDifference <= 5) {
+    } else if (daysDifference <= 4) {
       return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}'; // Expiring soon
     } else {
       return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}'; // Fresh items
@@ -859,51 +847,67 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void _editFoodItem(String documentId) {}
-}
 
-Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
-  bool? confirm = await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text("Confirm Deletion"),
-        content: Text(
-            "Are you sure you want to delete this item? This action cannot be undone."),
-        actions: [
-          TextButton(
-            child: Text("Cancel"),
-            onPressed: () {
-              Navigator.of(context).pop(false); // Return false if user cancels
-            },
-          ),
-          TextButton(
-            child: Text("Delete"),
-            onPressed: () {
-              Navigator.of(context).pop(true); // Return true if user confirms
-            },
-          ),
-        ],
-      );
-    },
-  );
+  getAppbarTitle(int currentPage) {
+    switch (currentPage) {
+      case 0:
+        return 'Home';
+      case 1:
+        return 'Recipes';
+      case 2:
+        return 'Donations';
+      case 3:
+        return 'Statistics';
+      default:
+        return 'Home';
+    }
+  }
 
-  if (confirm == true) {
-    try {
-      // Delete the food item document from Firestore
-      await FirebaseFirestore.instance
-          .collection('foodItems')
-          .doc(documentId)
-          .delete();
+  Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
+    bool? confirm = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm Deletion"),
+          content: Text(
+              "Are you sure you want to delete this item? This action cannot be undone."),
+          actions: [
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context)
+                    .pop(false); // Return false if user cancels
+              },
+            ),
+            TextButton(
+              child: Text("Delete"),
+              onPressed: () {
+                Navigator.of(context).pop(true); // Return true if user confirms
+              },
+            ),
+          ],
+        );
+      },
+    );
 
-      // Notify the user of success
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Item deleted successfully.")),
-      );
-    } catch (e) {
-      print('Error deleting food item: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to delete item: $e")),
-      );
+    if (confirm == true) {
+      try {
+        // Delete the food item document from Firestore
+        await FirebaseFirestore.instance
+            .collection('foodItems')
+            .doc(documentId)
+            .delete();
+
+        // Notify the user of success
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Item deleted successfully.")),
+        );
+      } catch (e) {
+        print('Error deleting food item: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to delete item: $e")),
+        );
+      }
     }
   }
 }

@@ -23,7 +23,7 @@ class CardTiles extends StatelessWidget {
           ),
           color: Colors.red, // Entire card is red for food waste
           elevation: 5,
-          child: ListTile(
+          child: ExpansionTile(
             leading: Icon(
               Icons.delete,
               color: Colors.white, // White icon for visibility on red background
@@ -43,6 +43,23 @@ class CardTiles extends StatelessWidget {
                 fontWeight: FontWeight.bold, // Bold the text
               ),
             ),
+            children: <Widget>[
+              // List of food waste items, using 'productName'
+              ListView.builder(
+                shrinkWrap: true, // To prevent scrolling issues in the expanded view
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: highestFoodWaste['foodItems']?.length ?? 0,
+                itemBuilder: (context, index) {
+                  // Assuming 'foodItems' is a list of maps with 'productName'
+                  return ListTile(
+                    title: Text(
+                      highestFoodWaste['foodItems'][index]['productName'],  // Accessing 'productName'
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
         SizedBox(height: 15), // Adding space between cards
@@ -54,7 +71,7 @@ class CardTiles extends StatelessWidget {
           ),
           color: Colors.green, // Entire card is green for food saved
           elevation: 5,
-          child: ListTile(
+          child: ExpansionTile(
             leading: Icon(
               Icons.check_circle,
               color: Colors.white, // White icon for visibility on green background
@@ -74,6 +91,23 @@ class CardTiles extends StatelessWidget {
                 fontWeight: FontWeight.bold, // Bold the text
               ),
             ),
+            children: <Widget>[
+              // List of food saved items, using 'productName'
+              ListView.builder(
+                shrinkWrap: true, // To prevent scrolling issues in the expanded view
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: highestFoodSaved['foodItems']?.length ?? 0,
+                itemBuilder: (context, index) {
+                  // Assuming 'foodItems' is a list of maps with 'productName'
+                  return ListTile(
+                    title: Text(
+                      highestFoodSaved['foodItems'][index]['productName'],  // Accessing 'productName'
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ],

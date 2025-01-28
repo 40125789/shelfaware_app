@@ -15,8 +15,10 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   late Future<List<FoodHistory>> _foodItems;
-  List<int> _selectedItems = []; // Track selected food items
-  bool _isRecreateMode = false; // Flag for toggling recreate mode
+  List<int> _selectedItems = [];
+  bool _isRecreateMode = false;
+  bool _isGrouped = false; // For grouping by consumed and discarded
+  bool _isNewestToOldest = true; // For sorting by newest to oldest
 
   @override
   void initState() {
@@ -24,7 +26,6 @@ class _HistoryPageState extends State<HistoryPage> {
     _foodItems = HistoryService().getHistoryItems(widget.userId);
   }
 
-  // Handle the Recreate button press
   void _onRecreateSelected(List<FoodHistory> selectedFoodItems) {
     if (selectedFoodItems.isNotEmpty) {
       Navigator.push(
@@ -32,12 +33,12 @@ class _HistoryPageState extends State<HistoryPage> {
         MaterialPageRoute(
           builder: (context) => AddFoodItem(
             foodItem: selectedFoodItems.first,
-            isRecreated: true, foodItems: [], // Pass selected items to AddFoodItem
+            isRecreated: true,
+            foodItems: [],
           ),
         ),
       );
     } else {
-      // Show an error message if no items are selected
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select at least one food item to recreate.'),
@@ -47,60 +48,72 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
-  // Method to toggle recreate mode and clear selection
   void _toggleRecreateMode() {
     setState(() {
       _isRecreateMode = !_isRecreateMode;
       if (!_isRecreateMode) {
-        _selectedItems.clear(); // Clear selection when exiting recreate mode
+        _selectedItems.clear();
       }
     });
+  }
+
+  void _sortFoodItems(List<FoodHistory> foodItems) {
+    if (_isGrouped) {
+      foodItems.sort((a, b) {
+        if (a.status == b.status) {
+          return a.updatedOn.compareTo(b.updatedOn);
+        }
+        return a.status == 'consumed' ? -1 : 1;
+      });
+    } else {
+      foodItems.sort((a, b) {
+        return _isNewestToOldest
+            ? b.updatedOn.compareTo(a.updatedOn) // Newest to Oldest
+            : a.updatedOn.compareTo(b.updatedOn); // Oldest to Newest
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: _isRecreateMode
+        leading: !_isRecreateMode
             ? IconButton(
                 icon: Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              )
+            : IconButton(
+                icon: Icon(Icons.arrow_back),
                 onPressed: () {
-                  // Exit recreate mode by setting _isRecreateMode to false
-                  _toggleRecreateMode();
+                  setState(() {
+                    _isRecreateMode = false; // Exit recreate mode
+                    _selectedItems.clear(); // Clear selected items
+                  });
                 },
-              )
-            : null, // Show back button only when in recreate mode
-
-        title: _isRecreateMode
-            ? Text(
-                '${_selectedItems.length} Items selected', // Show the selected items count when in recreate mode
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              )
-            : Text('Food History'), // Default title when not in recreate mode
-
-        backgroundColor: _isRecreateMode
-            ? Colors.blue
-            : Colors.green, // Change color when in recreate mode
-
+              ), // No back arrow in recreate mode, or it will exit recreate mode
+        title: Text(
+          _isRecreateMode
+              ? '${_selectedItems.length} Items selected'
+              : 'Food History',
+        ),
+        backgroundColor: _isRecreateMode ? Colors.blue : Colors.green,
         actions: [
-          // Show the recreate button only when not in recreate mode
           if (!_isRecreateMode)
             IconButton(
-              icon: Icon(Icons.replay), // Recreate icon
+              icon: Icon(Icons.edit),
               onPressed: _toggleRecreateMode,
             ),
-          // Show the check button only in recreate mode
           if (_isRecreateMode)
             IconButton(
-              icon: Icon(Icons.check),
+              icon: Icon(Icons.refresh),
               onPressed: _selectedItems.isEmpty
-                  ? null // Disable if no items selected
+                  ? null
                   : () {
                       _foodItems.then((foodItems) {
                         _onRecreateSelected(
                           _selectedItems
-                              .map((index) =>
-                                  foodItems[index]) // Get selected items
+                              .map((index) => foodItems[index])
                               .toList(),
                         );
                       });
@@ -108,102 +121,149 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
         ],
       ),
-      body: FutureBuilder<List<FoodHistory>>(
-        future: _foodItems,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No food items found.'));
-          }
-
-          // List of food items to display
-          List<FoodHistory> foodItems = snapshot.data!;
-          return ListView.builder(
-            itemCount: foodItems.length,
-            itemBuilder: (context, index) {
-              final foodItem = foodItems[index];
-
-              // Format the expiry date
-              final formattedExpiryDate = DateFormat('dd MMM yyyy')
-                  .format(foodItem.expiryDate.toDate());
-
-              // Determine the status and icon
-              String statusText = '';
-              Icon statusIcon;
-              Color iconColor;
-
-              switch (foodItem.status) {
-                case 'consumed':
-                  statusText = 'Consumed';
-                  statusIcon = Icon(Icons.check_circle, color: Colors.green);
-                  iconColor = Colors.green;
-                  break;
-                case 'discarded':
-                  statusText = 'Discarded';
-                  statusIcon = Icon(Icons.delete, color: Colors.red);
-                  iconColor = Colors.red;
-                  break;
-                default:
-                  statusText = 'Pending';
-                  statusIcon = Icon(Icons.pending, color: Colors.grey);
-                  iconColor = Colors.grey;
-              }
-
-              return Card(
-                margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-                elevation: 5,
-                child: ListTile(
-                  contentPadding: EdgeInsets.all(15),
-                  title: Text(
-                    foodItem.productName,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // Aligns text to the left and status to the right
-                    children: [
-                      Text(
-                        'Expiry: ${formattedExpiryDate}',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      // Display status with appropriate color
-                      Row(
-                        children: [
-                          statusIcon, // The icon next to the status
-                          SizedBox(width: 5),
-                          Text(
-                            statusText,
-                            style: TextStyle(color: iconColor),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  trailing: _isRecreateMode
-                      ? null // Hide the trailing icon in recreate mode
-                      : null, // No status icon in the trailing area
-                  leading: _isRecreateMode
-                      ? Checkbox(
-                          value: _selectedItems.contains(index),
-                          onChanged: (bool? value) {
-                            setState(() {
-                              if (value == true) {
-                                _selectedItems.add(index);
-                              } else {
-                                _selectedItems.remove(index);
-                              }
-                            });
-                          },
-                        )
-                      : null, // Show checkbox only in recreate mode
-                  onTap: () {},
+      body: Column(
+        children: [
+          // Dropdown for sorting options below the app bar
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _isGrouped
+                  ? 'Group by Status'
+                  : _isNewestToOldest
+                      ? 'Newest First'
+                      : 'Oldest First',
+              items: [
+                DropdownMenuItem<String>(
+                  value: 'Group by Status',
+                  child: Text('Group by Status'),
                 ),
-              );
-            },
-          );
-        },
+                DropdownMenuItem<String>(
+                  value: 'Newest First',
+                  child: Text('Sort by Newest'),
+                ),
+                DropdownMenuItem<String>(
+                  value: 'Oldest First',
+                  child: Text('Sort by Oldest'),
+                ),
+              ],
+              onChanged: (String? newValue) {
+                setState(() {
+                  if (newValue == 'Group by Status') {
+                    _isGrouped = true;
+                    _isNewestToOldest =
+                        false; // Reset to disable "Newest First"
+                  } else if (newValue == 'Newest First') {
+                    _isNewestToOldest = true;
+                    _isGrouped = false; // Reset to disable "Group by Status"
+                  } else if (newValue == 'Oldest First') {
+                    _isNewestToOldest = false;
+                    _isGrouped = false; // Reset to disable "Group by Status"
+                  }
+
+                  // Reload the food items after applying sorting/filtering
+                  _foodItems = HistoryService().getHistoryItems(widget.userId);
+                });
+              },
+            ),
+          ),
+          // Food list
+          Expanded(
+            child: FutureBuilder<List<FoodHistory>>(
+              future: _foodItems,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('No food items found.'));
+                }
+
+                List<FoodHistory> foodItems = snapshot.data!;
+
+                // Sort the food items based on the current state
+                _sortFoodItems(foodItems);
+
+                return ListView.builder(
+                  itemCount: foodItems.length,
+                  itemBuilder: (context, index) {
+                    final foodItem = foodItems[index];
+                    final formattedDate = DateFormat('dd MMM yyyy')
+                        .format(foodItem.updatedOn.toDate());
+                    String statusText = foodItem.status == 'consumed'
+                        ? 'Consumed'
+                        : 'Discarded';
+                    Color textColor = foodItem.status == 'consumed'
+                        ? Colors.green
+                        : Colors.red;
+                    Color borderColor = foodItem.status == 'consumed'
+                        ? Colors.green
+                        : Colors.red;
+
+                    IconData statusIcon = foodItem.status == 'consumed'
+                        ? Icons.check
+                        : Icons.delete;
+
+                    return Card(
+                      margin:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: borderColor, width: 2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(15),
+                        title: Text(
+                          foodItem.productName,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Row(
+                          children: [
+                            Text(
+                              statusText, // Only status text is colored
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              ' on $formattedDate', // Date in grey and not bold
+                              style: TextStyle(
+                                color: Colors.grey, // Grey color for the date
+                                fontWeight: FontWeight.normal, // Not bold
+                              ),
+                            ),
+                            Spacer(),
+                            Icon(
+                              statusIcon,
+                              color: textColor,
+                            ),
+                          ],
+                        ),
+                        leading: _isRecreateMode
+                            ? Checkbox(
+                                value: _selectedItems.contains(index),
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    if (value == true) {
+                                      _selectedItems.add(index);
+                                    } else {
+                                      _selectedItems.remove(index);
+                                    }
+                                  });
+                                },
+                              )
+                            : null,
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

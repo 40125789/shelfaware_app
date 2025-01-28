@@ -31,10 +31,12 @@ class DonationListView extends StatefulWidget {
 class _DonationListViewState extends State<DonationListView> {
   late WatchlistService watchlistService;
   Map<String, bool> watchlistStatus = {};
-
+  Map<String, double> donorRatings = {}; // Add this line to define donorRatings
+  double averageRating = 0.0;
   bool filterExpiringSoon = false;
   bool filterNewlyAdded = false;
   double filterDistance = 0.0;
+  
 
   @override
   void initState() {
@@ -42,11 +44,31 @@ class _DonationListViewState extends State<DonationListView> {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
     watchlistService =
         WatchlistService(userId: userId ?? ''); // Initialize WatchlistService
+        
 
     // Initialize filter criteria from constructor arguments
     filterExpiringSoon = widget.filterExpiringSoon;
     filterNewlyAdded = widget.filterNewlyAdded;
     filterDistance = widget.filterDistance;
+  }
+
+  Future<void> fetchDonorRating(String donorId) async {
+    if (donorRatings.containsKey(donorId)) return; // Avoid fetching if already fetched
+
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(donorId).get();
+      if (userDoc.exists && userDoc.data() != null) {
+        var data = userDoc.data() as Map<String, dynamic>;
+        var rating = data['averageRating'];
+        if (rating != null) {
+          setState(() {
+            donorRatings[donorId] = rating.toDouble();
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching donor rating: $e');
+    }
   }
 
   @override
@@ -133,6 +155,8 @@ class _DonationListViewState extends State<DonationListView> {
           );
         }
 
+     
+
         // Render ListView if donations are found
         return ListView.builder(
           itemCount: donations.length,
@@ -147,6 +171,12 @@ class _DonationListViewState extends State<DonationListView> {
             GeoPoint? location = donation['location'];
             String donorId = donation['donorId'];
             String donationId = donations[index].id;
+
+           // Fetch the donor rating
+            fetchDonorRating(donorId);
+
+            // Fetch the average rating for the donor
+             double? rating = donorRatings[donorId];
 
             double latitude = location?.latitude ?? 0.0;
             double longitude = location?.longitude ?? 0.0;
@@ -267,149 +297,166 @@ class _DonationListViewState extends State<DonationListView> {
                         // Optionally show a message to the user
                       }
                     },
+
+                    
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Donation Image (left side)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: imageUrl != null && imageUrl.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: imageUrl,
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) =>
-                                        CircularProgressIndicator(),
-                                    errorWidget: (context, url, error) =>
-                                        Image.asset(
-                                      'assets/placeholder.png',
-                                      width: 120,
-                                      height: 120,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  )
-                                : Image.asset(
-                                    'assets/placeholder.png', // Placeholder image
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.cover,
-                                  ),
-                          ),
-                          SizedBox(width: 12), // Space between image and text
+      padding: const EdgeInsets.all(12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Donation Image (left side)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: imageUrl != null && imageUrl.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) =>
+                        CircularProgressIndicator(),
+                    errorWidget: (context, url, error) => Image.asset(
+                      'assets/placeholder.png',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Image.asset(
+                    'assets/placeholder.png', // Placeholder image
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                  ),
+          ),
+          SizedBox(width: 12), // Space between image and text
 
-                          // Text area (right side)
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Product Name (top of the text area)
-                                Text(
-                                  productName,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                SizedBox(height: 8),
+          // Text area (right side)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Product Name (top of the text area)
+                Text(
+                  productName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 8),
 
-                                // Donor's name and profile image (below product name)
-                                Row(
-                                  children: [
-                                    ProfileImage(
-                                        donorId: donorId, userId: userId ?? ''),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      donorName,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                // Donor's name and profile image (below product name)
+                Row(
+                  children: [
+                    ProfileImage(donorId: donorId, userId: userId ?? ''),
+                    SizedBox(width: 8),
+                    Text(
+                      donorName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                       // Add some space between donor name and rating
+                     SizedBox(width: 6),
+
+                    // Display the average rating as gold stars
+                                    if (rating != null && rating > 0)
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.star,
+                                            color: Colors.amber, // Gold star
+                                            size: 16,
+                                          ),
+                                          Text(
+                                            rating.toStringAsFixed(1), // Display rating with 1 decimal point
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
                                   ],
                                 ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Status: $status',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[700],
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(Icons.location_on,
-                                        color: Colors.grey, size: 16),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '$distanceText away',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[500]),
-                                    ),
-                                  ],
-                                ),
-                                if (isNewlyAdded || isExpiringSoon) ...[
-                                  SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      if (isNewlyAdded) ...[
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            'New',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                      ],
-                                      if (isExpiringSoon) ...[
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            'Expiring Soon',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
-                              ],
+                  
+                SizedBox(height: 8),
+                Text(
+                  'Status: $status',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.grey, size: 16),
+                    SizedBox(width: 4),
+                    Text(
+                      '$distanceText away',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+                if (isNewlyAdded || isExpiringSoon) ...[
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (isNewlyAdded) ...[
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'New',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                        SizedBox(width: 8),
+                      ],
+                      if (isExpiringSoon) ...[
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Expiring Soon',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),  
+                  ),
+                ),                  
+
                 Positioned(
                   bottom: 8,
                   left: 8,
