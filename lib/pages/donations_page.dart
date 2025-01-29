@@ -152,7 +152,7 @@ Future<void> _getUserLocationFromFirestore(String userId) async {
     final donationLocations = await fetchDonationLocations();
 
     // Create donation markers (excluding the logged-in user's donations)
-    Set<Marker> donationMarkers = _mapService.getMarkers(
+    Set<Marker> donationMarkers = await _mapService.getMarkers(
       _currentLocation!,
       donationLocations,
       [], // This can be used for predefined points if needed

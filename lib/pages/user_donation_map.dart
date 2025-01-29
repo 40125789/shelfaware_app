@@ -53,7 +53,7 @@ class DonationMapScreen extends StatefulWidget {
 
 class _DonationMapScreenState extends State<DonationMapScreen> {
   late GoogleMapController mapController;
-  late Marker donationMarker;
+  late Circle donationMarker;
   late Marker userMarker;
   String address = 'Loading address...'; // Initialize with loading text
   bool isMapExpanded = false; // Manage the expanded state of the map
@@ -68,16 +68,11 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
   }
 
   void _initializeMarkers() {
-    donationMarker = Marker(
-      markerId: MarkerId('donationLocation'),
-      position: LatLng(widget.donationLatitude, widget.donationLongitude),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      infoWindow: InfoWindow(
-        title: widget.productName,
-        snippet: 'Expires on: ${widget.expiryDate}\nStatus: ${widget.status}',
-      ),
-      onTap: _showDonationDetails,
-    );
+  donationMarker = Circle(
+    circleId: CircleId('donationLocation'),
+    center: LatLng(widget.donationLatitude, widget.donationLongitude),
+  );
+ 
 
     userMarker = Marker(
       markerId: MarkerId('userLocation'),
@@ -454,14 +449,13 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                     mapController = controller;
                   },
                   markers: {
-                    donationMarker,
                     userMarker, // User's location marker
                   },
                   circles: {
                     Circle(
                       circleId: CircleId('radius'),
                       center: donationLocation,
-                      radius: 500, // Define radius (500 meters)
+                      radius: 150, // Define radius (500 meters)
                       strokeColor: Colors.blue.withOpacity(0.5),
                       strokeWidth: 2,
                       fillColor: Colors.blue.withOpacity(0.1),

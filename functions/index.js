@@ -121,82 +121,104 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
   });
 
   exports.sendDonationRequestNotification = functions.firestore
-    .document('donationRequests/{requestId}')
-    .onCreate(async (snapshot, context) => {
-        const requestData = snapshot.data();
+  .document('donationRequests/{requestId}')
+  .onCreate(async (snapshot, context) => {
+      const requestData = snapshot.data();
 
-        if (!requestData || !requestData.donatorId || !requestData.requesterId || !requestData.productName) {
-            console.log("Missing necessary data.");
-            return null;
-        }
+      if (!requestData || !requestData.donatorId || !requestData.requesterId || !requestData.productName) {
+          console.log("Missing necessary data.");
+          return null;
+      }
 
-        try {
-            // Extract necessary fields from the donation request
-            const { 
-                donatorId, 
-                productName, 
-                donorImageUrl, 
-                requesterId, 
-                requesterProfileImageUrl, 
-                message 
-            } = requestData;
+      try {
+          // Extract necessary fields from the donation request
+          const { 
+              donatorId, 
+              productName, 
+              donorImageUrl, 
+              requesterId, 
+              requesterProfileImageUrl, 
+              imageUrl,
+              message 
+          } = requestData;
 
-            // Fetch donor's FCM token from Firestore users collection
-            const donorDoc = await admin.firestore()
-                .collection('users')
-                .doc(donatorId)
-                .get();
+          // Fetch donor's FCM token from Firestore users collection
+          const donorDoc = await admin.firestore()
+              .collection('users')
+              .doc(donatorId)
+              .get();
 
-            if (!donorDoc.exists || !donorDoc.data().fcm_token) {
-                console.log("FCM token not found for donor.");
-                return null;
-            }
+          if (!donorDoc.exists || !donorDoc.data().fcm_token) {
+              console.log("FCM token not found for donor.");
+              return null;
+          }
 
-            const fcmToken = donorDoc.data().fcm_token;
+          const fcmToken = donorDoc.data().fcm_token;
 
-            // Fetch the requester's document from Firestore to get their first name
-            const requesterDoc = await admin.firestore()
-                .collection('users')
-                .doc(requesterId)
-                .get();
+          // Fetch the requester's document from Firestore to get their first name
+          const requesterDoc = await admin.firestore()
+              .collection('users')
+              .doc(requesterId)
+              .get();
 
-            if (!requesterDoc.exists) {
-                console.log("Requester document not found.");
-                return null;
-            }
+          if (!requesterDoc.exists) {
+              console.log("Requester document not found.");
+              return null;
+          }
 
-            const requesterFirstName = requesterDoc.data().firstName;
+          const requesterFirstName = requesterDoc.data().firstName;
 
-            // Notification message
-            const notificationMessage = {
-                notification: {
-                    title: `New Request for ${productName} from ${requesterFirstName}`,
-                    body: `Message: ${message}`,
-                    image: requesterProfileImageUrl
-                },
-                token: fcmToken,
-                data: {
-                    requestId: context.params.requestId,
-                    requesterId: requesterId,
-                    requesterFirstName: requesterFirstName, // Added requester's first name
-                    requesterProfileImageUrl: requesterProfileImageUrl,
-                    donorImageUrl: donorImageUrl,
-                    productName: productName,
-                    message: message,
-                    pickupDateTime: requestData.pickupDateTime.toDate().toISOString()
-                }
-            };
+          // Notification message
+          const notificationMessage = {
+              notification: {
+                  title: `New Request for ${productName} from ${requesterFirstName}`,
+                  body: `Message: ${message}`,
+                  image: imageUrl
+              },
+              token: fcmToken,
+              data: {
+                  requestId: context.params.requestId,
+                  requesterId: requesterId,
+                  requesterFirstName: requesterFirstName, 
+                  requesterProfileImageUrl: requesterProfileImageUrl,
+                  donorImageUrl: donorImageUrl,
+                  productName: productName,
+                  message: message,
+                  imageUrl: imageUrl || "",
+                  pickupDateTime: requestData.pickupDateTime.toDate().toISOString()
+              }
+          };
 
-            // Send the notification
-            await admin.messaging().send(notificationMessage);
-            console.log(`Notification sent successfully to donor: ${donatorId}`);
+          // Send the notification
+          await admin.messaging().send(notificationMessage);
+          console.log(`Notification sent successfully to donor: ${donatorId}`);
 
-        } catch (error) {
-            console.error("Error sending notification:", error);
-        }
+          // Add a document to the notifications collection with type "request"
+          const notificationDoc = {
+              type: "request",
+              donatorId: donatorId,
+              requesterId: requesterId,
+              productName: productName,
+              message: message,
+              title: `New Request for ${productName} from ${requesterFirstName}`,  // Add the title here
+              body: `Message: ${message}`,  // Add the body here
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              read: false,  // You can use this to track the notification status
+              pickupDateTime: requestData.pickupDateTime.toDate().toISOString(),
+              donorImageUrl: donorImageUrl,
+              requesterProfileImageUrl: requesterProfileImageUrl,
+              userId: donatorId,
+          };
 
-        return null;
-    });
+          await admin.firestore().collection('notifications').add(notificationDoc);
+          console.log("Notification document added to the 'notifications' collection.");
+
+      } catch (error) {
+          console.error("Error sending notification:", error);
+      }
+
+      return null;
+  });
 
     exports.updateDonorAverageRating = functions.firestore
   .document("reviews/{reviewId}")
@@ -273,7 +295,6 @@ exports.sendRequestAcceptedNotification = functions.firestore
             const productName = newValue.productName;
             const pickupDateTime = newValue.pickupDateTime.toDate(); // Format the date without UTC
           
-
             // Retrieve the requester data from the 'users' collection (or wherever user data is stored)
             const userRef = admin.firestore().collection('users').doc(requesterId);
             const userSnapshot = await userRef.get();
@@ -291,9 +312,8 @@ exports.sendRequestAcceptedNotification = functions.firestore
                 return null;
             }
 
-           // Create the message body with the necessary details
-           const messageBody = `${assignedToName}, your request for ${productName} has been accepted!\nYour pickup time is: ${pickupDateTime} as selected`;
-
+            // Create the message body with the necessary details
+            const messageBody = `${assignedToName}, your request for ${productName} has been accepted!\nYour pickup time is: ${pickupDateTime} as selected`;
 
             // Send a notification to the requester
             const message = {
@@ -308,6 +328,24 @@ exports.sendRequestAcceptedNotification = functions.firestore
                 // Send the notification using Firebase Cloud Messaging (FCM)
                 await admin.messaging().send(message);
                 console.log('Notification sent successfully.');
+
+                // Add a document to the notifications collection with type "request_accepted"
+                const notificationDoc = {
+                    type: "request",
+                    userId: requesterId,
+                    requesterId: requesterId,
+                    assignedToName: assignedToName,
+                    productName: productName,
+                    title: 'Donation Request Accepted',  // Add the title here
+                    body: messageBody,
+                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                    read: false,  // You can track the notification status
+                    pickupDateTime: pickupDateTime.toISOString(),
+                };
+
+                await admin.firestore().collection('notifications').add(notificationDoc);
+                console.log("Notification document added to the 'notifications' collection.");
+
             } catch (error) {
                 console.error('Error sending notification: ', error);
             }

@@ -9,6 +9,7 @@ import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/settings_page.dart';
 import 'package:shelfaware_app/providers/settings_provider.dart';
 import 'package:shelfaware_app/services/notification_handler.dart';
+import 'package:wiredash/wiredash.dart';
 import 'firebase_options.dart';
 import 'pages/auth_page.dart';
 import 'package:provider/provider.dart';
@@ -151,7 +152,31 @@ class MyApp extends StatelessWidget {
     // Get the dark mode status
     bool isDarkMode = Provider.of<SettingsProvider>(context).isDarkMode;
 
- return MaterialApp(
+ return Wiredash(
+  projectId: 'shelfaware-vzxz2vt',
+  secret: '-y_wurv7O5isCUa4qVVG_5CGaiiJsatH',
+
+  feedbackOptions: WiredashFeedbackOptions(
+  labels: [
+      // Grab the label IDs from the Console
+      // https://wiredash.com/console -> Settings -> Labels
+      Label(
+        id: 'label-rp8uxxf8zg',
+        title: 'Feature Request',
+      ),
+      Label(
+        id: 'label-v4cxn1elkc',
+        title: 'User Interface',
+      ),
+      Label(
+        id: 'label-s8wq58dcmb',
+        title: 'Bug',
+      ),
+    ],
+  
+  ),
+  child: MaterialApp(
+
   debugShowCheckedModeBanner: false,
   title: 'ShelfAware',
   theme: ThemeData(
@@ -216,6 +241,7 @@ class MyApp extends StatelessWidget {
             
         '/settings': (context) => SettingsPage(), 
       },
-    );
+    ),
+  );
   }
 }

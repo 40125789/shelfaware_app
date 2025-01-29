@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/models/recipe_model.dart';
 import 'package:shelfaware_app/pages/recipe_details_page.dart';
@@ -28,40 +29,52 @@ class _RecipeCardState extends State<RecipeCard> {
     _checkIfFavourite();
   }
 
-  // Check if the recipe is already in favourites
-  void _checkIfFavourite() async {
-    final docSnapshot = await FirebaseFirestore.instance
-        .collection('favourites')
-        .doc(widget.recipe.id.toString())
-        .get();
+ void _checkIfFavourite() async {
+  final docSnapshot = await FirebaseFirestore.instance
+      .collection('favourites')
+      .doc(widget.recipe.id.toString())
+      .get();
 
-    if (docSnapshot.exists) {
-      setState(() {
-        isFavourite = true;
-      });
-    }
-  }
+  setState(() {
+    isFavourite = docSnapshot.exists; // Set state based on the document's existence
+  });
+}
 
-  // Toggle favourite status in Firestore
-  void _toggleFavourite() async {
-    setState(() {
-      isFavourite = !isFavourite;
-    });
 
+void _toggleFavourite() async {
+  // Toggle the favourite status (button state)
+  setState(() {
+    isFavourite = !isFavourite; 
+  });
+
+  final collectionRef = FirebaseFirestore.instance.collection('favourites');
+  final docRef = collectionRef.doc(widget.recipe.id.toString()); // Correct document reference
+
+  try {
     if (isFavourite) {
-      // Add recipe to Firestore (creates collection if it doesn't exist)
-      await FirebaseFirestore.instance.collection('favourites').doc(widget.recipe.id as String?).set({
+      // Add the recipe to the 'favourites' collection
+      await docRef.set({
         'id': widget.recipe.id,
         'title': widget.recipe.title,
         'imageUrl': widget.recipe.imageUrl,
-        'ingredients': widget.recipe.ingredients,
-        'timestamp': FieldValue.serverTimestamp(),
+        'ingredients': widget.recipe.ingredients.map((ingredient) => ingredient.name).toList(),
+        'totalIngredients': widget.recipe.ingredients.length, // Adding total ingredients count
+        'instructions': widget.recipe.instructions, // Adding instructions
+        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'Unknown', // Adding the current user's ID
+        'timestamp': FieldValue.serverTimestamp(),  // Adding a timestamp for reference
       });
+      print("Recipe added to favourites.");
     } else {
-      // Remove recipe from favourites
-      await FirebaseFirestore.instance.collection('favourites').doc(widget.recipe.id as String?).delete();
+      // Remove the recipe from the 'favourites' collection
+      await docRef.delete();
+      print("Recipe removed from favourites.");
     }
+  } catch (e) {
+    print("Error updating favourites: $e");
   }
+}
+
+
 
 List<String> getMatchingIngredients() {
   List<String> matchingIngredients = [];

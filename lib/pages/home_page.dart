@@ -26,6 +26,7 @@ import 'package:shelfaware_app/controllers/auth_controller.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shelfaware_app/components/mark_food_dialogue.dart';
 import 'package:lottie/lottie.dart';
+import 'package:wiredash/wiredash.dart';
 
 
 // Import the Mark Food Dialog page
@@ -537,18 +538,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => AddFoodItem(
-                          foodItems: [],
-                        )),
-              );
+              // Add your onPressed functionality here
+            Wiredash.of(context).show(inheritMaterialTheme: true);
             },
-            child: const Icon(Icons.add),
+            child: const Icon(Icons.feedback_rounded),
             elevation: 6.0,
             shape: const CircleBorder(),
           ),
+          
         );
       },
     );

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
+import 'package:shelfaware_app/pages/my_donations_page.dart';
 import 'package:shelfaware_app/services/notification_service.dart';
 
 // Adjust path as per your project structure
@@ -97,9 +98,10 @@ class _NotificationPageState extends State<NotificationPage> {
         final notifications = snapshot.data ?? [];
         final expiryNotifications = filterByType(notifications, 'expiry');
         final messageNotifications = filterByType(notifications, 'message');
+        final requestNotifications = filterByType(notifications, 'request');
 
         return DefaultTabController(
-          length: 2,
+          length: 3, // Now we have 3 tabs
           child: Scaffold(
             appBar: AppBar(
               title: Text('Notifications'),
@@ -120,13 +122,17 @@ class _NotificationPageState extends State<NotificationPage> {
                 tabs: [
                   Tab(text: 'Expiry Dates'),
                   Tab(text: 'Messages'),
+                  Tab(text: 'Requests'), // Added the new Requests tab
                 ],
               ),
             ),
             body: TabBarView(
               children: [
                 _buildNotificationList(expiryNotifications),
-                _buildNotificationList(messageNotifications),
+                _buildNotificationList(
+                    messageNotifications), // Displaying message notifications
+                _buildNotificationList(
+                    requestNotifications), // Displaying request notifications
               ],
             ),
           ),
@@ -137,7 +143,6 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Future<String> _fetchReceiverName(String receiverId) async {
     try {
-      // Fetch user data based on receiverId
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(receiverId)
@@ -145,18 +150,16 @@ class _NotificationPageState extends State<NotificationPage> {
 
       if (userDoc.exists) {
         var userData = userDoc.data();
-        return (userData as Map<String, dynamic>)['firstName'] ??
-            'Unknown'; // Return 'Unknown' if the name is missing
+        return (userData as Map<String, dynamic>)['firstName'] ?? 'Unknown';
       } else {
-        return 'Unknown'; // Return 'Unknown' if the user doesn't exist
+        return 'Unknown';
       }
     } catch (error) {
       print("Error fetching donor name: $error");
-      return 'Unknown'; // Return 'Unknown' in case of an error
+      return 'Unknown';
     }
   }
 
-  // Helper method to build the notification list
   Widget _buildNotificationList(List<Map<String, dynamic>> notifications) {
     if (notifications.isEmpty) {
       return Center(
@@ -176,17 +179,12 @@ class _NotificationPageState extends State<NotificationPage> {
             onTap: () async {
               String notificationId = notification['notificationId'];
               if (notification['type'] == 'message') {
-                String chatId =
-                    notification['chatId']; // Assuming 'chatId' exists
-
-                // Check if chatId is null or empty before navigating
+                // Handle message notification
+                String chatId = notification['chatId'];
                 if (chatId != null && chatId.isNotEmpty) {
                   try {
-                    // Step 1: Mark notification as read and refresh UI
-                    await NotificationService().markAsRead(
-                        notificationId); // Using the document ID directly
+                    await NotificationService().markAsRead(notificationId);
 
-                    // Step 2: Fetch the chat document using chatId
                     DocumentSnapshot chatSnapshot = await FirebaseFirestore
                         .instance
                         .collection('chats')
@@ -195,88 +193,94 @@ class _NotificationPageState extends State<NotificationPage> {
 
                     if (chatSnapshot.exists) {
                       var chatData = chatSnapshot.data();
-                      print("Chat data: $chatData");
+                      List<String> participants = List<String>.from(
+                          (chatData as Map<String, dynamic>)['participants']);
 
-                      if (chatData != null) {
-                        // Fetch participants list
-                        List<String> participants = List<String>.from(
-                            (chatData as Map<String, dynamic>)['participants']);
+                      String loggedInUserId =
+                          FirebaseAuth.instance.currentUser?.uid ?? '';
+                      String receiverId = participants.firstWhere(
+                          (id) => id != loggedInUserId,
+                          orElse: () => '');
 
-                        // Dynamically determine receiverId based on the logged-in user
-                        String loggedInUserId =
-                            FirebaseAuth.instance.currentUser?.uid ??
-                                ''; // Assuming Firebase Auth is used
-                        String receiverId = participants.firstWhere(
-                            (id) => id != loggedInUserId,
-                            orElse: () => ''); // Get the receiverId
+                      String productId =
+                          chatData['product']?['donationId'] ?? '';
+                      String productName =
+                          chatData['product']?['productName'] ?? '';
+                      String userId = chatData['userId'] ?? '';
 
-                        // Fetch product details
-                        String productId =
-                            chatData['product']?['donationId'] ?? '';
-                        String productName =
-                            chatData['product']?['productName'] ?? '';
-                        String userId = chatData['userId'] ?? '';
+                      QuerySnapshot messagesSnapshot = await FirebaseFirestore
+                          .instance
+                          .collection('chats')
+                          .doc(chatId)
+                          .collection('messages')
+                          .orderBy('timestamp', descending: true)
+                          .limit(1)
+                          .get();
 
-                        // Step 3: Fetch the most recent message in the messages subcollection
-                        QuerySnapshot messagesSnapshot = await FirebaseFirestore
-                            .instance
-                            .collection('chats')
-                            .doc(chatId)
-                            .collection('messages')
-                            .orderBy('timestamp', descending: true)
-                            .limit(1)
-                            .get();
+                      String lastMessage = '';
+                      String senderEmail = '';
+                      String receiverEmail = '';
 
-                        String lastMessage = '';
-                        String senderEmail = '';
-                        String receiverEmail = '';
-
-                        if (messagesSnapshot.docs.isNotEmpty) {
-                          var lastMessageData =
-                              messagesSnapshot.docs.first.data();
-                          lastMessage = (lastMessageData
-                                  as Map<String, dynamic>)['message'] ??
-                              '';
-                          senderEmail = lastMessageData?['senderEmail'] ?? '';
-                          receiverEmail =
-                              lastMessageData?['receiverEmail'] ?? '';
-                        }
-
-                        // Step 4: Fetch the receiver's name (donor name) from the users collection
-                        String donorName = await _fetchReceiverName(receiverId);
-
-                        // Refresh the UI by calling setState
-                        setState(() {
-                          notification['read'] =
-                              true; // Assuming 'notification' is a reference to the specific notification
-                        });
-
-                        // Step 5: Navigate to the ChatPage
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChatPage(
-                              chatId: chatId,
-                              receiverEmail: receiverEmail,
-                              receiverId: receiverId,
-                              donationId: productId,
-                              userId: userId,
-                              donationName: productName,
-                              donorName: donorName,
-                            ),
-                          ),
-                        );
+                      if (messagesSnapshot.docs.isNotEmpty) {
+                        var lastMessageData =
+                            messagesSnapshot.docs.first.data();
+                        lastMessage = (lastMessageData
+                                as Map<String, dynamic>)['message'] ??
+                            '';
+                        senderEmail = lastMessageData?['senderEmail'] ?? '';
+                        receiverEmail = lastMessageData?['receiverEmail'] ?? '';
                       }
-                    } else {
-                      // Handle the case where chat document doesn't exist
-                      print("Chat document does not exist for chatId: $chatId");
+
+                      String donorName = await _fetchReceiverName(receiverId);
+
+                      setState(() {
+                        notification['read'] = true;
+                      });
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatPage(
+                            chatId: chatId,
+                            receiverEmail: receiverEmail,
+                            receiverId: receiverId,
+                            donationId: productId,
+                            userId: userId,
+                            donationName: productName,
+                            donorName: donorName,
+                          ),
+                        ),
+                      );
                     }
                   } catch (e) {
                     print("Error fetching chat and message data: $e");
                   }
-                } else {
-                  // Handle the case where chatId is missing or empty
-                  print("Error: Missing or empty chatId for notification.");
+                }
+              } else if (notification['type'] == 'request') {
+                // Handle request notification
+                String notificationId = notification['notificationId'];
+                if (notificationId != null && notificationId.isNotEmpty) {
+                  try {
+                    // Mark as read for request notification
+                    await NotificationService().markAsRead(notificationId);
+
+                    // Navigate to the request details page or handle appropriately
+                    setState(() {
+                      notification['read'] = true;
+                    });
+
+                    // Assuming a RequestPage exists for displaying request details
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MyDonationsPage(
+                        userId: widget.userId,
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    print("Error handling request notification: $e");
+                  }
                 }
               }
             },
@@ -332,7 +336,7 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  // Helper function to format the timestamp
+
   String _formatTimestamp(Timestamp timestamp) {
     DateTime dateTime = timestamp.toDate();
     DateTime now = DateTime.now();
@@ -347,3 +351,4 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 }
+
