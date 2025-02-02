@@ -62,63 +62,69 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
   }
 });
 
-  
-  exports.sendMessageNotification = functions.firestore
-  .document("chats/{chatId}/messages/{messageId}")
-  .onCreate(async (snapshot, context) => {
-    const db = admin.firestore();
-    const messageData = snapshot.data();
+exports.sendMessageNotification = functions.firestore
+.document("chats/{chatId}/messages/{messageId}")
+.onCreate(async (snapshot, context) => {
+  const db = admin.firestore();
+  const messageData = snapshot.data();
 
-    if (!messageData) return null;
+  if (!messageData) return null;
 
-    const { receiverId, senderEmail, message, donationId, donorName, productName } = messageData;
+  const { receiverId, senderEmail, message, donationId, donorName, productName } = messageData;
 
-    try {
-      // Fetch the receiver's FCM token
-      const receiverDoc = await db.collection("users").doc(receiverId).get();
-      if (!receiverDoc.exists) return null;
+  try {
+    // Fetch the receiver's FCM token and notification preferences
+    const receiverDoc = await db.collection("users").doc(receiverId).get();
+    if (!receiverDoc.exists) return null;
 
-      const receiverData = receiverDoc.data();
-      const fcmToken = receiverData.fcm_token;
-      if (!fcmToken) return null;
+    const receiverData = receiverDoc.data();
+    const fcmToken = receiverData.fcm_token;
+    const notificationPreferences = receiverData.notificationPreferences;
 
-      // Save message notification to Firestore
-      const notificationDoc = {
-        userId: receiverId,
-        type: 'message', // Type of notification
+    // Check if message notifications are enabled
+    if (!fcmToken || !notificationPreferences || !notificationPreferences.messages) {
+      return null; // Don't send notification if it's not enabled in preferences
+    }
+
+    // Save message notification to Firestore
+    const notificationDoc = {
+      userId: receiverId,
+      type: 'message', // Type of notification
+      title: "New Message",
+      body: `${senderEmail}: ${message}`,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      read: false,
+      chatId: context.params.chatId,
+    };
+    await db.collection("notifications").add(notificationDoc);
+
+    // Create v1 notification payload
+    const messagePayload = {
+      token: fcmToken,
+      notification: {
         title: "New Message",
         body: `${senderEmail}: ${message}`,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        read: false,
+      },
+      data: {
         chatId: context.params.chatId,
-      };
-      await db.collection("notifications").add(notificationDoc);
+        messageId: context.params.messageId,
+        donationId: donationId || "",
+        donorName: donorName || "",
+        productName: productName || "",
+      },
+    };
 
-      // Create v1 notification payload
-      const messagePayload = {
-        token: fcmToken,
-        notification: {
-          title: "New Message",
-          body: `${senderEmail}: ${message}`,
-        },
-        data: {
-          chatId: context.params.chatId,
-          messageId: context.params.messageId,
-          donationId: donationId || "",
-          donorName: donorName || "",
-          productName: productName || "",
-        },
-      };
+    const messaging = admin.messaging();
+    const response = await messaging.send(messagePayload);
+    console.log("Successfully sent message:", response);
+    return null;
+  } catch (error) {
+    console.error("Error processing message notification:", error);
+    return null;
+  }
+});
 
-      const messaging = admin.messaging();
-      const response = await messaging.send(messagePayload);
-      console.log("Successfully sent message:", response);
-      return null;
-    } catch (error) {
-      console.error("Error processing message notification:", error);
-      return null;
-    }
-  });
+ 
 
   exports.sendDonationRequestNotification = functions.firestore
   .document('donationRequests/{requestId}')
@@ -142,7 +148,7 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
               message 
           } = requestData;
 
-          // Fetch donor's FCM token from Firestore users collection
+          // Fetch donor's document from Firestore
           const donorDoc = await admin.firestore()
               .collection('users')
               .doc(donatorId)
@@ -150,6 +156,15 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
 
           if (!donorDoc.exists || !donorDoc.data().fcm_token) {
               console.log("FCM token not found for donor.");
+              return null;
+          }
+
+          // Fetch the donor's notification preferences
+          const donatorPreferences = donorDoc.data().notificationPreferences || {};
+
+          // Check if the donor has enabled request notifications
+          if (donatorPreferences.requests === false) {
+              console.log("Donor has disabled request notifications.");
               return null;
           }
 
@@ -189,7 +204,7 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
               }
           };
 
-          // Send the notification
+          // Send the notification if the user has the correct preference
           await admin.messaging().send(notificationMessage);
           console.log(`Notification sent successfully to donor: ${donatorId}`);
 
@@ -200,10 +215,10 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
               requesterId: requesterId,
               productName: productName,
               message: message,
-              title: `New Request for ${productName} from ${requesterFirstName}`,  // Add the title here
-              body: `Message: ${message}`,  // Add the body here
+              title: `New Request for ${productName} from ${requesterFirstName}`,
+              body: `Message: ${message}`,
               timestamp: admin.firestore.FieldValue.serverTimestamp(),
-              read: false,  // You can use this to track the notification status
+              read: false,
               pickupDateTime: requestData.pickupDateTime.toDate().toISOString(),
               donorImageUrl: donorImageUrl,
               requesterProfileImageUrl: requesterProfileImageUrl,
@@ -219,6 +234,7 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
 
       return null;
   });
+
 
     exports.updateDonorAverageRating = functions.firestore
   .document("reviews/{reviewId}")
@@ -294,37 +310,44 @@ exports.sendRequestAcceptedNotification = functions.firestore
             const assignedToName = newValue.assignedToName;
             const productName = newValue.productName;
             const pickupDateTime = newValue.pickupDateTime.toDate(); // Format the date without UTC
-          
-            // Retrieve the requester data from the 'users' collection (or wherever user data is stored)
-            const userRef = admin.firestore().collection('users').doc(requesterId);
-            const userSnapshot = await userRef.get();
             
-            if (!userSnapshot.exists) {
-                console.log('User not found');
-                return null;
-            }
-
-            const user = userSnapshot.data();
-            const requesterToken = user.fcm_token;  // Assuming the user document has an FCM token field
-
-            if (!requesterToken) {
-                console.log('No FCM token found for the user');
-                return null;
-            }
-
-            // Create the message body with the necessary details
-            const messageBody = `${assignedToName}, your request for ${productName} has been accepted!\nYour pickup time is: ${pickupDateTime} as selected`;
-
-            // Send a notification to the requester
-            const message = {
-                notification: {
-                    title: 'Donation Request Accepted',
-                    body: messageBody,
-                },
-                token: requesterToken,
-            };
-
             try {
+                // Retrieve the requester data from the 'users' collection
+                const userRef = admin.firestore().collection('users').doc(requesterId);
+                const userSnapshot = await userRef.get();
+                
+                if (!userSnapshot.exists) {
+                    console.log('User not found');
+                    return null;
+                }
+
+                const user = userSnapshot.data();
+                const requesterToken = user.fcm_token;  // Assuming the user document has an FCM token field
+
+                if (!requesterToken) {
+                    console.log('No FCM token found for the user');
+                    return null;
+                }
+
+                // Check the user's notification preferences
+                const notificationPreferences = user.notificationPreferences || {};
+                if (notificationPreferences.requests === false) {
+                    console.log('User has disabled request notifications');
+                    return null;  // If the user has disabled requests notifications, don't send a message
+                }
+
+                // Create the message body with the necessary details
+                const messageBody = `${assignedToName}, your request for ${productName} has been accepted!\nYour pickup time is: ${pickupDateTime} as selected`;
+
+                // Send a notification to the requester
+                const message = {
+                    notification: {
+                        title: 'Donation Request Accepted',
+                        body: messageBody,
+                    },
+                    token: requesterToken,
+                };
+
                 // Send the notification using Firebase Cloud Messaging (FCM)
                 await admin.messaging().send(message);
                 console.log('Notification sent successfully.');

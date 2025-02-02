@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/trends_tab.dart';
 import 'package:shelfaware_app/components/my_stats_tab.dart';
 
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shelfaware_app/services/openai_service.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
@@ -48,7 +50,7 @@ Widget build(BuildContext context) {
               children: [
                 // Pass the userId to MyStatsTab
                 MyStatsTab(userId: userId ?? ''),  // Ensure userId is not null
-                TrendsTab(isWeekly: isWeekly, onToggle: _toggleView, userId: userId ?? ''), // Trends Tab with toggle
+                WasteAnalyticsTab(userId: userId ?? '',), // Trends Tab with toggle
               ],
             ),
           ),

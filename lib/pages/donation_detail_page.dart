@@ -120,13 +120,36 @@ class DonationDetailsPage extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 20),
-                if (donation['status'] == 'available')
-                  ElevatedButton(
-                    onPressed: () {
-                      // Allow the user to change the donation status or take action.
-                    },
-                    child: Text("Update Status or Manage Donation"),
-                  ),
+                if (donation['status'] == 'Reserved')
+        ElevatedButton(
+          onPressed: () async {
+            // Allow the user to change the donation status or cancel the reservation
+            await FirebaseFirestore.instance
+                .collection('donations')
+                .doc(donationId)
+                .update({
+              'status': 'Picked Up',
+            });
+
+            // Assuming you want to update the request with the same donationId
+            final requestSnapshot = await FirebaseFirestore.instance
+                .collection('donationRequests')
+                .where('donationId', isEqualTo: donationId)
+                .get();
+
+            for (var doc in requestSnapshot.docs) {
+              await FirebaseFirestore.instance
+                  .collection('donationRequests')
+                  .doc(doc.id)
+                  .update({
+                'status': 'Picked Up',
+              });
+            }
+
+            Navigator.pop(context);
+          },
+          child: Text("Mark as Picked Up"),
+        ),
                 SizedBox(height: 20),
 
                 // Donation Requests Section
@@ -213,60 +236,100 @@ class DonationDetailsPage extends StatelessWidget {
                                     ],
                                   ),
                                   trailing: Icon(Icons.arrow_forward_ios),
-                                  onTap: () {
-                                   // Before showing the dialog, check if the donation has already been taken
-if (donation['status'] == 'Taken') {
-  // Show an alert indicating the request cannot be accepted
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.0),  // Rounded corners for the dialog
-        ),
-        backgroundColor: Colors.white,  // Background color for the dialog
-        title: Center(  // Title centered
-          child: Text(
-            "Donation already taken",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],  // Grey color for the title
-            ),
+onTap: () {
+  if (donation['status'] == 'Reserved') {
+    // Show alert for a reserved donation
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
           ),
-        ),
-        content: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          child: Text(
-            "This donation has already been assigned to someone.",
-            textAlign: TextAlign.center,  // Centered text
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],  // Grey color for the content text
-            ),
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Close the dialog
-            },
+          backgroundColor: Colors.white,
+          title: Center(
             child: Text(
-              "OK",
-              style: TextStyle(fontSize: 16, color: Colors.white),  // White text for the button
+              "Donation already reserved for $requesterName",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green, // Green background for the button
-              minimumSize: Size(100, 40),
+          ),
+          content: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Text(
+              "Would you like to cancel the request or update the status?",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
             ),
-    
-
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    } else {
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Logic to update the status or cancel reservation
+                Navigator.pop(context);
+              },
+              child: Text("Update Status"),
+            ),
+          ],
+        );
+      },
+    );
+  } else if (donation['status'] == 'Picked Up') {
+    // Show alert for a picked-up donation
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          backgroundColor: Colors.white,
+          title: Center(
+            child: Text(
+              "Donation has already been picked up",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+          content: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Text(
+              "This donation has already been collected. No further actions are needed.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  } else {
+          
                                       // Open the alert dialog to accept or decline the request
                                       showDialog(
                                         context: context,
@@ -393,7 +456,7 @@ if (donation['status'] == 'Taken') {
                                                               'donations')
                                                           .doc(donationId)
                                                           .update({
-                                                        'status': 'Taken',
+                                                        'status': 'Reserved',
                                                         'assignedTo':
                                                             requesterId,
                                                         'assignedToName':

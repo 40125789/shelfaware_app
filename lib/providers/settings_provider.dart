@@ -1,31 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:permission_handler/permission_handler.dart' as permission_handler;
-import 'package:location/location.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsProvider extends ChangeNotifier {
   bool _isDarkMode = false;
-  bool _notificationsEnabled = true;
   bool _locationEnabled = true;
+  bool _messagesNotifications = true;
+  bool _requestNotifications = true;
+  bool _expiryNotifications = true;
+  bool _isSettingsLoaded = false;
 
   bool get isDarkMode => _isDarkMode;
-  bool get notificationsEnabled => _notificationsEnabled;
   bool get locationEnabled => _locationEnabled;
+  bool get messagesNotifications => _messagesNotifications;
+  bool get requestNotifications => _requestNotifications;
+  bool get expiryNotifications => _expiryNotifications;
+  bool get isSettingsLoaded => _isSettingsLoaded;
 
+  // Constructor
   SettingsProvider() {
     _loadSettings();
   }
 
-  // Load saved settings from SharedPreferences
-  _loadSettings() async {
+  // Load saved settings from SharedPreferences and Firestore
+  Future<void> _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
     _locationEnabled = prefs.getBool('locationEnabled') ?? true;
-    
-    // If location is enabled, request permission, otherwise stop location tracking.
+    _messagesNotifications = prefs.getBool('messagesNotifications') ?? true;
+    _requestNotifications = prefs.getBool('requestNotifications') ?? true;
+    _expiryNotifications = prefs.getBool('expiryNotifications') ?? true;
+
+    // Fetch user's notification preferences from Firestore
+    await _fetchUserNotificationPreferences();
+
+    _isSettingsLoaded = true;
+
+    // Handle location permission
     if (_locationEnabled) {
       await _requestLocationPermission();
     } else {
@@ -35,41 +47,75 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Toggle dark mode
-  toggleDarkMode(bool value) async {
-    _isDarkMode = value;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('isDarkMode', value);
-    notifyListeners();
-  }
+  // Fetch user notification preferences from Firestore
+  Future<void> _fetchUserNotificationPreferences() async {
+    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-  // Toggle notifications
-  toggleNotifications(bool value) async {
-    _notificationsEnabled = value;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('notificationsEnabled', value);
+    if (userId.isNotEmpty) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
-    // Handle enabling/disabling notifications
-    if (value) {
-      _enableNotifications();
-    } else {
-      _disableNotifications();
+      if (userDoc.exists) {
+        var preferences = (userDoc.data()
+            as Map<String, dynamic>?)?['notificationPreferences'];
+
+        if (preferences == null) {
+          await _createNotificationPreferences(userId);
+        } else {
+          _messagesNotifications = preferences['messages'] ?? true;
+          _requestNotifications = preferences['requests'] ?? true;
+          _expiryNotifications = preferences['expiry'] ?? true;
+
+          await _saveSetting('messagesNotifications', _messagesNotifications);
+          await _saveSetting('requestNotifications', _requestNotifications);
+          await _saveSetting('expiryNotifications', _expiryNotifications);
+        }
+      }
     }
+  }
 
+  Future<void> _createNotificationPreferences(String userId) async {
+    DocumentReference userRef =
+        FirebaseFirestore.instance.collection('users').doc(userId);
+
+    await userRef.update({
+      'notificationPreferences': {
+        'messages': true,
+        'requests': true,
+        'expiry': true,
+      }
+    }).catchError((e) {
+      print('Error creating notification preferences: $e');
+    });
+
+    await _saveSetting('messagesNotifications', true);
+    await _saveSetting('requestNotifications', true);
+    await _saveSetting('expiryNotifications', true);
+  }
+
+  Future<void> _saveSetting(String key, bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+  }
+
+  // Toggle Dark Mode
+  void toggleDarkMode(bool value) async {
+    _isDarkMode = value;
+    await _saveSetting('isDarkMode', value);
     notifyListeners();
   }
 
-  // Toggle location access
-  toggleLocation(bool value) async {
+  // Toggle Location
+  void toggleLocation(bool value) async {
     _locationEnabled = value;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('locationEnabled', value);
+    await _saveSetting('locationEnabled', value);
 
-    // Handle enabling/disabling location access
     if (value) {
       await _requestLocationPermission();
     } else {
-      _stopLocationTracking(); // Disable location tracking when turned off
+      _stopLocationTracking();
     }
 
     notifyListeners();
@@ -77,44 +123,55 @@ class SettingsProvider extends ChangeNotifier {
 
   // Request location permission
   Future<void> _requestLocationPermission() async {
-    permission_handler.PermissionStatus status = await permission_handler.Permission.location.request();
-    if (status.isGranted) {
-      print("Location permission granted.");
-      // Start location tracking if necessary
-    } else if (status.isDenied) {
-      print("Location permission denied.");
-    } else if (status.isPermanentlyDenied) {
-      permission_handler.openAppSettings();
-    }
+    // Implement permission handling logic
   }
 
   // Stop location tracking
-  Future<void> _stopLocationTracking() async {
-    // Logic to stop location tracking (if using a plugin like geolocator or location)
-    print("Location tracking stopped.");
-    
-    // If you're using geolocator:
-    // Geolocator.stopLocationService();
-
-    // If you're using a location service or a real-time location update, you should stop or unsubscribe here.
+  void _stopLocationTracking() {
+    // Implement location stop logic
   }
 
-  // Enable notifications (Example with flutter_local_notifications)
-  void _enableNotifications() {
-    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-        FlutterLocalNotificationsPlugin();
-
-    var androidSettings = AndroidInitializationSettings('app_icon');
-    var initializationSettings =
-        InitializationSettings(android: androidSettings);
-
-    flutterLocalNotificationsPlugin.initialize(initializationSettings);
-
-    print("Notifications enabled.");
+  // Toggle Messages Notifications
+  void toggleMessageNotifications(bool value) async {
+    _messagesNotifications = value;
+    await _saveSetting('messagesNotifications', value);
+    await _updateUserNotificationPreferences();
+    notifyListeners();
   }
 
-  // Disable notifications
-  void _disableNotifications() {
-    print("Notifications disabled.");
+  // Toggle Request Notifications
+  void toggleRequestNotifications(bool value) async {
+    _requestNotifications = value;
+    await _saveSetting('requestNotifications', value);
+    await _updateUserNotificationPreferences();
+    notifyListeners();
+  }
+
+  // Toggle Expiry Notifications
+  void toggleExpiryNotifications(bool value) async {
+    _expiryNotifications = value;
+    await _saveSetting('expiryNotifications', value);
+    await _updateUserNotificationPreferences();
+    notifyListeners();
+  }
+
+  // Update user notification preferences in Firestore
+  Future<void> _updateUserNotificationPreferences() async {
+    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    if (userId.isNotEmpty) {
+      DocumentReference userRef =
+          FirebaseFirestore.instance.collection('users').doc(userId);
+
+      await userRef.update({
+        'notificationPreferences': {
+          'messages': _messagesNotifications,
+          'requests': _requestNotifications,
+          'expiry': _expiryNotifications,
+        }
+      }).catchError((e) {
+        print('Error updating notification preferences: $e');
+      });
+    }
   }
 }

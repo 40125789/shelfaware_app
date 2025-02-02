@@ -154,16 +154,29 @@ class _DonationListViewState extends State<DonationListView> {
             ),
           );
         }
+        // Render ListView and filter out donations with the "Picked up" status
+return donations.isEmpty
+    ? Center(
+        child: Text(
+          "No donations yet!",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey),
+        ),
+      )
+    :
 
-     
+// Render ListView and filter out donations with the "Picked up" status
+ListView.builder(
+  itemCount: donations.length,
+  itemBuilder: (context, index) {
+    var donation = donations[index].data() as Map<String, dynamic>;
+    String status = donation['status'] ?? 'Unknown';
 
-        // Render ListView if donations are found
-        return ListView.builder(
-          itemCount: donations.length,
-          itemBuilder: (context, index) {
-            var donation = donations[index].data() as Map<String, dynamic>;
+    // Skip the donation if the status is "Picked up"
+    if (status == 'Picked Up') {
+      return Container(); // Return an empty container to skip this item
+    }
+        
             String productName = donation['productName'] ?? 'No product name';
-            String status = donation['status'] ?? 'Unknown';
             String donorName = donation['donorName'] ?? 'Anonymous';
             String? imageUrl = donation['imageUrl'];
             Timestamp? expiryDate = donation['expiryDate'];
@@ -494,3 +507,5 @@ class _DonationListViewState extends State<DonationListView> {
     );
   }
 }
+
+

@@ -9,6 +9,8 @@ import 'package:shelfaware_app/services/firebase_service.dart';
 import 'package:shelfaware_app/services/recipe_service.dart';
 import 'package:shelfaware_app/pages/recipe_details_page.dart';
 
+import 'package:flutter/material.dart';
+
 class RecipesPage extends StatefulWidget {
   @override
   _RecipesPageState createState() => _RecipesPageState();
@@ -21,13 +23,13 @@ class _RecipesPageState extends State<RecipesPage> {
   @override
   void initState() {
     super.initState();
-    // Fetch expiring ingredients and then fetch recipes
+    // Fetch recipes based on ingredients fetched from Firebase
     recipesFuture = _fetchRecipes();
   }
 
   Future<List<Recipe>> _fetchRecipes() async {
-    // Fetch user ingredients that are close to expiry (replace with your actual method to fetch ingredients)
-    userIngredients = await fetchUserIngredients(); // Replace this with actual method
+    // Fetch user ingredients using FirebaseService
+    userIngredients = await FirebaseService().fetchUserIngredients();
 
     if (userIngredients.isNotEmpty) {
       // If ingredients are available, fetch recipes based on those ingredients
@@ -57,7 +59,6 @@ class _RecipesPageState extends State<RecipesPage> {
                 child: RecipeCard(
                   recipe: recipes[index],
                   userIngredients: userIngredients, 
-               
                 ),
               );
             },

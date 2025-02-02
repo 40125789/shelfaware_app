@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shelfaware_app/providers/settings_provider.dart';
@@ -23,35 +24,54 @@ class SettingsPage extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: ListView(
               children: [
-                // Dark Mode Section
+                // Theme Section (in the same card as Dark Mode)
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                   margin: const EdgeInsets.symmetric(vertical: 10),
-                  child: ListTile(
-                    leading: Icon(
-                      settingsProvider.isDarkMode
-                          ? Icons.nightlight_round
-                          : Icons.sunny,
-                      color: settingsProvider.isDarkMode
-                          ? Colors.yellow
-                          : Colors.orange,
-                    ),
-                    title: Text(
-                      settingsProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
+                  child: Column(
+                    children: [
+                      // Theme Header
+                      ListTile(
+                        leading: const Icon(Icons.palette),
+                        title: const Text(
+                          'Theme',
+                          style: TextStyle(
+                         
+                         
+                          ),
+                        ),
                       ),
-                    ),
-                    trailing: Switch(
-                      value: settingsProvider.isDarkMode,
-                      onChanged: (value) {
-                        settingsProvider.toggleDarkMode(value);
-                      },
-                    ),
+                      const Divider(), // Adds a visual separator
+                      
+                      // Dark Mode Toggle
+                      ListTile(
+                        leading: Icon(
+                          settingsProvider.isDarkMode
+                              ? Icons.nightlight_round
+                              : Icons.sunny,
+                          color: settingsProvider.isDarkMode
+                              ? Colors.yellow
+                              : Colors.orange,
+                        ),
+                        title: Text(
+                          settingsProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                        ),
+                        trailing: Switch(
+                          value: settingsProvider.isDarkMode,
+                          onChanged: (value) {
+                            settingsProvider.toggleDarkMode(value);
+                          },
+                       
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -62,15 +82,41 @@ class SettingsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   margin: const EdgeInsets.symmetric(vertical: 10),
-                  child: ListTile(
-                    leading: const Icon(Icons.notifications),
-                    title: const Text('Enable Notifications'),
-                    trailing: Switch(
-                      value: settingsProvider.notificationsEnabled,
-                      onChanged: (value) {
-                        settingsProvider.toggleNotifications(value);
-                      },
-                    ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.notifications),
+                        title: const Text('Notification Preferences'),
+                      ),
+                      const Divider(),
+                      ListTile(
+                        title: const Text('Messages'),
+                        trailing: Switch(
+                          value: settingsProvider.messagesNotifications,
+                          onChanged: (value) {
+                            settingsProvider.toggleMessageNotifications(value);
+                          },
+                        ),
+                      ),
+                      ListTile(
+                        title: const Text('Donation Requests'),
+                        trailing: Switch(
+                          value: settingsProvider.requestNotifications,
+                          onChanged: (value) {
+                            settingsProvider.toggleRequestNotifications(value);
+                          },
+                        ),
+                      ),
+                      ListTile(
+                        title: const Text('Expiry Alerts'),
+                        trailing: Switch(
+                          value: settingsProvider.expiryNotifications,
+                          onChanged: (value) {
+                            settingsProvider.toggleExpiryNotifications(value);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -143,3 +189,5 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
+
+

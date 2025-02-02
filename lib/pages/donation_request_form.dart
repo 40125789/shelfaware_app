@@ -69,7 +69,7 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
       final donationRequest = {
         'productName': widget.productName,
         'expiryDate': widget.expiryDate,
-        'status': widget.status,
+        'status': "Pending",
         'donorName': widget.donorName,
         'donatorId': widget.donatorId,
         'donationId': widget.donationId,
