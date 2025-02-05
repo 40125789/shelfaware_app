@@ -124,6 +124,7 @@ flutter:
   - assets/login.png
   - assets/custom_marker_home.png
   - assets/custom_marker_donation.png
+  - assets/animations/success_tick.json
  
 
 

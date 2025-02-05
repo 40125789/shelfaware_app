@@ -4,10 +4,6 @@ import 'package:lottie/lottie.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ReviewPage extends StatefulWidget {
   final String donorId;
@@ -70,9 +66,46 @@ class _ReviewPageState extends State<ReviewPage> {
         });
       }
       print('Review submitted/updated successfully!');
+      showSuccessDialog(); // Show success dialog after submitting the review
     } catch (e) {
       print('Error submitting/updating review: $e');
     }
+  }
+
+  void showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Lottie.asset('assets/animations/success_tick.json',
+               width: 150, 
+               height: 150,
+               repeat: false
+
+               ),
+              SizedBox(height: 20),
+              Text('Thanks for your review!', 
+              style: TextStyle(fontSize: 18, 
+              fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+              )
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop(); // Navigate back to the previous page
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget buildRatingSection(String label, double rating, Function(double) onRatingChanged) {
@@ -195,4 +228,3 @@ class _ReviewPageState extends State<ReviewPage> {
     );
   }
 }
-
