@@ -1,35 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
+import 'package:shelfaware_app/providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/auth_controller.dart';
 import 'home_page.dart';
 import 'login_or_register_page.dart';
 
-class AuthPage extends StatelessWidget {
-  const AuthPage({super.key});
+class AuthPage extends ConsumerWidget {
+  const AuthPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final authController = Provider.of<AuthController>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
 
     return Scaffold(
-      body: StreamBuilder<User?>(
-        stream: authController.authStateChanges,
-        builder: (context, snapshot) {
-          // Show a loading spinner while checking auth state
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // If user is logged in, navigate to HomePage
-          if (snapshot.hasData) {
-            return HomePage();
-          }
-
-          // Otherwise, show LoginOrRegisterPage
-          return LoginOrRegisterPage();
-        },
-      ),
+      body: authState.isAuthenticated
+          ? HomePage() // Redirect to HomePage if authenticated
+          : LoginOrRegisterPage(), // Otherwise, show login/register page
     );
   }
 }

@@ -35,7 +35,7 @@ class DonationCard extends StatefulWidget {
     required this.isNewlyAdded,
     required this.isExpiringSoon,
     required this.currentLocation,
-    required this.onTap, required double rating, required String distanceText, required String expiryText,
+    required this.onTap,
   });
 
   @override
@@ -65,26 +65,7 @@ class _DonationCardState extends State<DonationCard> {
 
   @override
   Widget build(BuildContext context) {
-    Icon donationStatusIcon;
-    Color statusColor;
-
-    switch (widget.status) {
-      case 'available':
-        donationStatusIcon = Icon(Icons.check_circle, color: Colors.green);
-        statusColor = Colors.green;
-        break;
-      case 'donated':
-        donationStatusIcon = Icon(Icons.card_giftcard, color: Colors.blue);
-        statusColor = Colors.blue;
-        break;
-      case 'expired':
-        donationStatusIcon = Icon(Icons.cancel, color: Colors.red);
-        statusColor = Colors.red;
-        break;
-      default:
-        donationStatusIcon = Icon(Icons.help, color: Colors.grey);
-        statusColor = Colors.grey;
-    }
+   
 
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),

@@ -1,43 +1,39 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class AuthController extends ChangeNotifier {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  User? _user;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-  AuthController() {
-    // Subscribe to auth changes and initialize user state
+class AuthState {
+  final User? user;
+  final bool isAuthenticated;
+
+  AuthState({this.user, this.isAuthenticated = false});
+}
+
+class AuthNotifier extends StateNotifier<AuthState> {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+
+  AuthNotifier() : super(AuthState(isAuthenticated: false)) {
     _firebaseAuth.authStateChanges().listen((user) {
-      _user = user;
-      notifyListeners();
+      state = AuthState(user: user, isAuthenticated: user != null);
     });
   }
 
-  User? get user => _user;
-  bool get isAuthenticated => _user != null;
-
-  // Sign-in method with error handling
   Future<void> signIn(String email, String password) async {
     try {
       final UserCredential userCredential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      _user = userCredential.user;
-      notifyListeners();
+      state = AuthState(user: userCredential.user, isAuthenticated: true);
     } catch (e) {
-      // Handle specific FirebaseAuth exceptions here if needed
       throw Exception('Failed to sign in: ${e.toString()}');
     }
   }
 
-  // Sign-out method
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
-    _user = null;
-    notifyListeners();
+    state = AuthState(user: null, isAuthenticated: false);
   }
-
-  // Expose auth state changes
-  Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 }

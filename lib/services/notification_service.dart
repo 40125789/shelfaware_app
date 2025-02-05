@@ -4,14 +4,16 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/providers/notification_count_provider.dart';
 
 class NotificationService {
+  
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   // Initialize notification plugins
-  Future<void> initializeNotifications() async {
+  Future<void> initializeNotifications(context) async {
     // Initialize local notifications
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('app_icon'); // Set your app icon
@@ -27,6 +29,11 @@ class NotificationService {
         _showLocalNotification(message.notification!.title, message.notification!.body, message.data['chatId']);
       }
     });
+
+    // Get the new unread count 
+    int newCount = await getUnreadNotificationCount(FirebaseAuth.instance.currentUser!.uid).first;
+    context.read(notificationCountProvider.notifier).setUnreadCount(newCount);
+    
 
     // Handle background notifications (app is in the background)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {

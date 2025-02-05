@@ -3,48 +3,98 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class SettingsProvider extends ChangeNotifier {
-  bool _isDarkMode = false;
-  bool _locationEnabled = true;
-  bool _messagesNotifications = true;
-  bool _requestNotifications = true;
-  bool _expiryNotifications = true;
-  bool _isSettingsLoaded = false;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-  bool get isDarkMode => _isDarkMode;
-  bool get locationEnabled => _locationEnabled;
-  bool get messagesNotifications => _messagesNotifications;
-  bool get requestNotifications => _requestNotifications;
-  bool get expiryNotifications => _expiryNotifications;
-  bool get isSettingsLoaded => _isSettingsLoaded;
+class SettingsState {
+  final bool isDarkMode;
+  final bool locationEnabled;
+  final bool messagesNotifications;
+  final bool requestNotifications;
+  final bool expiryNotifications;
+  final bool isSettingsLoaded;
 
-  // Constructor
-  SettingsProvider() {
+  SettingsState({
+    required this.isDarkMode,
+    required this.locationEnabled,
+    required this.messagesNotifications,
+    required this.requestNotifications,
+    required this.expiryNotifications,
+    required this.isSettingsLoaded,
+  });
+
+  SettingsState copyWith({
+    bool? isDarkMode,
+    bool? locationEnabled,
+    bool? messagesNotifications,
+    bool? requestNotifications,
+    bool? expiryNotifications,
+    bool? isSettingsLoaded,
+  }) {
+    return SettingsState(
+      isDarkMode: isDarkMode ?? this.isDarkMode,
+      locationEnabled: locationEnabled ?? this.locationEnabled,
+      messagesNotifications: messagesNotifications ?? this.messagesNotifications,
+      requestNotifications: requestNotifications ?? this.requestNotifications,
+      expiryNotifications: expiryNotifications ?? this.expiryNotifications,
+      isSettingsLoaded: isSettingsLoaded ?? this.isSettingsLoaded,
+    );
+  }
+}
+
+class SettingsNotifier extends StateNotifier<SettingsState> {
+  SettingsNotifier()
+      : super(SettingsState(
+          isDarkMode: false,
+          locationEnabled: true,
+          messagesNotifications: true,
+          requestNotifications: true,
+          expiryNotifications: true,
+          isSettingsLoaded: false,
+        )) {
     _loadSettings();
   }
 
   // Load saved settings from SharedPreferences and Firestore
   Future<void> _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    _locationEnabled = prefs.getBool('locationEnabled') ?? true;
-    _messagesNotifications = prefs.getBool('messagesNotifications') ?? true;
-    _requestNotifications = prefs.getBool('requestNotifications') ?? true;
-    _expiryNotifications = prefs.getBool('expiryNotifications') ?? true;
+    bool isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    bool locationEnabled = prefs.getBool('locationEnabled') ?? true;
+    bool messagesNotifications = prefs.getBool('messagesNotifications') ?? true;
+    bool requestNotifications = prefs.getBool('requestNotifications') ?? true;
+    bool expiryNotifications = prefs.getBool('expiryNotifications') ?? true;
 
     // Fetch user's notification preferences from Firestore
     await _fetchUserNotificationPreferences();
 
-    _isSettingsLoaded = true;
+    // Update state
+    state = state.copyWith(
+      isDarkMode: isDarkMode,
+      locationEnabled: locationEnabled,
+      messagesNotifications: messagesNotifications,
+      requestNotifications: requestNotifications,
+      expiryNotifications: expiryNotifications,
+      isSettingsLoaded: true,
+    );
+
+    // Toggle dark mode setting and save to SharedPreferences
+  Future<void> toggleDarkMode(bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', value);
+
+    // Update the state with the new dark mode setting
+    state = state.copyWith(isDarkMode: value);
+  }
+
 
     // Handle location permission
-    if (_locationEnabled) {
+    if (locationEnabled) {
       await _requestLocationPermission();
     } else {
       _stopLocationTracking();
     }
-
-    notifyListeners();
   }
 
   // Fetch user notification preferences from Firestore
@@ -52,33 +102,30 @@ class SettingsProvider extends ChangeNotifier {
     String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     if (userId.isNotEmpty) {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
       if (userDoc.exists) {
-        var preferences = (userDoc.data()
-            as Map<String, dynamic>?)?['notificationPreferences'];
+        var preferences = (userDoc.data() as Map<String, dynamic>?)?['notificationPreferences'];
 
         if (preferences == null) {
           await _createNotificationPreferences(userId);
         } else {
-          _messagesNotifications = preferences['messages'] ?? true;
-          _requestNotifications = preferences['requests'] ?? true;
-          _expiryNotifications = preferences['expiry'] ?? true;
-
-          await _saveSetting('messagesNotifications', _messagesNotifications);
-          await _saveSetting('requestNotifications', _requestNotifications);
-          await _saveSetting('expiryNotifications', _expiryNotifications);
+          state = state.copyWith(
+            messagesNotifications: preferences['messages'] ?? true,
+            requestNotifications: preferences['requests'] ?? true,
+            expiryNotifications: preferences['expiry'] ?? true,
+          );
+          await _saveSetting('messagesNotifications', state.messagesNotifications);
+          await _saveSetting('requestNotifications', state.requestNotifications);
+          await _saveSetting('expiryNotifications', state.expiryNotifications);
         }
       }
     }
   }
 
   Future<void> _createNotificationPreferences(String userId) async {
-    DocumentReference userRef =
-        FirebaseFirestore.instance.collection('users').doc(userId);
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
 
     await userRef.update({
       'notificationPreferences': {
@@ -101,15 +148,14 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   // Toggle Dark Mode
-  void toggleDarkMode(bool value) async {
-    _isDarkMode = value;
-    await _saveSetting('isDarkMode', value);
-    notifyListeners();
+  void toggleDarkMode(bool isDarkMode) async {
+    state = state.copyWith(isDarkMode: isDarkMode); 
+    await _saveSetting('isDarkMode', isDarkMode);
   }
 
   // Toggle Location
   void toggleLocation(bool value) async {
-    _locationEnabled = value;
+    state = state.copyWith(locationEnabled: value);
     await _saveSetting('locationEnabled', value);
 
     if (value) {
@@ -117,8 +163,6 @@ class SettingsProvider extends ChangeNotifier {
     } else {
       _stopLocationTracking();
     }
-
-    notifyListeners();
   }
 
   // Request location permission
@@ -133,26 +177,23 @@ class SettingsProvider extends ChangeNotifier {
 
   // Toggle Messages Notifications
   void toggleMessageNotifications(bool value) async {
-    _messagesNotifications = value;
+    state = state.copyWith(messagesNotifications: value);
     await _saveSetting('messagesNotifications', value);
     await _updateUserNotificationPreferences();
-    notifyListeners();
   }
 
   // Toggle Request Notifications
   void toggleRequestNotifications(bool value) async {
-    _requestNotifications = value;
+    state = state.copyWith(requestNotifications: value);
     await _saveSetting('requestNotifications', value);
     await _updateUserNotificationPreferences();
-    notifyListeners();
   }
 
   // Toggle Expiry Notifications
   void toggleExpiryNotifications(bool value) async {
-    _expiryNotifications = value;
+    state = state.copyWith(expiryNotifications: value);
     await _saveSetting('expiryNotifications', value);
     await _updateUserNotificationPreferences();
-    notifyListeners();
   }
 
   // Update user notification preferences in Firestore
@@ -160,14 +201,13 @@ class SettingsProvider extends ChangeNotifier {
     String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     if (userId.isNotEmpty) {
-      DocumentReference userRef =
-          FirebaseFirestore.instance.collection('users').doc(userId);
+      DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
 
       await userRef.update({
         'notificationPreferences': {
-          'messages': _messagesNotifications,
-          'requests': _requestNotifications,
-          'expiry': _expiryNotifications,
+          'messages': state.messagesNotifications,
+          'requests': state.requestNotifications,
+          'expiry': state.expiryNotifications,
         }
       }).catchError((e) {
         print('Error updating notification preferences: $e');

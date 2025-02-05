@@ -41,6 +41,7 @@ class _DonationsScreenState extends State<DonationsPage>
   bool _filterNewlyAdded = false; // Define the variable
   double _filterDistance = 0.0; // Define the variable
   List<DonationLocation> _allDonations = []; // Define the variable
+  String imageUrl = 'imageUrl';
 
   @override
   void initState() {
@@ -259,6 +260,7 @@ Future<void> _getUserLocationFromFirestore(String userId) async {
     DateTime expiryDate = DateTime.parse(
         donation.expiryDate); // Assuming donation.expiryDate is in ISO format
     String formattedExpiryDate = DateFormat('dd/MM/yy').format(expiryDate);
+    String imageUrl = donation.imageUrl;  
 
     // Get the address from latitude and longitude
     List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -271,17 +273,26 @@ Future<void> _getUserLocationFromFirestore(String userId) async {
       Placemark placemark = placemarks[0];
       address =
           '${placemark.thoroughfare}, ${placemark.locality}, ${placemark.postalCode}, ${placemark.country}';
+
+
+      
+
+
     }
 
     // Show dialog
-    showDialog(
+    showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
         return DonationDetailsDialog(
           itemName: donation.itemName,
           formattedExpiryDate: formattedExpiryDate,
           donorName: donation.donorName,
-          address: address,
+          
+      
+          imageUrl: donation.imageUrl,
+      
+          
           onContactDonor: () {
             Navigator.push(
               context,
@@ -292,11 +303,12 @@ Future<void> _getUserLocationFromFirestore(String userId) async {
                   receiverEmail: donation.donorEmail,
                   receiverId: donation.donorId,
                   donationId: donation.donationId,
-                  donationName: donation.itemName, chatId: '',
+                  donationName: donation.itemName, 
+                  chatId: '',
                 ),
               ),
             );
-          },
+          }, status: donation.status,
         );
       },
     );

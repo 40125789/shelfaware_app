@@ -16,6 +16,7 @@ class DonationLocation {
   final String donorEmail;
   final String donationId;
   final String addedOn;
+  final String imageUrl;
   // Name of the donor
   // ID of the donor (must be a string)
 
@@ -30,6 +31,7 @@ class DonationLocation {
     required this.donorEmail,
     required this.donationId,
     required this.addedOn,
+    required this.imageUrl,
   });
 
   // Factory constructor to map Firestore data to DonationLocation model
@@ -55,7 +57,8 @@ class DonationLocation {
         addedOn: (doc['addedOn'] as Timestamp)
             .toDate()
             .toLocal()
-            .toString());
+            .toString(), 
+       imageUrl: doc['imageUrl'] ?? ''); 
   }
 
     // This method calculates the distance between two GeoPoints
@@ -76,4 +79,12 @@ class DonationLocation {
   }
 // Optional: Getter for user ID if needed
 String get userId => donorId;
+
+  get rating => null;
+
+  get distanceText => null;
+
+  get isNewlyAdded => null;
+
+  get isExpiringSoon => null;
 }

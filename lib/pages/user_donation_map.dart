@@ -107,7 +107,8 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
           itemName: widget.productName,
           formattedExpiryDate: widget.expiryDate,
           donorName: widget.donorName,
-          address: address,
+     
+          
           onContactDonor: () {
             Navigator.push(
               context,
@@ -123,7 +124,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                 ),
               ),
             );
-          },
+          }, imageUrl: widget.imageUrl, status: widget.status, 
         );
       },
     );

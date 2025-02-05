@@ -28,7 +28,7 @@ class ChatPage extends StatefulWidget {
     required this.donationId,
     required this.userId,
     required this.donationName,
-    required this.donorName, required String chatId,
+    required this.donorName, required String chatId, 
   }) : super(key: key);
 
   @override

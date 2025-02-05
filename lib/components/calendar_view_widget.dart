@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shelfaware_app/services/food_item_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class CalendarView extends StatefulWidget {
@@ -24,33 +25,34 @@ class _CalendarViewState extends State<CalendarView> {
     _fetchFoodItems();
   }
 
-  /// Fetch food items from Firestore and group by expiry date
-  Future<void> _fetchFoodItems() async {
+  /// Fetch food items from Firestore
+  FoodItemService _foodService = FoodItemService();
+  void _fetchFoodItems() async {
     try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('foodItems')
-          .where('userId', isEqualTo: widget.userId)
-          .get();
+      Stream<List<DocumentSnapshot>> foodItemsStream =
+          _foodService.getUserFoodItems(widget.userId);
 
-      Map<DateTime, List<Map<String, dynamic>>> groupedItems = {};
+      foodItemsStream.listen((snapshot) {
+        Map<DateTime, List<Map<String, dynamic>>> groupedItems = {};
 
-      for (var doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        Timestamp expiryTimestamp = data['expiryDate'];
-        DateTime expiryDate = DateTime(
-          expiryTimestamp.toDate().year,
-          expiryTimestamp.toDate().month,
-          expiryTimestamp.toDate().day,
-        );
+        for (var doc in snapshot) {
+          final data = doc.data() as Map<String, dynamic>;
+          Timestamp expiryTimestamp = data['expiryDate'];
+          DateTime expiryDate = DateTime(
+            expiryTimestamp.toDate().year,
+            expiryTimestamp.toDate().month,
+            expiryTimestamp.toDate().day,
+          );
 
-        if (groupedItems[expiryDate] == null) {
-          groupedItems[expiryDate] = [];
+          if (groupedItems[expiryDate] == null) {
+            groupedItems[expiryDate] = [];
+          }
+          groupedItems[expiryDate]!.add(data);
         }
-        groupedItems[expiryDate]!.add(data);
-      }
 
-      setState(() {
-        _groupedFoodItems = groupedItems;
+        setState(() {
+          _groupedFoodItems = groupedItems;
+        });
       });
     } catch (e) {
       print('Error fetching food items: $e');

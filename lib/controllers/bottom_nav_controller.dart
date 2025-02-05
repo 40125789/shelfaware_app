@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BottomNavController with ChangeNotifier {
-  int _selectedIndex = 0;
+class BottomNavController extends StateNotifier<int> {
+  BottomNavController() : super(0); // Initial selected index is 0
 
-  int get selectedIndex => _selectedIndex;
-
+  // Method to change the selected index
   void navigateTo(int index) {
-    _selectedIndex = index;
-    notifyListeners();
+    state = index;  // Update the state
   }
 }
+
+// Create a StateNotifierProvider for BottomNavController
+final bottomNavControllerProvider = StateNotifierProvider<BottomNavController, int>((ref) {
+  return BottomNavController();
+});

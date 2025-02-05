@@ -34,7 +34,6 @@ class _HistoryPageState extends State<HistoryPage> {
           builder: (context) => AddFoodItem(
             foodItem: selectedFoodItems.first,
             isRecreated: true,
-            foodItems: [],
           ),
         ),
       );

@@ -9,6 +9,7 @@ import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shelfaware_app/services/profile_image_service.dart';
+
 import 'package:shelfaware_app/services/watched_donation_service.dart';
 
 class DonationListView extends StatefulWidget {

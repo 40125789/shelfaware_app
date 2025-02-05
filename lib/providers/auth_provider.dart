@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  return AuthNotifier();
+});
+
 class AuthState {
   final User? user;
   final bool isAuthenticated;
@@ -19,7 +23,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     });
   }
 
-  // Sign-in method
   Future<void> signIn(String email, String password) async {
     try {
       final UserCredential userCredential = await _firebaseAuth.signInWithEmailAndPassword(
@@ -32,14 +35,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // Sign-out method
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
     state = AuthState(user: null, isAuthenticated: false);
   }
 }
 
-// Create a provider for the AuthNotifier
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier();
-});
+

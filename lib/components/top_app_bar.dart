@@ -18,7 +18,7 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
     Key? key,
     this.title = '',
     required this.onNotificationPressed,
-    required this.userId, required Null Function() onLocationPressed,
+    required this.userId, required Null Function() onLocationPressed, required Null Function(int index) onPageChanged,
   }) : super(key: key);
 
   @override

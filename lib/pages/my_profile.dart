@@ -272,7 +272,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 // Food Item Rating with star after the field name
                 Row(
                   children: [
-                    Text('Food Item: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Food Quality: ', style: TextStyle(fontWeight: FontWeight.bold)),
                     Icon(Icons.star, color: Colors.yellow, size: 16),
                     Text('${foodItemRating.toStringAsFixed(1)}'),
                   ],
@@ -282,7 +282,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 // Donation Process Rating with star after the field name
                 Row(
                   children: [
-                    Text('Donation Process: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Pickup Process: ', style: TextStyle(fontWeight: FontWeight.bold)),
                     Icon(Icons.star, color: Colors.yellow, size: 16),
                     Text('${donationProcessRating.toStringAsFixed(1)}'),
                   ],
