@@ -6,9 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:shelfaware_app/components/additional_stats_widget.dart';
 import 'package:shelfaware_app/models/user_stats.dart'; // Assuming you're using the pie_chart package
-
 import 'package:flutter/material.dart';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -68,7 +66,7 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
     var donationSnapshot = await FirebaseFirestore.instance
         .collection('donations')
         .where('userId', isEqualTo: userId)
-        .where('status', isEqualTo: 'Taken')
+        .where('status', isEqualTo: 'Picked Up')
         .get();
 
     for (var doc in donationSnapshot.docs) {
@@ -123,7 +121,7 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
     var donationSnapshot = await FirebaseFirestore.instance
         .collection('donations')
         .where('userId', isEqualTo: widget.userId)
-        .where('status', isEqualTo: 'Taken')
+        .where('status', isEqualTo: 'Picked Up')
         .get();
 
     List<String> donatedItems = [];

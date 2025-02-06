@@ -5,11 +5,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:http/http.dart' as http;
+
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentication
+// Import Firebase Authentication
+
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+import 'package:permission_handler/permission_handler.dart';
 
 class LocationPage extends StatefulWidget {
   @override
@@ -55,7 +64,7 @@ class _LocationPageState extends State<LocationPage> {
               _markers.add(Marker(
                 markerId: MarkerId('user_location'),
                 position: _currentLocation,
-                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
                 infoWindow: InfoWindow(title: 'Your Location'),
               ));
             });
@@ -94,6 +103,8 @@ class _LocationPageState extends State<LocationPage> {
 
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
+        _selectedLocation = _currentLocation; // Set the selected location
+        _isLocationSelected = true; // Mark location as selected
         _isLoading = false;
 
         _markers.add(Marker(
@@ -277,56 +288,55 @@ class _LocationPageState extends State<LocationPage> {
                 controller: _addressController,
                 decoration: InputDecoration(
                   filled: true,
-                
                   labelText: 'Search Address',
                   suffixIcon: Icon(Icons.search),
                 ),
               ),
             ),
           ),
-Positioned(
-  bottom: 0, // Position buttons at the very bottom
-  left: 10,
-  right: 10,
-  child: Column(
-    children: [
-      // Just text with an icon, not a button
-      GestureDetector(
-        onTap: _getCurrentLocation, // Trigger action when tapped
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.my_location, size: 20, color: Colors.blue), // Location icon
-            SizedBox(width: 8),
-            Text(
-              'Locate Me',
-              style: TextStyle(fontSize: 16, color: Colors.blue),
+          Positioned(
+            bottom: 0, // Position buttons at the very bottom
+            left: 10,
+            right: 10,
+            child: Column(
+              children: [
+                // Just text with an icon, not a button
+                GestureDetector(
+                  onTap: _getCurrentLocation, // Trigger action when tapped
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.my_location, size: 20, color: Colors.blue), // Location icon
+                      SizedBox(width: 8),
+                      Text(
+                        'Locate Me',
+                        style: TextStyle(fontSize: 16, color: Colors.blue),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 8),
+                // Set as Current Location button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _setCurrentLocation,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                    ),
+                    child: Text(
+                      'Set as Current Location',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16), // Add extra spacing below the button
+              ],
             ),
-          ],
-        ),
-      ),
-      SizedBox(height: 8),
-      // Set as Current Location button
-      SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: _setCurrentLocation,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            padding: EdgeInsets.symmetric(vertical: 16.0),
           ),
-          child: Text(
-            'Set as Current Location',
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ),
-      ),
-      SizedBox(height: 16), // Add extra spacing below the button
-    ],
-  ),
-),
         ],
       ),
     );
-  }   
+  }
 }

@@ -58,6 +58,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+     
       body: SafeArea(
         child: SingleChildScrollView( // Wrap with SingleChildScrollView
           child: Padding(
@@ -68,8 +69,8 @@ class _LoginPageState extends State<LoginPage> {
                 // Logo
                 Image.asset(
                   'assets/login.png', // Path to your image
-                  width: 120,  // Adjust the size if needed
-                  height: 140,
+                  width: 150,
+                  height: 150,
                 ),
                 const SizedBox(height: 5),
 

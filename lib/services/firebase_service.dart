@@ -33,6 +33,18 @@ class FirebaseService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getHistoryData(String userId) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('history')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    return querySnapshot.docs.map((doc) {
+      return doc.exists ? Map<String, dynamic>.from(doc.data() as Map<String, dynamic>) : <String, dynamic>{};
+    }).toList();
+  }
+
+
   // Fetch food history for the authenticated user
   Future<List<Map<String, dynamic>>> getFoodHistory(String userId) async {
     User? user = currentUser;

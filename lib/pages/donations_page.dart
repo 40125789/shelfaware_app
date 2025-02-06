@@ -18,6 +18,7 @@ import 'package:shelfaware_app/models/donation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:shelfaware_app/services/donation_filter_logic.dart';
 
 class DonationsPage extends StatefulWidget {
@@ -458,7 +459,7 @@ Widget build(BuildContext context) {
                             filterExpiringSoon: _filterExpiringSoon,
                             filterNewlyAdded: _filterNewlyAdded,
                             filterDistance: _filterDistance,
-                            currentLocation: _currentLocation),
+                            currentLocation: _currentLocation != null ? latlong2.LatLng(_currentLocation!.latitude, _currentLocation!.longitude) : null),
                         GoogleMap(
                           initialCameraPosition: CameraPosition(
                             target: _currentLocation ?? LatLng(0, 0),

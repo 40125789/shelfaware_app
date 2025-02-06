@@ -26,6 +26,19 @@ class DonationFireBaseService {
     });
   }
 
+
+  Future<List<Map<String, dynamic>>> getDonations(String userId) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('donations')
+        .where('status', isEqualTo: 'Picked Up')
+        .get();
+
+    return querySnapshot.docs.map((doc) {
+      return doc.exists ? Map<String, dynamic>.from(doc.data() as Map<String, dynamic>) : <String, dynamic>{};
+    }).toList();
+  }
+
+
   Future<void> withdrawDonationRequest(BuildContext context, String requestId) async {
     try {
       var requestDoc = await FirebaseFirestore.instance
@@ -63,6 +76,8 @@ class DonationFireBaseService {
       );
     }
   }
+
+  
 
   Future<bool> hasUserAlreadyReviewed(String donationId, String userId) async {
     final querySnapshot = await FirebaseFirestore.instance

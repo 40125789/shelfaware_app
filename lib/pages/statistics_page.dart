@@ -50,7 +50,7 @@ Widget build(BuildContext context) {
               children: [
                 // Pass the userId to MyStatsTab
                 MyStatsTab(userId: userId ?? ''),  // Ensure userId is not null
-                WasteAnalyticsTab(userId: userId ?? '',), // Trends Tab with toggle
+                TrendsTab(userId: userId ?? '',), // Trends Tab with toggle
               ],
             ),
           ),
