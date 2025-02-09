@@ -1,18 +1,12 @@
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps;
-import 'package:latlong2/latlong.dart' as latlong;
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shelfaware_app/components/donation_card.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shelfaware_app/services/profile_image_service.dart';
-
 import 'package:shelfaware_app/services/watched_donation_service.dart';
 
 

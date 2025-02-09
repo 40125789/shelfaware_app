@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/models/product_details.dart';
-// Make sure to import the model (if needed)
+import 'package:url_launcher/url_launcher.dart';
 
 class ProductDetailsDialog extends StatelessWidget {
   final ProductDetails product; // Product passed to the bottom sheet
@@ -48,7 +48,21 @@ class ProductDetailsDialog extends StatelessWidget {
                     ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20), // Reduced height slightly
+            // Reduced height slightly
+              TextButton(
+                onPressed: () async {
+                   final url = product.productUrl;
+                  launchUrl(Uri.parse(url)).onError((error, stackTrace) {
+                    print('Error launching URL: $error');
+                    return false;
+                  });
+                },
+                child: const Text(
+                  'View on Open Food Facts',
+                  style: TextStyle(color: Colors.blue),
+                ),
+              ),
+            // Reduced height slightly
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -64,6 +78,7 @@ class ProductDetailsDialog extends StatelessWidget {
                         'productName': product.productName,
                         'imageUrl': product.imageUrl,
                         'brandName': product.brandName,
+                        'productUrl': product.productUrl, // Include productUrl
                       });
                     },
                     child: const Text(

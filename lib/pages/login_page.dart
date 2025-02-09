@@ -7,8 +7,9 @@ import 'package:shelfaware_app/services/auth_services.dart';
 import 'reset_password_page.dart';
 
 class LoginPage extends StatefulWidget {
+  final String email;
   final Function()? onTap;
-  const LoginPage({super.key, required this.onTap});
+  const LoginPage({super.key, required this.email, required this.onTap});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -18,6 +19,14 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String? _errorMessage;
+
+   @override
+  void initState() {
+    super.initState();
+    // Set the email field to the pre-filled email passed from Registration
+    emailController.text = widget.email;
+  }
 
   void signUserIn() async {
     showDialog(
@@ -26,6 +35,7 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     try {
+
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
@@ -34,33 +44,21 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
-      showErrorMessage(e.code);
+      setState(() {
+        if (e.code == 'wrong-password') {
+          _errorMessage = 'Incorrect password';
+        } else {
+          _errorMessage = e.message;
+        }
+      });
     }
-  }
-
-  void showErrorMessage(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.red,
-          title: Center(
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
       body: SafeArea(
-        child: SingleChildScrollView( // Wrap with SingleChildScrollView
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25),
             child: Column(
@@ -92,8 +90,8 @@ class _LoginPageState extends State<LoginPage> {
                     MyTextField(
                       controller: emailController,
                       hintText: 'Email',
-                      obscureText: false, 
-                      suffixIcon: null, 
+                      obscureText: false,
+                      suffixIcon: null,
                     ),
                     const SizedBox(height: 0), // Reduced spacing
 
@@ -113,6 +111,14 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
                     ),
+                    if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
                   ],
                 ),
 
@@ -204,4 +210,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-

@@ -25,6 +25,7 @@ class _LoginOrRegisterPageState extends State<LoginOrRegisterPage> {
     if (showLoginPage) {
       return LoginPage(
         onTap: togglePages,
+        email: '',
       );
     } else {
       return RegisterPage(

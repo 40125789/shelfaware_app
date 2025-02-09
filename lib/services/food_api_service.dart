@@ -23,7 +23,8 @@ class FoodApiService {
 
           String productName = productData['product_name'] ?? 'Unknown';
           String? imageUrl = productData['image_url'];
-          String? brandName = productData['brands']; // Extract brand name
+          String? brandName = productData['brands']; 
+          String productUrl = 'https://world.openfoodfacts.org/product/$barcode';
 
           // Ensure the imageUrl is valid (if it exists)
           if (imageUrl != null && imageUrl.isNotEmpty) {
@@ -39,10 +40,17 @@ class FoodApiService {
             print('No brand name found');
           }
 
+          if (productUrl.isNotEmpty) {
+            print('Product URL: $productUrl');
+          } else {
+            print('No product URL found');
+          }
+
           return ProductDetails(
             productName: productName,
             imageUrl: imageUrl,
-            brandName: brandName, // Return brand name along with product details
+            brandName: brandName, 
+            productUrl: productUrl,
           );
         } else {
           print('Product not found for barcode: $barcode');

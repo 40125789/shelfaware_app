@@ -1,16 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:shelfaware_app/main.dart';
-import 'package:shelfaware_app/providers/settings_provider.dart';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:shelfaware_app/providers/settings_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 
+import 'package:flutter/material.dart';
+import 'package:shelfaware_app/main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends ConsumerWidget {
   @override
@@ -42,12 +39,8 @@ class SettingsPage extends ConsumerWidget {
                   const Divider(),
                   ListTile(
                     leading: Icon(
-                      isDarkMode
-                          ? Icons.nightlight_round
-                          : Icons.sunny,
-                      color: isDarkMode
-                          ? Colors.yellow
-                          : Colors.orange,
+                      isDarkMode ? Icons.nightlight_round : Icons.sunny,
+                      color: isDarkMode ? Colors.yellow : Colors.orange,
                     ),
                     title: Text(
                       isDarkMode ? 'Dark Mode' : 'Light Mode',
@@ -110,41 +103,73 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
             ),
-            // Location Section
+            // Other Section
             Card(
               elevation: 5,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
               margin: const EdgeInsets.symmetric(vertical: 10),
-              child: ListTile(
-                leading: const Icon(Icons.location_on),
-                title: Text(
-                  settingsState.locationEnabled ? 'Location ON' : 'Location OFF',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.info),
+                    title: const Text('App powered by:'),
                   ),
-                ),
-                trailing: Switch(
-                  value: settingsState.locationEnabled,
-                  onChanged: (value) {
-                    ref.read(settingsProvider.notifier).toggleLocation(value);
-                  },
-                ),
+                  const Divider(),
+                  ListTile(
+                    title: Row(
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          height: 50,
+                          child: Image.asset(
+                            'assets/open_food_facts_logo.png',
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        Spacer(),
+                        TextButton(
+                          onPressed: () async {
+                            const url = 'https://world.openfoodfacts.org/';
+                            launchUrl(Uri.parse(url)).onError((error, stackTrace) {
+                              print('Error launching URL: $error');
+                              return false;
+                            });
+                          },
+                          child: const Text('Learn More'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ListTile(
+                    title: Row(
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          height: 50,
+                          child: Image.asset(
+                            'assets/spoonacular_logo.png',
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        Spacer(),
+                        TextButton(
+                          onPressed: () async {
+                            const url = 'https://spoonacular.com/food-api';
+                            launchUrl(Uri.parse(url)).onError((error, stackTrace) {
+                              print('Error launching URL: $error');
+                              return false;
+                            });
+                          },
+                          child: const Text('Learn More'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            if (!settingsState.locationEnabled)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "Location is disabled. You will not have access to location-based features.",
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
             const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(

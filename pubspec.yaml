@@ -118,6 +118,7 @@ flutter:
   - assets/default_avatar.png
   - assets/placeholder.png
   - assets/animations/donation_animation.json
+  - assets/animations/register_success.json
   - assets/camera.png
   - assets/splashscreen/splashscreen.png
   - assets/map_markers/current_location.png
@@ -125,6 +126,8 @@ flutter:
   - assets/custom_marker_home.png
   - assets/custom_marker_donation.png
   - assets/animations/success_tick.json
+  - assets/open_food_facts_logo.png
+  - assets/spoonacular_logo.png
  
 
 

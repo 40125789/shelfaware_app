@@ -6,21 +6,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:shelfaware_app/services/profile_image_service.dart';
 
 
-
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:shelfaware_app/services/profile_image_service.dart';
-
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:shelfaware_app/services/profile_image_service.dart';
-
 class DonationCard extends StatefulWidget {
   final String productName;
   final String status;

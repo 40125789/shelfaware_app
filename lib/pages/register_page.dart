@@ -4,7 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
 import 'package:shelfaware_app/components/square_tile.dart';
+import 'package:shelfaware_app/pages/login_page.dart';
+import 'package:shelfaware_app/pages/registration_success_page.dart';
 import 'package:shelfaware_app/services/auth_services.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:shelfaware_app/components/my_button.dart';
+import 'package:shelfaware_app/components/my_textfield.dart';
+import 'package:shelfaware_app/components/square_tile.dart';
+import 'package:shelfaware_app/services/auth_services.dart';
+import 'package:shelfaware_app/pages/registration_success_page.dart';
 
 class RegisterPage extends StatefulWidget {
   final Function()? onTap;
@@ -20,6 +31,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final confirmPasswordController = TextEditingController();
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
+  String? _passwordError;
 
   @override
   void dispose() {
@@ -31,36 +43,91 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  String? validatePassword(String password) {
+    // Password validation checks
+    if (password.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!RegExp(r'[a-z]').hasMatch(password)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      return 'Password must contain at least one number';
+    }
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) {
+      return 'Password must contain at least one special character';
+    }
+    return null;
+  }
+
   void signUserUp() async {
+    // Display loading dialog
     showDialog(
       context: context,
       builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
+        return const Center(child: CircularProgressIndicator());
       },
     );
 
-    try {
-      if (passwordController.text == confirmPasswordController.text) {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: emailController.text,
-          password: passwordController.text,
-        );
+    // Validate passwords
+    if (passwordController.text != confirmPasswordController.text) {
+      Navigator.pop(context);
+      showErrorMessage('Passwords do not match');
+      return;
+    }
 
-        addUserDetails(
+    // Validate password policy
+    String? passwordError = validatePassword(passwordController.text);
+    if (passwordError != null) {
+      Navigator.pop(context);
+      showErrorMessage(passwordError);
+      return;
+    }
+
+    try {
+      // Create user account
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+
+      User? user = userCredential.user;
+
+      if (user != null) {
+        // Send email verification
+        await user.sendEmailVerification();
+
+        // Add user details to Firestore
+        await addUserDetails(
           firstNameController.text.trim(),
           lastNameController.text.trim(),
           emailController.text.trim(),
         );
-      } else {
-        showErrorMessage('Passwords do not match');
-      }
 
-      Navigator.pop(context);
+        // Sign out the user
+        await FirebaseAuth.instance.signOut();
+
+        // Close loading dialog
+        Navigator.pop(context);
+
+        // Navigate to the Registration Success Page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RegistrationSuccessPage(
+              firstName: firstNameController.text.trim(),
+              email: emailController.text.trim(),
+            ),
+          ),
+        );
+      }
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context);
-      showErrorMessage(e.code);
+      Navigator.pop(context); // Close loading dialog
+      showErrorMessage(e.message ?? 'An error occurred');
+    // Navigate to the login page
     }
   }
 
@@ -96,9 +163,8 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       body: SafeArea(
-        child: Center(
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25),
             child: Column(
@@ -135,6 +201,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: passwordController,
                   hintText: 'Password',
                   obscureText: true,
+                  errorText: _passwordError,
                 ),
                 MyTextField(
                   controller: confirmPasswordController,
@@ -159,21 +226,16 @@ class _RegisterPageState extends State<RegisterPage> {
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: Text(
                           'or continue with',
-                        
                           style: TextStyle(color: Colors.grey[700]),
-                          
-
                         ),
                       ),
                       Expanded(
                         child: Divider(
                           thickness: 0.5,
-                          color: Colors.grey[400],
-                        ),
-                      )
+                          color: Colors.grey[400]),
+                      ),
                     ],
                   ),
-                 
                 ),
                 const SizedBox(height: 10.0),
                 Row(
@@ -209,9 +271,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                   ],
-                  
                 ),
-                
               ],
             ),
           ),
