@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shelfaware_app/controllers/expiring_items_controller.dart'; // Import the controller
-import 'package:shelfaware_app/pages/expiring_items_page.dart'; // Import the ExpiringItemsScreen
+import 'package:shelfaware_app/controllers/expiring_items_controller.dart'; // Import the controller // Import the ExpiringItemsScreen
 import 'package:shelfaware_app/services/data_fetcher.dart'; // Import the DataFetcher
 import 'package:shelfaware_app/models/food_item.dart'; // Import the FoodItem model
-import 'package:shelfaware_app/pages/expiring_items_page.dart';
 import 'package:shelfaware_app/services/notification_service.dart'; 
 import 'package:shelfaware_app/pages/location_page.dart';
 

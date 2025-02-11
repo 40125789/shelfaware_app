@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:shelfaware_app/services/review_service.dart';
 
 class ReviewPage extends StatefulWidget {
   final String donorId;
@@ -32,40 +32,19 @@ class _ReviewPageState extends State<ReviewPage> {
   double foodItemRating = 0;
   double donationProcessRating = 0;
   TextEditingController commentController = TextEditingController();
+  final ReviewService _reviewService = ReviewService();
 
-  Future<void> submitReview({
-    required String donorId,
-    required String donationId,
-    required String userId,
-    required double communicationRating,
-    required double foodItemRating,
-    required double donationProcessRating,
-    String? reviewId,
-    String? comment,
-  }) async {
+  Future<void> submitReview() async {
     try {
-      Timestamp timestamp = Timestamp.now();
-      if (reviewId == null) {
-        await FirebaseFirestore.instance.collection('reviews').add({
-          'donorId': donorId,
-          'donationId': donationId,
-          'reviewerId': userId,
-          'communicationRating': communicationRating,
-          'foodItemRating': foodItemRating,
-          'donationProcessRating': donationProcessRating,
-          'comment': comment,
-          'timestamp': timestamp,
-        });
-      } else {
-        await FirebaseFirestore.instance.collection('reviews').doc(reviewId).update({
-          'communicationRating': communicationRating,
-          'foodItemRating': foodItemRating,
-          'donationProcessRating': donationProcessRating,
-          'comment': comment,
-          'timestamp': timestamp,
-        });
-      }
-      print('Review submitted/updated successfully!');
+      await _reviewService.submitReview(
+        donorId: widget.donorId,
+        donationId: widget.donationId,
+        userId: FirebaseAuth.instance.currentUser?.uid ?? '',
+        communicationRating: communicationRating,
+        foodItemRating: foodItemRating,
+        donationProcessRating: donationProcessRating,
+        comment: commentController.text,
+      );
       showSuccessDialog(); // Show success dialog after submitting the review
     } catch (e) {
       print('Error submitting/updating review: $e');
@@ -80,18 +59,18 @@ class _ReviewPageState extends State<ReviewPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Lottie.asset('assets/animations/success_tick.json',
-               width: 150, 
-               height: 150,
-               repeat: false
-
-               ),
+              Lottie.asset(
+                'assets/animations/success_tick.json',
+                width: 150,
+                height: 150,
+                repeat: false,
+              ),
               SizedBox(height: 20),
-              Text('Thanks for your review!', 
-              style: TextStyle(fontSize: 18, 
-              fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-              )
+              Text(
+                'Thanks for your review!',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
           actions: [
@@ -201,17 +180,7 @@ class _ReviewPageState extends State<ReviewPage> {
             Center(
               child: ElevatedButton(
                 onPressed: communicationRating > 0 && foodItemRating > 0 && donationProcessRating > 0
-                    ? () {
-                        submitReview(
-                          donorId: widget.donorId,
-                          donationId: widget.donationId,
-                          userId: FirebaseAuth.instance.currentUser?.uid ?? '',
-                          communicationRating: communicationRating,
-                          foodItemRating: foodItemRating,
-                          donationProcessRating: donationProcessRating,
-                          comment: commentController.text,
-                        );
-                      }
+                    ? submitReview
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,

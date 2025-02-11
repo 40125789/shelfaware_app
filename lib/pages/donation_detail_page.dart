@@ -1,56 +1,34 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shelfaware_app/services/donation_service.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shelfaware_app/services/donation_service.dart';
 
 class DonationDetailsPage extends StatelessWidget {
   final String donationId;
+  final DonationService donationService = DonationService();
 
-  DonationDetailsPage(
-      {required this.donationId, required Map<String, dynamic> donation});
-
-  // Fetch donation details based on the donationId
-  Future<Map<String, dynamic>> getDonationDetails() async {
-    DocumentSnapshot donationDoc = await FirebaseFirestore.instance
-        .collection('donations')
-        .doc(donationId)
-        .get();
-    return donationDoc.exists ? donationDoc.data() as Map<String, dynamic> : {};
-  }
-
-  // Fetch donation requests for the given donationId
-  Stream<List<Map<String, dynamic>>> getDonationRequests() {
-    return FirebaseFirestore.instance
-        .collection('donationRequests')
-        .where('donationId', isEqualTo: donationId)
-        .snapshots()
-        .map((querySnapshot) {
-      return querySnapshot.docs.map((doc) {
-        return doc.exists
-            ? Map<String, dynamic>.from(doc.data() as Map<String, dynamic>)
-            : <String, dynamic>{};
-      }).toList();
-    });
-  }
-
-  // Fetch the requester name based on requesterId
-  Future<String> getRequesterName(String requesterId) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(requesterId)
-        .get();
-    return userDoc.exists
-        ? (userDoc.data() as Map<String, dynamic>)['firstName'] ?? 'Unknown'
-        : 'Unknown';
-  }
+  DonationDetailsPage({required this.donationId});
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final userId = user?.uid ?? ''; // Define the userId variable
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Donation Details"),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: getDonationDetails(),
+        future: donationService.getDonationDetails(donationId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -121,35 +99,21 @@ class DonationDetailsPage extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
                 if (donation['status'] == 'Reserved')
-        ElevatedButton(
-          onPressed: () async {
-            // Allow the user to change the donation status or cancel the reservation
-            await FirebaseFirestore.instance
-                .collection('donations')
-                .doc(donationId)
-                .update({
-              'status': 'Picked Up',
-            });
-
-            // Assuming you want to update the request with the same donationId
-            final requestSnapshot = await FirebaseFirestore.instance
-                .collection('donationRequests')
-                .where('donationId', isEqualTo: donationId)
-                .get();
-
-            for (var doc in requestSnapshot.docs) {
-              await FirebaseFirestore.instance
-                  .collection('donationRequests')
-                  .doc(doc.id)
-                  .update({
-                'status': 'Picked Up',
-              });
-            }
-
-            Navigator.pop(context);
-          },
-          child: Text("Mark as Picked Up"),
-        ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await donationService.updateDonationStatus(
+                          donationId, 'Picked Up');
+                      await donationService.updateDonationRequestStatus(
+                          donationId, 'Picked Up');
+                      // Refresh the UI
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  DonationDetailsPage(donationId: donationId)));
+                    },
+                    child: Text("Mark as Picked Up"),
+                  ),
                 SizedBox(height: 20),
 
                 // Donation Requests Section
@@ -163,7 +127,7 @@ class DonationDetailsPage extends StatelessWidget {
                 Expanded(
                   // Make donation requests scrollable
                   child: StreamBuilder<List<Map<String, dynamic>>>(
-                    stream: getDonationRequests(),
+                    stream: donationService.getDonationRequests(donationId),// Replace 'additionalArgument' with the actual argument needed
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -188,10 +152,12 @@ class DonationDetailsPage extends StatelessWidget {
                               request['pickupDateTime']?.toDate();
                           final message = request['message'] ?? 'No message';
                           final status = request['status'] ?? 'Pending';
+                          final requestId = request['requestId'] ?? '';
 
                           // Fetch requester's name asynchronously
                           return FutureBuilder<String>(
-                            future: getRequesterName(requesterId),
+                            future:
+                                donationService.getRequesterName(requesterId),
                             builder: (context, userSnapshot) {
                               if (userSnapshot.connectionState ==
                                   ConnectionState.waiting) {
@@ -230,106 +196,115 @@ class DonationDetailsPage extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                          "Pickup Date & Time: ${DateFormat('dd MMM yyyy, HH:mm').format(pickupDateTime ?? DateTime.now())}",
-                                          style: TextStyle(color: Colors.grey)),
+                                        "Pickup Date & Time: ${DateFormat('dd MMM yyyy, HH:mm').format(pickupDateTime ?? DateTime.now())}",
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
                                       SizedBox(height: 5),
                                     ],
                                   ),
                                   trailing: Icon(Icons.arrow_forward_ios),
-onTap: () {
-  if (donation['status'] == 'Reserved') {
-    // Show alert for a reserved donation
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
-          ),
-          backgroundColor: Colors.white,
-          title: Center(
-            child: Text(
-              "Donation already reserved for $requesterName",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
-              ),
-            ),
-          ),
-          content: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Text(
-              "Would you like to cancel the request or update the status?",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Logic to update the status or cancel reservation
-                Navigator.pop(context);
-              },
-              child: Text("Update Status"),
-            ),
-          ],
-        );
-      },
-    );
-  } else if (donation['status'] == 'Picked Up') {
-    // Show alert for a picked-up donation
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
-          ),
-          backgroundColor: Colors.white,
-          title: Center(
-            child: Text(
-              "Donation has already been picked up",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
-              ),
-            ),
-          ),
-          content: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Text(
-              "This donation has already been collected. No further actions are needed.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
-  } else {
-          
+                                  onTap: () {
+                                    if (donation['status'] == 'Reserved') {
+                                      // Show alert for a reserved donation
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16.0),
+                                            ),
+                                            backgroundColor: Colors.white,
+                                            title: Center(
+                                              child: Text(
+                                                "Donation already reserved for $requesterName",
+                                                style: TextStyle(
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.grey[700],
+                                                ),
+                                              ),
+                                            ),
+                                            content: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 16.0),
+                                              child: Text(
+                                                "Would you like to cancel the request or update the status?",
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ),
+                                            actions: [
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(
+                                                      context); // Close the dialog
+                                                },
+                                                child: Text("Cancel"),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  // Logic to update the status or cancel reservation
+                                                  Navigator.pop(context);
+                                                },
+                                                child: Text("Update Status"),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    } else if (donation['status'] ==
+                                        'Picked Up') {
+                                      // Show alert for a picked-up donation
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16.0),
+                                            ),
+                                            backgroundColor: Colors.white,
+                                            title: Center(
+                                              child: Text(
+                                                "Donation has already been picked up",
+                                                style: TextStyle(
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.grey[700],
+                                                ),
+                                              ),
+                                            ),
+                                            content: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 16.0),
+                                              child: Text(
+                                                "This donation has already been collected. No further actions are needed.",
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ),
+                                            actions: [
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(
+                                                      context); // Close the dialog
+                                                },
+                                                child: Text("OK"),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    } else {
                                       // Open the alert dialog to accept or decline the request
                                       showDialog(
                                         context: context,
@@ -358,7 +333,7 @@ onTap: () {
                                                 CircleAvatar(
                                                   backgroundImage: NetworkImage(
                                                       request['requesterProfileImageUrl'] ??
-                                                          ''),
+                                                          ''), // Updated line
                                                   radius: 30,
                                                 ),
                                               ],
@@ -432,51 +407,11 @@ onTap: () {
                                                   ElevatedButton(
                                                     onPressed: () async {
                                                       // Accept action
-                                                      String requesterId =
-                                                          request[
-                                                              'requesterId'];
-                                                      DocumentSnapshot
-                                                          userSnapshot =
-                                                          await FirebaseFirestore
-                                                              .instance
-                                                              .collection(
-                                                                  'users')
-                                                              .doc(requesterId)
-                                                              .get();
-                                                      String requesterName =
-                                                          userSnapshot.exists
-                                                              ? userSnapshot[
-                                                                  'firstName']
-                                                              : 'Unknown';
-
-                                                      // Update the donation and request status
-                                                      await FirebaseFirestore
-                                                          .instance
-                                                          .collection(
-                                                              'donations')
-                                                          .doc(donationId)
-                                                          .update({
-                                                        'status': 'Reserved',
-                                                        'assignedTo':
-                                                            requesterId,
-                                                        'assignedToName':
-                                                            requesterName,
-                                                      });
-
-                                                      await FirebaseFirestore
-                                                          .instance
-                                                          .collection(
-                                                              'donationRequests')
-                                                          .doc(request[
-                                                              'requestId'])
-                                                          .update({
-                                                        'status': 'Accepted',
-                                                        'assignedTo':
-                                                            requesterId,
-                                                        'assignedToName':
-                                                            requesterName,
-                                                      });
-
+                                                      await donationService
+                                                          .acceptDonationRequest(
+                                                              donationId,
+                                                              requestId,
+                                                              requesterId);
                                                       Navigator.pop(
                                                           context); // Close the dialog
                                                     },
@@ -487,24 +422,18 @@ onTap: () {
                                                                 Colors.white)),
                                                     style: ElevatedButton
                                                         .styleFrom(
-                                                            backgroundColor:
-                                                                Colors.green,
-                                                            minimumSize:
-                                                                Size(100, 40)),
+                                                      backgroundColor:
+                                                          Colors.green,
+                                                      minimumSize:
+                                                          Size(100, 40),
+                                                    ),
                                                   ),
                                                   ElevatedButton(
                                                     onPressed: () async {
                                                       // Decline action
-                                                      await FirebaseFirestore
-                                                          .instance
-                                                          .collection(
-                                                              'donationRequests')
-                                                          .doc(request[
-                                                              'requestId'])
-                                                          .update({
-                                                        'status': 'Declined',
-                                                      });
-
+                                                      await donationService
+                                                          .declineDonationRequest(
+                                                              requestId);
                                                       Navigator.pop(
                                                           context); // Close the dialog
                                                     },
@@ -515,10 +444,11 @@ onTap: () {
                                                                 Colors.white)),
                                                     style: ElevatedButton
                                                         .styleFrom(
-                                                            backgroundColor:
-                                                                Colors.red,
-                                                            minimumSize:
-                                                                Size(100, 40)),
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                      minimumSize:
+                                                          Size(100, 40),
+                                                    ),
                                                   ),
                                                 ],
                                               ),

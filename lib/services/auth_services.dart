@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
+
+    Stream<User?> get authStateChanges => FirebaseAuth.instance.authStateChanges();
   //google sign in
   signInWithGoogle() async {
     //begin interactive google sign in process

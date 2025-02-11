@@ -4,12 +4,8 @@ import 'package:fl_chart/fl_chart.dart' as fl_chart;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart' as fl_chart;
-import 'package:shelfaware_app/components/line_chart.dart' as custom;
-import 'package:shelfaware_app/components/line_chart.dart';
-import 'package:shelfaware_app/components/card_tiles.dart';
-import 'package:shelfaware_app/services/donation_firebase_service.dart';
+import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/firebase_service.dart';
-
 
 class TrendsTab extends StatefulWidget {
   final String userId;
@@ -33,7 +29,7 @@ class _TrendsTabState extends State<TrendsTab> {
 
   Future<Map<String, dynamic>> _fetchTrends(String userId) async {
     FirebaseService firebaseService = FirebaseService();
-    DonationFireBaseService donationFireBaseService = DonationFireBaseService();
+    DonationService donationService = DonationService();
 
     // Fetch history data from Firebase
     List<Map<String, dynamic>> historyData;
@@ -44,9 +40,13 @@ class _TrendsTabState extends State<TrendsTab> {
     }
 
     // Fetch donation stats from Firebase
-    List<Map<String, dynamic>> donations;
+    List<Map<String, dynamic>> donations = [];
     try {
-      donations = await donationFireBaseService.getDonations(userId);
+      var donationDataStream = donationService.getAllDonations();
+      var donationData = await donationDataStream.first;
+      if (donationData != null) {
+        donations = List<Map<String, dynamic>>.from(donationData);
+      }
     } catch (e) {
       return {"error": "Error fetching donations: $e"};
     }
@@ -59,7 +59,8 @@ class _TrendsTabState extends State<TrendsTab> {
     Map<String, dynamic> foodInsights = _analyzeHistoryData(historyData);
 
     // Analyze donation stats
-    Map<String, dynamic> donationStats = _analyzeDonationStats(donations, userId);
+    Map<String, dynamic> donationStats =
+        _analyzeDonationStats(donations, userId);
 
     return {
       "foodInsights": foodInsights,
@@ -69,7 +70,8 @@ class _TrendsTabState extends State<TrendsTab> {
 
   Future<String> _fetchJoinDuration(String userId) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-    DocumentSnapshot userDoc = await firestore.collection('users').doc(userId).get();
+    DocumentSnapshot userDoc =
+        await firestore.collection('users').doc(userId).get();
 
     if (!userDoc.exists) {
       return "Unknown duration";
@@ -85,7 +87,8 @@ class _TrendsTabState extends State<TrendsTab> {
     }
   }
 
-  Map<String, dynamic> _analyzeHistoryData(List<Map<String, dynamic>> historyData) {
+  Map<String, dynamic> _analyzeHistoryData(
+      List<Map<String, dynamic>> historyData) {
     // Example analysis logic
     Map<String, int> foodItemCount = {};
     Map<String, int> foodCategoryCount = {};
@@ -115,7 +118,8 @@ class _TrendsTabState extends State<TrendsTab> {
         // Count food categories
         if (foodCategory != null) {
           if (foodCategoryCount.containsKey(foodCategory)) {
-            foodCategoryCount[foodCategory] = foodCategoryCount[foodCategory]! + 1;
+            foodCategoryCount[foodCategory] =
+                foodCategoryCount[foodCategory]! + 1;
           } else {
             foodCategoryCount[foodCategory] = 1;
           }
@@ -134,7 +138,8 @@ class _TrendsTabState extends State<TrendsTab> {
         totalDiscardedItems++;
 
         // Calculate total time between adding and discarding
-        totalTimeBetweenAddingAndDiscarding += discardedOn.toDate().difference(addedOn.toDate());
+        totalTimeBetweenAddingAndDiscarding +=
+            discardedOn.toDate().difference(addedOn.toDate());
       }
     }
 
@@ -143,12 +148,16 @@ class _TrendsTabState extends State<TrendsTab> {
         ? foodItemCount.entries.reduce((a, b) => a.value > b.value ? a : b).key
         : 'No data';
     String mostWastedFoodCategory = foodCategoryCount.isNotEmpty
-        ? foodCategoryCount.entries.reduce((a, b) => a.value > b.value ? a : b).key
+        ? foodCategoryCount.entries
+            .reduce((a, b) => a.value > b.value ? a : b)
+            .key
         : 'No data';
 
     // Find most common discard reason
     String mostCommonDiscardReason = discardReasonCount.isNotEmpty
-        ? discardReasonCount.entries.reduce((a, b) => a.value > b.value ? a : b).key
+        ? discardReasonCount.entries
+            .reduce((a, b) => a.value > b.value ? a : b)
+            .key
         : 'No data';
 
     // Calculate average time between adding and discarding
@@ -157,7 +166,8 @@ class _TrendsTabState extends State<TrendsTab> {
         : Duration.zero;
 
     // Format the average time between adding and discarding
-    String formattedAverageTime = _formatDuration(averageTimeBetweenAddingAndDiscarding);
+    String formattedAverageTime =
+        _formatDuration(averageTimeBetweenAddingAndDiscarding);
 
     return {
       "mostWastedFoodItem": mostWastedFoodItem,
@@ -177,7 +187,8 @@ class _TrendsTabState extends State<TrendsTab> {
     }
   }
 
-  Map<String, dynamic> _analyzeDonationStats(List<Map<String, dynamic>> donations, String userId) {
+  Map<String, dynamic> _analyzeDonationStats(
+      List<Map<String, dynamic>> donations, String userId) {
     int givenDonations = 0;
     int receivedDonations = 0;
 
@@ -185,7 +196,8 @@ class _TrendsTabState extends State<TrendsTab> {
       if (donation['donorId'] == userId && donation['status'] == 'Picked Up') {
         givenDonations++;
       }
-      if (donation['assignedTo'] == userId && donation['status'] == 'Picked Up') {
+      if (donation['assignedTo'] == userId &&
+          donation['status'] == 'Picked Up') {
         receivedDonations++;
       }
     }
@@ -211,13 +223,16 @@ class _TrendsTabState extends State<TrendsTab> {
           }
 
           if (!snapshot.hasData || snapshot.data!.containsKey("error")) {
-            return Center(child: Text(snapshot.data?["error"] ?? 'No insights available.'));
+            return Center(
+                child:
+                    Text(snapshot.data?["error"] ?? 'No insights available.'));
           }
 
           var foodInsights = snapshot.data!["foodInsights"];
           var donationStats = snapshot.data!["donationStats"];
 
-          int totalDonations = donationStats["givenDonations"] + donationStats["receivedDonations"];
+          int totalDonations = donationStats["givenDonations"] +
+              donationStats["receivedDonations"];
 
           return FutureBuilder<String>(
             future: joinDurationFuture,
@@ -240,22 +255,23 @@ class _TrendsTabState extends State<TrendsTab> {
                       RichText(
                         text: TextSpan(
                           text: "$joinDuration",
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
+                          style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green),
                           children: <TextSpan>[
                             TextSpan(
                               text: " since you've joined!",
                               style: TextStyle(color: Colors.black),
                             ),
                           ],
-                          ),
                         ),
-  
-                        SizedBox(height: 20),
-
-                      Text('Food Trends', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-
+                      ),
+                      SizedBox(height: 20),
+                      Text('Food Trends',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
                       SizedBox(height: 16),
-
                       GridView.count(
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
@@ -263,18 +279,35 @@ class _TrendsTabState extends State<TrendsTab> {
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
                         children: [
-                          _buildCard('Top Wasted Item', foodInsights["mostWastedFoodItem"], '🚯'),
-                          _buildCard('Top Wasted Category', foodInsights["mostWastedFoodCategory"], '🔖'),
-                          _buildCard('Top Discard Reason', foodInsights["mostCommonDiscardReason"], '🚮'),
-                          _buildCard('Average Discard Rate', foodInsights["averageTimeBetweenAddingAndDiscarding"], '⏰'),
+                          _buildCard('Top Wasted Item',
+                              foodInsights["mostWastedFoodItem"], '🚯'),
+                          _buildCard('Top Wasted Category',
+                              foodInsights["mostWastedFoodCategory"], '🔖'),
+                          _buildCard('Top Discard Reason',
+                              foodInsights["mostCommonDiscardReason"], '🚮'),
+                          _buildCard(
+                              'Average Discard Rate',
+                              foodInsights[
+                                  "averageTimeBetweenAddingAndDiscarding"],
+                              '⏰'),
                         ],
                       ),
                       SizedBox(height: 16),
-                      Text('Donation Trends', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text('Donation Trends',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
                       SizedBox(height: 16),
-                      _buildProgressBar('Donations Given', donationStats["givenDonations"], totalDonations, Colors.blue),
+                      _buildProgressBar(
+                          'Donations Given',
+                          donationStats["givenDonations"],
+                          totalDonations,
+                          Colors.blue),
                       SizedBox(height: 8),
-                      _buildProgressBar('Donations Received', donationStats["receivedDonations"], totalDonations, Colors.green),
+                      _buildProgressBar(
+                          'Donations Received',
+                          donationStats["receivedDonations"],
+                          totalDonations,
+                          Colors.green),
                     ],
                   ),
                 ),
@@ -302,15 +335,14 @@ class _TrendsTabState extends State<TrendsTab> {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-          SizedBox(height: 8),
-Padding(
-  padding: const EdgeInsets.all(8.0),
-  child: Text(
-    emoji,
-    style: TextStyle(fontSize: 24),
-  ),
-),
-            
+            SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                emoji,
+                style: TextStyle(fontSize: 24),
+              ),
+            ),
             SizedBox(height: 8),
             Flexible(
               child: Text(

@@ -8,14 +8,6 @@ import 'package:shelfaware_app/pages/login_page.dart';
 import 'package:shelfaware_app/pages/registration_success_page.dart';
 import 'package:shelfaware_app/services/auth_services.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:shelfaware_app/components/my_button.dart';
-import 'package:shelfaware_app/components/my_textfield.dart';
-import 'package:shelfaware_app/components/square_tile.dart';
-import 'package:shelfaware_app/services/auth_services.dart';
-import 'package:shelfaware_app/pages/registration_success_page.dart';
 
 class RegisterPage extends StatefulWidget {
   final Function()? onTap;

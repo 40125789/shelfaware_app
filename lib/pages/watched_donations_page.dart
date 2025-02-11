@@ -158,7 +158,7 @@ class WatchedDonationsPage extends StatelessWidget {
                               imageUrl: imageUrl ?? '',
                               donationId: donations[index].id,
                               receiverEmail:
-                                  'receiverEmail', // Replace with actual receiverEmail if available
+                                  'receiverEmail', pickupTimes: '', pickupInstructions: '', // Replace with actual receiverEmail if available
                             ),
                           ),
                         );

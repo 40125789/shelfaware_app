@@ -29,7 +29,9 @@ class LocationService {
       if (!serviceEnabled) {
         throw Exception('Location services are disabled. Please enable them.');
       }
-      return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
     } else if (permission == PermissionStatus.permanentlyDenied) {
       throw Exception('Location permissions are permanently denied. Please enable them in settings.');
     } else {

@@ -7,24 +7,18 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
+
 import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/groups_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
 import 'package:shelfaware_app/pages/my_profile.dart';
-import 'package:shelfaware_app/pages/settings_page.dart';
+
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:shelfaware_app/providers/profile_image_provider.dart';
 
 final isUploadingProvider = StateProvider<bool>((ref) => false);

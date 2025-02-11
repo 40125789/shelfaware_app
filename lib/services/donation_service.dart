@@ -6,16 +6,33 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:month_picker_dialog/month_picker_dialog.dart';
+import 'package:shelfaware_app/repositories/donation_repository.dart';
 
 import 'package:shelfaware_app/services/food_item_service.dart';
+import 'package:shelfaware_app/components/donation_photo_form.dart'; // Adjust the path as necessary
 
+import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:lottie/lottie.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:month_picker_dialog/month_picker_dialog.dart';
+import 'package:shelfaware_app/repositories/donation_repository.dart';
+import 'package:shelfaware_app/services/food_item_service.dart';
+import 'package:shelfaware_app/components/donation_photo_form.dart'; // Adjust the path as necessary
 
 class DonationService {
+  final DonationRepository _donationRepository = DonationRepository();
   static final FoodItemService _fooditemService = FoodItemService();
+
   static Future<void> donateFoodItem(BuildContext context, String id, Position position) async {
     try {
       // Fetch the food item document
-      Map<String, dynamic> ? foodItemDoc = await _fooditemService.fetchFoodItemById(id);
+      Map<String, dynamic>? foodItemDoc = await _fooditemService.fetchFoodItemById(id);
       if (foodItemDoc == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Food item not found.")),
@@ -33,134 +50,34 @@ class DonationService {
 
       // Get the user's location
       Position location = await _getUserLocation();
-      
 
-      // Ask if the user wants to add a photo
-      bool takePhoto = await showDialog(
+      // Show the DonationPhotoForm as a modal bottom sheet
+      Map<String, String>? formData = await showModalBottomSheet<Map<String, String>>(
         context: context,
+        isScrollControlled: true,
         builder: (BuildContext context) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            title: Text(
-              "Would you like to add a photo?",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center, // Ensures title is centered
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Image with adjusted size and border for better presentation
-                Container(
-                  height: 120,
-                  width: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey, width: 1),
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/camera.png', // Your image path here
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16),
-                // Improved text with better alignment and styling
-                Text(
-                  "Adding a photo of your food item can help attract more attention and assist others in assessing its quality. Photos make listings stand out and feel more trustworthy.",
-                  textAlign: TextAlign.center, // Centers the content text
-                  style: TextStyle(fontSize: 14, color: Colors.black87),
-                ),
-              ],
-            ),
-            actions: [
-              // Simplified actions with consistent styling
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(
-                  "No, skip",
-                  style: TextStyle(color: Colors.blueAccent),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  "Yes, add photo",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+          return AddPhotoAndDetailsForm(
+            onPhotoAdded: (String imageUrl) {
+              Navigator.pop(context, {'imageUrl': imageUrl});
+            },
+            onDetailsAdded: (String pickupTimes, String pickupInstructions) {
+              Navigator.pop(context, {
+                'pickupTimes': pickupTimes,
+                'pickupInstructions': pickupInstructions,
+              });
+            },
+            onFormSubmitted: (Map<String, String> formData) {
+              Navigator.pop(context, formData);
+            },
           );
         },
       );
 
-      String? imageUrl;
-      if (takePhoto) {
-        // Show the Lottie loading animation dialog after the photo is taken
-        showDialog(
-          context: context,
-          barrierDismissible: false, // Prevent closing the dialog
-          builder: (BuildContext context) {
-            return AlertDialog(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RepaintBoundary(
-                    child: Lottie.network(
-                      'https://lottie.host/726edc0a-86f8-4d94-95fc-3df9de90d8fe/c2E6eYh86Z.json',
-                      frameRate: FrameRate.max,
-                      repeat: true,
-                      animate: true,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    "Donating your food...",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            );
-          },
+      if (formData == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Donation cancelled.")),
         );
-
-        // Let user pick an image
-        final picker = ImagePicker();
-        final XFile? image = await picker.pickImage(
-          source: ImageSource.camera,
-          maxWidth: 800,
-          maxHeight: 800,
-        );
-
-        if (image != null) {
-          final String userId = FirebaseAuth.instance.currentUser!.uid;
-          final String imageName =
-              "donation_${DateTime.now().millisecondsSinceEpoch}.jpg";
-          final Reference storageRef = FirebaseStorage.instance
-              .ref()
-              .child('donation_images/$userId/$imageName');
-          final TaskSnapshot snapshot =
-              await storageRef.putFile(File(image.path)).whenComplete(() {});
-
-          // Get image URL after upload
-          imageUrl = await snapshot.ref.getDownloadURL();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text("No photo captured. Proceeding without photo.")),
-          );
-        }
-
-        Navigator.pop(context); // Dismiss loading dialog after image upload
+        return;
       }
 
       // Prepare donation data
@@ -183,6 +100,8 @@ class DonationService {
       foodItemDoc['donatedAt'] = Timestamp.now();
       foodItemDoc['status'] = 'available';
       foodItemDoc['donationId'] = donationId;
+      foodItemDoc['pickupTimes'] = formData['pickupTimes'] ?? '';
+      foodItemDoc['pickupInstructions'] = formData['pickupInstructions'] ?? '';
 
       // If location exists in the user's document, use that, otherwise use GeoLocator location
       if (userDoc['location'] != null) {
@@ -194,8 +113,8 @@ class DonationService {
             GeoPoint(location.latitude, location.longitude);
       }
 
-      if (imageUrl != null) {
-        foodItemDoc['imageUrl'] = imageUrl;
+      if (formData['imageUrl'] != null) {
+        foodItemDoc['imageUrl'] = formData['imageUrl'];
       }
 
       // Add the item to the donations collection
@@ -243,7 +162,104 @@ class DonationService {
     );
   }
 
+  // Fetch donation details by donationId
+  Future<Map<String, dynamic>> getDonationDetails(String donationId) async {
+    return await _donationRepository.getDonationDetails(donationId);
+  }
+
+  // Fetch donations for a specific user
+  Stream<List<Map<String, dynamic>>> getDonations(String userId) {
+    return _donationRepository.getDonations(userId);
+  }
+
+  // Fetch all donations
+  Stream<List<Map<String, dynamic>>> getAllDonations() {
+    return _donationRepository.getAllDonations();
+  }
+
+
+  // Fetch sent donation requests for a specific user
+  Stream<List<Map<String, dynamic>>> getSentDonationRequests(String userId) {
+    return _donationRepository.getSentDonationRequests(userId);
+  }
+
+  // Fetch donation request count for a specific donation
+  Stream<int> getDonationRequestCount(String donationId) {
+    return _donationRepository
+        .getDonationRequests(donationId)
+        .map((requests) => requests.length);
+  }
+
+  // Accept a donation request
+  Future<void> acceptDonationRequest(
+      String donationId, String requestId, String requesterId) async {
+    await _donationRepository.acceptDonationRequest(
+        donationId, requestId, requesterId);
+  }
+
+  // Decline a donation request
+  Future<void> declineDonationRequest(String requestId) async {
+    await _donationRepository.declineDonationRequest(requestId);
+  }
+
+  // Update donation request status
+  Future<void> updateDonationRequestStatus(
+      String donationId, String status) async {
+    await _donationRepository.updateDonationRequestStatus(donationId, status);
+  }
+
+  // Fetch requester's name by userId
+  Future<String> getRequesterName(String userId) async {
+    return await _donationRepository.getRequesterName(userId);
+  }
+
+  // Add a new donation
+  Future<void> addDonation(Map<String, dynamic> donationData) async {
+    await _donationRepository.addDonation(donationData);
+  }
+
+  // Remove a food item
+  Future<void> removeFoodItem(String id) async {
+    await _donationRepository.removeFoodItem(id);
+  }
+
+  // Update user donations
+  Future<void> updateUserDonations(String userId, String donationId) async {
+    await _donationRepository.updateUserDonations(userId, donationId);
+  }
+
+  // Upload donation image
+  Future<String?> uploadDonationImage(File image) async {
+    return await _donationRepository.uploadDonationImage(image);
+  }
+
+  // Withdraw a donation request
+  Future<void> withdrawDonationRequest(
+      BuildContext context, String requestId) async {
+    await _donationRepository.withdrawDonationRequest(context, requestId);
+  }
+
+  // Check if user has already reviewed a donation
+  Future<bool> hasUserAlreadyReviewed(String donationId, String userId) async {
+    return await _donationRepository.hasUserAlreadyReviewed(donationId, userId);
+  }
+
   static Future<Position> _getUserLocation() async {
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+  }
+
+  Future updateDonationStatus(String donationId, String status) async {
+    return await FirebaseFirestore.instance
+        .collection('donations')
+        .doc(donationId)
+        .update({'status': status});
+  }
+
+  Stream<List<Map<String, dynamic>>> getDonationRequests(String donationId) {
+    final String donorId = FirebaseAuth.instance.currentUser!.uid;
+    return _donationRepository.getDonationRequests(donationId).map((requests) {
+      return requests.where((request) => request['requesterId'] != donorId).toList();
+    });
   }
 }

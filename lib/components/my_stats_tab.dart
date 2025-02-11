@@ -1,15 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart' as fl_chart;
 import 'package:intl/intl.dart';
-import 'package:pie_chart/pie_chart.dart' as pie_chart;
-import 'package:shelfaware_app/components/additional_stats_widget.dart';
 import 'package:shelfaware_app/models/user_stats.dart'; // Assuming you're using the pie_chart package
-import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:month_picker_dialog/month_picker_dialog.dart';
+import 'package:shelfaware_app/services/my_stats_service.dart';
+
 
 class MyStatsTab extends StatefulWidget {
   final String userId;
@@ -21,11 +16,12 @@ class MyStatsTab extends StatefulWidget {
 }
 
 class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
+  final StatsService _statsService = StatsService();
   late Future<UserStats> _userStats;
-  String _selectedMonth = DateFormat('MMMM').format(DateTime.now());
-  List<String> _consumedItems = [];
-  List<String> _discardedItems = [];
-  List<String> _donatedItems = [];
+  late Future<List<String>> _consumedItems;
+  late Future<List<String>> _discardedItems;
+  late Future<List<String>> _donatedItems;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -35,107 +31,10 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
 
   void _fetchStats() {
     setState(() {
-      _userStats = fetchUserStats(widget.userId, _selectedMonth);
-      _fetchFoodItems();
-      _fetchDonatedItems();
-    });
-  }
-
-  Future<UserStats> fetchUserStats(String userId, String month) async {
-    var snapshot = await FirebaseFirestore.instance
-        .collection('history')
-        .where('userId', isEqualTo: userId)
-        .get();
-
-    int consumed = 0;
-    int discarded = 0;
-    int donated = 0;
-
-    for (var doc in snapshot.docs) {
-      DateTime addedDate = (doc['updatedOn'] as Timestamp).toDate();
-      if (DateFormat('MMMM').format(addedDate) != month) continue;
-
-      String status = doc['status'] ?? '';
-      if (status == 'consumed') {
-        consumed++;
-      } else if (status == 'discarded') {
-        discarded++;
-      }
-    }
-
-    var donationSnapshot = await FirebaseFirestore.instance
-        .collection('donations')
-        .where('userId', isEqualTo: userId)
-        .where('status', isEqualTo: 'Picked Up')
-        .get();
-
-    for (var doc in donationSnapshot.docs) {
-      DateTime donationDate = (doc['addedOn'] as Timestamp).toDate();
-      if (DateFormat('MMMM').format(donationDate) == month) {
-        donated++;
-      }
-    }
-
-    return UserStats(
-      consumed: consumed,
-      discarded: discarded,
-      donated: donated,
-      mostWastedFoodItem: '',
-      mostCommonCategory: '',
-      avgShelfLife: 0,
-    );
-  }
-
-  // Fetch consumed and discarded food items
-  void _fetchFoodItems() async {
-    var snapshot = await FirebaseFirestore.instance
-        .collection('history')
-        .where('userId', isEqualTo: widget.userId)
-        .get();
-
-    List<String> consumedItems = [];
-    List<String> discardedItems = [];
-
-    for (var doc in snapshot.docs) {
-      DateTime addedDate = (doc['updatedOn'] as Timestamp).toDate();
-      if (DateFormat('MMMM').format(addedDate) != _selectedMonth) continue;
-
-      String status = doc['status'] ?? '';
-      String foodName = doc['productName'] ?? '';
-
-      if (status == 'consumed') {
-        consumedItems.add(foodName);
-      } else if (status == 'discarded') {
-        discardedItems.add(foodName);
-      }
-    }
-
-    setState(() {
-      _consumedItems = consumedItems;
-      _discardedItems = discardedItems;
-    });
-  }
-
-  // Fetch donated food items
-  void _fetchDonatedItems() async {
-    var donationSnapshot = await FirebaseFirestore.instance
-        .collection('donations')
-        .where('userId', isEqualTo: widget.userId)
-        .where('status', isEqualTo: 'Picked Up')
-        .get();
-
-    List<String> donatedItems = [];
-
-    for (var doc in donationSnapshot.docs) {
-      DateTime donationDate = (doc['addedOn'] as Timestamp).toDate();
-      if (DateFormat('MMMM').format(donationDate) == _selectedMonth) {
-        String foodName = doc['productName'] ?? '';
-        donatedItems.add(foodName);
-      }
-    }
-
-    setState(() {
-      _donatedItems = donatedItems;
+      _userStats = _statsService.getUserStats(widget.userId, _selectedDate);
+      _consumedItems = _statsService.getConsumedItems(widget.userId, _selectedDate);
+      _discardedItems = _statsService.getDiscardedItems(widget.userId, _selectedDate);
+      _donatedItems = _statsService.getDonatedItems(widget.userId, _selectedDate);
     });
   }
 
@@ -148,10 +47,10 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
           child: GestureDetector(
             onTap: () => _showMonthPicker(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0), // Smaller padding
               decoration: BoxDecoration(
-                color: Colors.white,  
-                borderRadius: BorderRadius.circular(30),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20), // Smaller border radius
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.2),
@@ -161,11 +60,9 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
                 ],
               ),
               child: Text(
-                _selectedMonth,
+                DateFormat('MMMM').format(_selectedDate), // Show only the month
                 style: TextStyle(
-                  fontSize: 20,
-              
-              
+                  fontSize: 16, // Smaller font size
                 ),
               ),
             ),
@@ -191,60 +88,116 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
                   children: [
                     Container(
                       height: 200,
-                      child: AnimatedSwitcher(
-                        duration: Duration(seconds: 1),
-                        child: PieChart(
-                          key: ValueKey<int>(total),
-                          PieChartData(
-                            sectionsSpace: 0,
-                            borderData: FlBorderData(show: false),
-                            centerSpaceRadius: 40,
-                            sections: [
-                              PieChartSectionData(
-                                value: (stats.consumed / total) * 100,
-                                color: Colors.green,
-                                title: '${((stats.consumed / total) * 100).toStringAsFixed(0)}%',
-                                radius: 50,
-                                titleStyle: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                showTitle: true,
+                      child: total == 0
+                            ? Center(
+                              child: Text(
+                              'No data to display!',
+                              style: TextStyle(
+                                fontSize: 18, // Increased font size
+                              // Bold text
                               ),
-                              PieChartSectionData(
-                                value: (stats.discarded / total) * 100,
-                                color: Colors.red,
-                                title: '${((stats.discarded / total) * 100).toStringAsFixed(0)}%',
-                                radius: 50,
-                                titleStyle: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                showTitle: true,
                               ),
-                              PieChartSectionData(
-                                value: (stats.donated / total) * 100,
-                                color: Colors.blue,
-                                title: '${((stats.donated / total) * 100).toStringAsFixed(0)}%',
-                                radius: 50,
-                                titleStyle: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                            )
+                          : AnimatedSwitcher(
+                              duration: Duration(seconds: 1),
+                              child: PieChart(
+                                key: ValueKey<int>(total),
+                                PieChartData(
+                                  borderData: FlBorderData(show: false),
+                                  sections: [
+                                    PieChartSectionData(
+                                      value: (stats.consumed / total) * 100,
+                                      color: Colors.green,
+                                      title: '${((stats.consumed / total) * 100).toStringAsFixed(0)}%',
+                                      radius: 50,
+                                      titleStyle: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      showTitle: true,
+                                    ),
+                                    PieChartSectionData(
+                                      value: (stats.discarded / total) * 100,
+                                      color: Colors.red,
+                                      title: '${((stats.discarded / total) * 100).toStringAsFixed(0)}%',
+                                      radius: 50,
+                                      titleStyle: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      showTitle: true,
+                                    ),
+                                    PieChartSectionData(
+                                      value: (stats.donated / total) * 100,
+                                      color: Colors.blue,
+                                      title: '${((stats.donated / total) * 100).toStringAsFixed(0)}%',
+                                      radius: 50,
+                                      titleStyle: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      showTitle: true,
+                                    ),
+                                  ],
+                                  // Add animation
+                                  startDegreeOffset: 0,
+                                  sectionsSpace: 0,
+                                  centerSpaceRadius: 40,
+                                  pieTouchData: PieTouchData(
+                                    touchCallback: (FlTouchEvent event, PieTouchResponse? response) {},
+                                  ),
                                 ),
-                                showTitle: true,
+                                swapAnimationDuration: Duration(milliseconds: 800), // Animation duration
+                                swapAnimationCurve: Curves.easeInOut, // Animation curve
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
+                            ),
                     ),
                     SizedBox(height: 10), // Reduced space between headers
-                    _buildExpandableTile("Consumed Items", Colors.green, _consumedItems),
-                    _buildExpandableTile("Discarded Items", Colors.red, _discardedItems),
-                    _buildExpandableTile("Donated Items", Colors.blue, _donatedItems),
+                    FutureBuilder<List<String>>(
+                      future: _consumedItems,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(child: Text('Error: ${snapshot.error}'));
+                        } else if (!snapshot.hasData || snapshot.data == null) {
+                          return Center(child: Text('No consumed items found.'));
+                        }
+
+                        return _buildExpandableTile("Consumed Items", Colors.green, snapshot.data!);
+                      },
+                    ),
+                    FutureBuilder<List<String>>(
+                      future: _discardedItems,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(child: Text('Error: ${snapshot.error}'));
+                        } else if (!snapshot.hasData || snapshot.data == null) {
+                          return Center(child: Text('No discarded items found.'));
+                        }
+
+                        return _buildExpandableTile("Discarded Items", Colors.red, snapshot.data!);
+                      },
+                    ),
+                    FutureBuilder<List<String>>(
+                      future: _donatedItems,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(child: Text('Error: ${snapshot.error}'));
+                        } else if (!snapshot.hasData || snapshot.data == null) {
+                          return Center(child: Text('No donated items found.'));
+                        }
+
+                        return _buildExpandableTile("Donated Items", Colors.blue, snapshot.data!);
+                      },
+                    ),
                   ],
                 ),
               );
@@ -306,37 +259,17 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
 
   // Month picker (popup) function
   void _showMonthPicker(BuildContext context) async {
-    DateTime? selectedDate = await showDatePicker(
+    DateTime? selectedDate = await showMonthPicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
     if (selectedDate != null) {
       setState(() {
-        _selectedMonth = DateFormat('MMMM').format(selectedDate);
+        _selectedDate = selectedDate;
         _fetchStats();
       });
     }
   }
-}
-
-
-
-class UserStats {
-  final int consumed;
-  final int discarded;
-  final int donated;
-  final String mostWastedFoodItem;
-  final String mostCommonCategory;
-  final double avgShelfLife;
-
-  UserStats({
-    required this.consumed,
-    required this.discarded,
-    required this.donated,
-    required this.mostWastedFoodItem,
-    required this.mostCommonCategory,
-    required this.avgShelfLife,
-  });
 }

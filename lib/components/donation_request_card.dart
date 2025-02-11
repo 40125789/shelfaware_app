@@ -17,42 +17,44 @@ class DonationRequestCard extends StatelessWidget {
     required this.hasLeftReview,
   });
 
+
   void _messageDonor(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance.collection('donations').doc(request['donationId']).get(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-
-            if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
-              return Scaffold(
-                appBar: AppBar(title: const Text('Error')),
-                body: const Center(child: Text('Donation not found')),
-              );
-            }
-
-            final donationData = snapshot.data!.data() as Map<String, dynamic>;
-
-            return ChatPage(
-              donorName: donationData['donorName'] ?? 'Unknown',
-              userId: donationData['userId'] ?? '',
-              receiverEmail: donationData['donorEmail'] ?? '',
-              receiverId: donationData['donorId'] ?? '',
-              donationId: request['donationId'] ?? '',
-              donationName: donationData['productName'] ?? 'Unnamed Item',
-              chatId: '',
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance.collection('donations').doc(request['donationId']).get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
             );
-          },
-        ),
+          }
+
+          if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+            return Scaffold(
+              appBar: AppBar(title: const Text('Error')),
+              body: const Center(child: Text('Donation not found')),
+            );
+          }
+
+          final donationData = snapshot.data!.data() as Map<String, dynamic>;
+
+          return ChatPage(
+            donorName: donationData['donorName'] ?? 'Unknown',
+            userId: donationData['userId'] ?? '',
+            receiverEmail: donationData['donorEmail'] ?? '',
+            receiverId: donationData['donorId'] ?? '',
+            donationId: request['donationId'] ?? '',
+            donationName: donationData['productName'] ?? 'Unnamed Item',
+            chatId: '',
+          );
+        },
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

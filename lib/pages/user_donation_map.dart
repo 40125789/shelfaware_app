@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/donation_request_form.dart';
@@ -24,7 +23,9 @@ class DonationMapScreen extends StatefulWidget {
   final String donationId;
   final String imageUrl;
   final String donorImageUrl; // Donor image URL
-  final DateTime donationTime; // Donation time
+  final DateTime donationTime; 
+  final String pickupTimes;
+  final String pickupInstructions;
   String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   DonationMapScreen({
@@ -45,6 +46,8 @@ class DonationMapScreen extends StatefulWidget {
     required this.imageUrl,
     required this.donationId,
     required receiverEmail,
+    required this.pickupTimes,
+    required this.pickupInstructions,
   });
 
   @override
@@ -68,11 +71,10 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
   }
 
   void _initializeMarkers() {
-  donationMarker = Circle(
-    circleId: CircleId('donationLocation'),
-    center: LatLng(widget.donationLatitude, widget.donationLongitude),
-  );
- 
+    donationMarker = Circle(
+      circleId: CircleId('donationLocation'),
+      center: LatLng(widget.donationLatitude, widget.donationLongitude),
+    );
 
     userMarker = Marker(
       markerId: MarkerId('userLocation'),
@@ -97,8 +99,6 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     }
   }
 
-  
-
   void _showDonationDetails() {
     showDialog(
       context: context,
@@ -107,8 +107,6 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
           itemName: widget.productName,
           formattedExpiryDate: widget.expiryDate,
           donorName: widget.donorName,
-     
-          
           onContactDonor: () {
             Navigator.push(
               context,
@@ -120,42 +118,91 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                   receiverId: widget.donatorId,
                   donationId: widget.donationId,
                   donationName: widget.productName,
-                  chatId: widget.chatId,
+                  chatId: '',
                 ),
               ),
             );
-          }, imageUrl: widget.imageUrl, status: widget.status, 
+          },
+          imageUrl: widget.imageUrl,
+          status: widget.status,
         );
       },
     );
   }
 
-  
   // Check if the current user has already requested the item
- Future<void> _checkIfAlreadyRequested() async {
-  try {
-    final donationRequestDoc = await FirebaseFirestore.instance
-        .collection('donationRequests')
-        .where('donationId', isEqualTo: widget.donationId)
-        .where('requesterId', isEqualTo: widget.userId)
-        .get();
+  Future<void> _checkIfAlreadyRequested() async {
+    try {
+      final donationRequestDoc = await FirebaseFirestore.instance
+          .collection('donationRequests')
+          .where('donationId', isEqualTo: widget.donationId)
+          .where('requesterId', isEqualTo: widget.userId)
+          .get();
 
-    if (donationRequestDoc.docs.isNotEmpty) {
-      setState(() {
-        hasRequested = true; // User has already requested the donation
-      });
-    } else {
-      setState(() {
-        hasRequested = false; // User has not requested the donation
-      });
+      if (donationRequestDoc.docs.isNotEmpty) {
+        setState(() {
+          hasRequested = true; // User has already requested the donation
+        });
+      } else {
+        setState(() {
+          hasRequested = false; // User has not requested the donation
+        });
+      }
+      print("Donation request checked: ${donationRequestDoc.docs.length} found.");
+    } catch (e) {
+      print('Error checking donation request: $e');
+      // Handle errors appropriately, maybe show a message to the user
     }
-    print("Donation request checked: ${donationRequestDoc.docs.length} found.");
-  } catch (e) {
-    print('Error checking donation request: $e');
-    // Handle errors appropriately, maybe show a message to the user
   }
-}
 
+  String _getTimeRemaining() {
+    DateTime? expiryDate;
+
+    try {
+      // Manually convert the "dd/MM/yyyy" format to "yyyy-MM-dd"
+      String formattedDate = widget.expiryDate;
+      List<String> dateParts = formattedDate.split('/');
+
+      if (dateParts.length == 3) {
+        // Reformat to "yyyy-MM-dd" format
+        formattedDate =
+            '${dateParts[2]}-${dateParts[1]}-${dateParts[0]}'; // yyyy-MM-dd
+      }
+
+      // Now, use DateTime.parse() with the reformatted date
+      expiryDate = DateTime.parse(formattedDate);
+
+      // Check if expiryDate is null or invalid
+      if (expiryDate == null) {
+        return 'Invalid expiry date';
+      }
+    } catch (e) {
+      return 'Invalid expiry date'; // Return an error message if parsing fails
+    }
+
+    // Calculate the difference in hours between the expiry date and the current time
+    final int expiryDiffInHours =
+        expiryDate.difference(DateTime.now()).inHours;
+
+    // If the item is expired
+    if (expiryDiffInHours < 0) {
+      return 'Expired';
+    }
+
+    // If the item expires in less than 24 hours
+    if (expiryDiffInHours < 24) {
+      return 'This item expires in less than a day';
+    }
+
+    // If the item expires tomorrow
+    final int expiryDiffInDays = expiryDate.difference(DateTime.now()).inDays;
+    if (expiryDiffInDays == 1) {
+      return 'This item expires tomorrow';
+    }
+
+    // If the item expires in more than 1 day
+    return 'This item expires in: $expiryDiffInDays days';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -185,66 +232,9 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
       timeAgo = '$daysAgo days ago';
     }
 
-    String _getTimeRemaining() {
-      DateTime? expiryDate;
-
-      try {
-        // Manually convert the "dd/MM/yyyy" format to "yyyy-MM-dd"
-        String formattedDate = widget.expiryDate;
-        List<String> dateParts = formattedDate.split('/');
-
-        if (dateParts.length == 3) {
-          // Reformat to "yyyy-MM-dd" format
-          formattedDate =
-              '${dateParts[2]}-${dateParts[1]}-${dateParts[0]}'; // yyyy-MM-dd
-        }
-
-        // Now, use DateTime.parse() with the reformatted date
-        expiryDate = DateTime.parse(formattedDate);
-
-        // Check if expiryDate is null or invalid
-        if (expiryDate == null) {
-          return 'Invalid expiry date';
-        }
-      } catch (e) {
-        return 'Invalid expiry date'; // Return an error message if parsing fails
-      }
-
-      // Calculate the difference in hours between the expiry date and the current time
-      final int expiryDiffInHours =
-          expiryDate.difference(DateTime.now()).inHours;
-
-      // Determine the color based on expiry
-      Color textColor;
-
-      // If the item is expired
-      if (expiryDiffInHours < 0) {
-        textColor = Colors.red;
-        return 'Expired';
-      }
-
-      // If the item expires in less than 24 hours
-      if (expiryDiffInHours < 24) {
-        textColor = Colors.orange;
-        return 'This item expires in less than a day';
-      }
-
-      // If the item expires in tomorrow
-      final int expiryDiffInDays = expiryDate.difference(DateTime.now()).inDays;
-      if (expiryDiffInDays == 1) {
-        textColor = Colors.yellow;
-        return 'This item expires tomorrow';
-      }
-
-      // If the item expires in more than 1 day
-      textColor = Colors.green;
-      return 'This item expires in: $expiryDiffInDays days';
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Product Details'),
-      
       ),
       body: SingleChildScrollView(
         // Make the whole body scrollable
@@ -311,9 +301,9 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                                 size: 16,
                                 color: Colors.grey,
                               ),
+                              SizedBox(width: 4),
                               Text(
-                                ' Added ' +
-                                    timeAgo, // Display time since donation was added
+                                'Added $timeAgo', // Display time since donation was added
                                 style:
                                     TextStyle(fontSize: 12, color: Colors.grey),
                               ),
@@ -328,79 +318,109 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                     widget.productName,
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
+                  SizedBox(height: 8),
                   Text(
                     _getTimeRemaining(), // Display the time remaining
-                    style: TextStyle(fontSize: 18),
+                    style: TextStyle(fontSize: 18, color: Colors.red),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Status: ${widget.status}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 16),
+                  Divider(),
+                  SizedBox(height: 16),
+                  Text(
+                    'Pickup Times:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 4),
-                  Text('Status: ${widget.status}'),
-                  SizedBox(height: 12),
-     Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    ElevatedButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatPage(
-              donorName: widget.donorName,
-              userId: widget.userId,
-              receiverEmail: widget.donorEmail,
-              receiverId: widget.donatorId,
-              donationId: widget.donationId,
-              donationName: widget.productName,
-              chatId: widget.chatId,
-            ),
-          ),
-        );
-      },
-      child: Text('Contact Donor', style: TextStyle(color: Colors.white)),
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-    ),
-    // Check if the user has already requested the item and display message accordingly
-    if (hasRequested)
-      Text(
-        "Already requested",
-        style: TextStyle(fontSize: 16, color: Colors.grey),
-      )
-    else 
-      ElevatedButton(
-        onPressed: () {
-          // Update UI after request
-          setState(() {
-            hasRequested = true; // User has successfully requested
-          });
+                  Text(
+                    widget.pickupTimes,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Pickup Instructions:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    widget.pickupInstructions,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatPage(
+                                donorName: widget.donorName,
+                                userId: widget.userId,
+                                receiverEmail: widget.donorEmail,
+                                receiverId: widget.donatorId,
+                                donationId: widget.donationId,
+                                donationName: widget.productName,
+                                chatId: '',
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text('Contact Donor', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                      ),
+                      // Check if the user has already requested the item and display message accordingly
+                      if (hasRequested)
+                        Text(
+                          "Already requested",
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        )
+                      else
+                        ElevatedButton(
+                          onPressed: () {
+                            // Update UI after request
+                            setState(() {
+                              hasRequested = true; // User has successfully requested
+                            });
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DonationRequestForm(
-                productName: widget.productName,
-                expiryDate: widget.expiryDate,
-                donationId: widget.donationId,
-                donorId: widget.donatorId,
-                status: widget.status,
-                donorName: widget.donorName,
-                donatorId: widget.donatorId,
-                donorImageUrl: widget.donorImageUrl,
-                imageUrl: widget.imageUrl,
-              ),
-            ),
-          );
-        },
-        child: Text(
-          'Request this item',
-          style: TextStyle(color: Colors.white),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-        ),
-      ),
-  ],
-),
-            
-            SizedBox(height: 16),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DonationRequestForm(
+                                  productName: widget.productName,
+                                  expiryDate: widget.expiryDate,
+                                  donationId: widget.donationId,
+                                  donorId: widget.donatorId,
+                                  status: widget.status,
+                                  donorName: widget.donorName,
+                                  donatorId: widget.donatorId,
+                                  donorImageUrl: widget.donorImageUrl,
+                                  imageUrl: widget.imageUrl,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Request this item',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                          ),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                
+                  Text(
+                   'Scroll down to see the location',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -418,6 +438,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                   Row(
                     children: [
                       Icon(Icons.location_on, color: Colors.grey),
+                      SizedBox(width: 4),
                       Text(
                         '${distanceInMiles.toStringAsFixed(2)} miles away', // Display distance in miles
                         style: TextStyle(fontSize: 12),

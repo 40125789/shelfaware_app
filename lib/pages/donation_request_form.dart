@@ -63,7 +63,7 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
           .doc(requesterId)
           .get();
 
-      String? profileImageUrl = userDoc['profileImageUrl'];
+      String? profileImageUrl = userDoc['profileImageUrl'] ?? '';
 
       // Create the donation request data (this will be the document data)
       final donationRequest = {

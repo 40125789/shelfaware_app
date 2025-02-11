@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
 import 'package:shelfaware_app/services/notification_service.dart';
-
-// Adjust path as per your project structure
+import 'package:shelfaware_app/utils/notification_date_utils.dart'; // Import the utility file
 
 class NotificationPage extends StatefulWidget {
   final String userId;
@@ -241,13 +240,12 @@ class _NotificationPageState extends State<NotificationPage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ChatPage(
-                            chatId: chatId,
                             receiverEmail: receiverEmail,
                             receiverId: receiverId,
                             donationId: productId,
                             userId: userId,
                             donationName: productName,
-                            donorName: donorName,
+                            donorName: donorName, chatId: '',
                           ),
                         ),
                       );
@@ -274,7 +272,7 @@ class _NotificationPageState extends State<NotificationPage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => MyDonationsPage(
-                        userId: widget.userId,
+                          userId: widget.userId,
                         ),
                       ),
                     );
@@ -324,7 +322,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    _formatTimestamp(notification['timestamp']),
+                    NotificationDateUtils.formatTimestamp(notification['timestamp']),
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
@@ -335,20 +333,4 @@ class _NotificationPageState extends State<NotificationPage> {
       }).toList(),
     );
   }
-
-
-  String _formatTimestamp(Timestamp timestamp) {
-    DateTime dateTime = timestamp.toDate();
-    DateTime now = DateTime.now();
-    Duration difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} minutes ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} hours ago';
-    } else {
-      return '${difference.inDays} days ago';
-    }
-  }
 }
-

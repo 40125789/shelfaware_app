@@ -170,8 +170,8 @@ class MyApp extends ConsumerWidget {
             donationId: 'donationId',
             userId: 'userId',
             donationName: 'donationName',
-            donorName: 'donorName',
-            chatId: 'chatId',
+            donorName: 'donorName', chatId: '',
+            
           ),
           '/settings': (context) => SettingsPage(),
         },

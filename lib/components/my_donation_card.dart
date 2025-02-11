@@ -6,11 +6,13 @@ class MyDonationCard extends StatelessWidget {
   final Map<String, dynamic> donation;
   final int requestCount;
   final VoidCallback onTap;
+  final String userId;
 
   const MyDonationCard({
     required this.donation,
     required this.requestCount,
     required this.onTap,
+    required this.userId,
   });
 
   @override

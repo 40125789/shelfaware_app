@@ -292,6 +292,8 @@ class _DonationListViewState extends State<DonationListView> {
                             : 'assets/placeholder.png',
                         donorImageUrl: donorImageUrl,
                         donationTime: donation['addedOn'].toDate(),
+                         pickupTimes: donation['pickupTimes'] ?? ''
+                         , pickupInstructions: donation['pickupInstructions'] ?? ''
                       ),
                     ),
                   );
