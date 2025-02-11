@@ -29,10 +29,12 @@ class DonationService {
   final DonationRepository _donationRepository = DonationRepository();
   static final FoodItemService _fooditemService = FoodItemService();
 
-  static Future<void> donateFoodItem(BuildContext context, String id, Position position) async {
+  static Future<void> donateFoodItem(
+      BuildContext context, String id, Position position) async {
     try {
       // Fetch the food item document
-      Map<String, dynamic>? foodItemDoc = await _fooditemService.fetchFoodItemById(id);
+      Map<String, dynamic>? foodItemDoc =
+          await _fooditemService.fetchFoodItemById(id);
       if (foodItemDoc == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Food item not found.")),
@@ -52,33 +54,37 @@ class DonationService {
       Position location = await _getUserLocation();
 
       // Show the DonationPhotoForm as a modal bottom sheet
-      Map<String, String>? formData = await showModalBottomSheet<Map<String, String>>(
+      Map<String, String>? formData =
+          await showModalBottomSheet<Map<String, String>>(
         context: context,
         isScrollControlled: true,
         builder: (BuildContext context) {
           return AddPhotoAndDetailsForm(
             onPhotoAdded: (String imageUrl) {
-              Navigator.pop(context, {'imageUrl': imageUrl});
+              // You can keep this empty or update the state if needed
             },
             onDetailsAdded: (String pickupTimes, String pickupInstructions) {
-              Navigator.pop(context, {
-                'pickupTimes': pickupTimes,
-                'pickupInstructions': pickupInstructions,
-              });
+              // You can keep this empty or update the state if needed
             },
             onFormSubmitted: (Map<String, String> formData) {
-              Navigator.pop(context, formData);
+              // No need to pop here, handled within the form
             },
           );
         },
       );
 
+      // Check if form data is returned or if the user canceled the form
       if (formData == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Donation cancelled.")),
         );
         return;
       }
+
+// Process the form data once it's returned
+      print("Form Data received: $formData");
+
+// Proceed with any additional processing after modal closes
 
       // Prepare donation data
       final String donorId = FirebaseAuth.instance.currentUser!.uid;
@@ -177,7 +183,6 @@ class DonationService {
     return _donationRepository.getAllDonations();
   }
 
-
   // Fetch sent donation requests for a specific user
   Stream<List<Map<String, dynamic>>> getSentDonationRequests(String userId) {
     return _donationRepository.getSentDonationRequests(userId);
@@ -259,7 +264,9 @@ class DonationService {
   Stream<List<Map<String, dynamic>>> getDonationRequests(String donationId) {
     final String donorId = FirebaseAuth.instance.currentUser!.uid;
     return _donationRepository.getDonationRequests(donationId).map((requests) {
-      return requests.where((request) => request['requesterId'] != donorId).toList();
+      return requests
+          .where((request) => request['requesterId'] != donorId)
+          .toList();
     });
   }
 }

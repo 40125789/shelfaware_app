@@ -46,7 +46,8 @@ class MyDonationCard extends StatelessWidget {
                             width: 120,
                             height: 120,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => const CircularProgressIndicator(),
+                            placeholder: (context, url) =>
+                                const CircularProgressIndicator(),
                             errorWidget: (context, url, error) => Image.asset(
                               'assets/placeholder.png',
                               width: 120,

@@ -9,12 +9,38 @@ import 'package:shelfaware_app/providers/location_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shelfaware_app/pages/location_page.dart';
+import 'package:shelfaware_app/services/donation_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shelfaware_app/providers/location_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shelfaware_app/pages/location_page.dart';
+import 'package:shelfaware_app/services/donation_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shelfaware_app/providers/location_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 class AddPhotoAndDetailsForm extends ConsumerStatefulWidget {
   final Function(String) onPhotoAdded;
   final Function(String, String) onDetailsAdded;
+  final Function(Map<String, String>) onFormSubmitted;
 
-  AddPhotoAndDetailsForm(
-      {required this.onPhotoAdded, required this.onDetailsAdded, required Null Function(Map<String, String> formData) onFormSubmitted});
+  AddPhotoAndDetailsForm({
+    required this.onPhotoAdded,
+    required this.onDetailsAdded,
+    required this.onFormSubmitted,
+  });
 
   @override
   _AddPhotoAndDetailsFormState createState() => _AddPhotoAndDetailsFormState();
@@ -91,7 +117,6 @@ class _AddPhotoAndDetailsFormState
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
-        // Wrap your entire widget tree in SingleChildScrollView
         child: Form(
           key: _formKey,
           child: Column(
@@ -227,16 +252,19 @@ class _AddPhotoAndDetailsFormState
                     SizedBox(height: 8),
                   ],
                 ),
-              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     if (_imageUrl != null) {
-                      widget.onDetailsAdded(
-                        _pickupTimesController.text,
-                        _pickupInstructionsController.text,
-                      );
-                      Navigator.of(context).pop(true);
+                      Map<String, String> formData = {
+                        'imageUrl': _imageUrl!,
+                        'pickupTimes': _pickupTimesController.text,
+                        'pickupInstructions':
+                            _pickupInstructionsController.text,
+                      };
+                      widget.onFormSubmitted(formData);
+                      Navigator.of(context)
+                          .pop(formData); // Ensure modal closes only once
                     } else {
                       setState(() {
                         _isPhotoMissing = true;
