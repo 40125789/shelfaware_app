@@ -262,7 +262,7 @@ class _TrendsTabState extends State<TrendsTab> {
                           children: <TextSpan>[
                             TextSpan(
                               text: " since you've joined!",
-                              style: TextStyle(color: Colors.black),
+                            
                             ),
                           ],
                         ),

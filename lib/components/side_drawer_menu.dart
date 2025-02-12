@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shelfaware_app/components/drawer_list_item.dart';
+import 'package:shelfaware_app/components/photo_upload.dart';
 
 import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/groups_page.dart';
@@ -21,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:shelfaware_app/providers/profile_image_provider.dart';
 
+
 final isUploadingProvider = StateProvider<bool>((ref) => false);
 
 class CustomDrawer extends ConsumerWidget {
@@ -34,7 +37,8 @@ class CustomDrawer extends ConsumerWidget {
     required this.firstName,
     required this.lastName,
     required this.onNavigateToFavorites,
-    required this.onNavigateToDonationWatchList, required Future<Null> Function() onSignOut,
+    required this.onNavigateToDonationWatchList,
+    required Future<Null> Function() onSignOut,
   }) : super(key: key);
 
   @override
@@ -42,52 +46,10 @@ class CustomDrawer extends ConsumerWidget {
     final user = ref.watch(authProvider).user;
     final isAuthenticated = ref.watch(authProvider).isAuthenticated;
 
-      // Get the current location
-  Future<Position> _getCurrentLocation() async {
-    return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-  }
-
-    // Using FutureProvider to fetch profile image
-    final profileImageUrl = ref.watch(profileImageProvider(user?.uid ?? ''));
-    final isUploading = ref.watch(isUploadingProvider.state).state;
-
-    // Upload profile image
-    Future<void> _uploadProfileImage(String uid, dynamic isUploadingProvider) async {
-      if (user == null) return; // Ensure user is not null
-      
-      try {
-        final picker = ImagePicker();
-        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-        if (pickedFile == null) {
-          debugPrint('No image selected.');
-          return;
-        }
-
-        ref.read(isUploadingProvider.state).state = true;  // Start upload
-        final storageRef = FirebaseStorage.instance.ref().child('user_profile_images/$uid.jpg');
-        final uploadTask = storageRef.putFile(File(pickedFile.path));
-
-        uploadTask.snapshotEvents.listen((taskSnapshot) {
-          double progress = taskSnapshot.bytesTransferred / taskSnapshot.totalBytes;
-          debugPrint('Upload progress: ${(progress * 100).toStringAsFixed(2)}%');
-        });
-
-        final snapshot = await uploadTask.whenComplete(() {});
-        final downloadUrl = await snapshot.ref.getDownloadURL();
-
-        await FirebaseFirestore.instance.collection('users').doc(uid).update({
-          'profileImageUrl': downloadUrl,
-        });
-
-        ref.invalidate(profileImageProvider(user.uid));  // Refresh profile image URL
-        ref.read(isUploadingProvider.state).state = false;  // End upload
-        debugPrint('Profile image uploaded successfully!');
-      } catch (e) {
-        ref.read(isUploadingProvider.state).state = false;  // End upload on error
-        debugPrint('Error uploading profile image: $e');
-      }
+    // Get the current location
+    Future<Position> _getCurrentLocation() async {
+      return await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
     }
 
     return Drawer(
@@ -96,73 +58,17 @@ class CustomDrawer extends ConsumerWidget {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: GestureDetector(
-              onTap: () {
-                if (user != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProfilePage(userId: user.uid),
-                    ),
-                  );
-                }
-              },
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: user != null ? () => _uploadProfileImage(user.uid, isUploadingProvider) : null,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundImage: profileImageUrl.when(
-                            data: (url) => url != null && url.isNotEmpty
-                                ? CachedNetworkImageProvider(url)
-                                : const AssetImage('assets/default_avatar.png') as ImageProvider,
-                            loading: () => const AssetImage('assets/default_avatar.png'),
-                            error: (_, __) => const AssetImage('assets/default_avatar.png'),
-                          ),
-                          child: profileImageUrl.when(
-                            data: (url) => url == null || url.isEmpty
-                                ? const Icon(Icons.person, color: Colors.white)
-                                : null,
-                            loading: () => const CircularProgressIndicator(),
-                            error: (_, __) => const Icon(Icons.error, color: Colors.white),
-                          ),
-                        ),
-                        if (isUploading)
-                          const CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (user != null)
-                        Text(
-                          "${firstName} ${lastName}",
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      const Text(
-                        "My Profile",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.normal, color: Colors.green),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            child: ProfileSection(
+              firstName: firstName,
+              lastName: lastName,
             ),
           ),
           const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
           // Drawer List Items - Section 1
-          ListTile(
-            leading: const Icon(Icons.group),
-            title: const Text('My Groups'),
+          DrawerListItem(
+            icon: Icons.group,
+            title: 'My Groups',
             onTap: () {
               if (user != null) {
                 Navigator.push(
@@ -174,9 +80,9 @@ class CustomDrawer extends ConsumerWidget {
               }
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('History'),
+          DrawerListItem(
+            icon: Icons.history,
+            title: 'History',
             onTap: () {
               if (user != null) {
                 Navigator.push(
@@ -191,45 +97,45 @@ class CustomDrawer extends ConsumerWidget {
           const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
           // Drawer List Items - Section 2
-          ListTile(
-            leading: const Icon(Icons.favorite),
-            title: const Text('Recipe Favourites'),
+          DrawerListItem(
+            icon: Icons.favorite,
+            title: 'Recipe Favourites',
             onTap: onNavigateToFavorites,
           ),
-          ListTile(
-            leading: const Icon(Icons.star),
-            title: const Text('Donation WatchList'),
-         onTap: () async {
-    // Get the current user ID
-    final userId = FirebaseAuth.instance.currentUser!.uid;
+          DrawerListItem(
+            icon: Icons.star,
+            title: 'Donation WatchList',
+            onTap: () async {
+              // Get the current user ID
+              final userId = FirebaseAuth.instance.currentUser!.uid;
 
-    // Get the current location
-    try {
-      Position position = await _getCurrentLocation();  // Get dynamic location
-      LatLng currentLocation = LatLng(position.latitude, position.longitude);
+              // Get the current location
+              try {
+                Position position = await _getCurrentLocation();  // Get dynamic location
+                LatLng currentLocation = LatLng(position.latitude, position.longitude);
 
-      // Navigate to WatchedDonationsPage with userId and currentLocation
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => WatchedDonationsPage(
-            userId: userId,
-            currentLocation: currentLocation,
-          ),
-        ),
-      );
-    } catch (e) {
-      // Handle errors (e.g., if location service is unavailable or permission denied)
-      print('Error getting location: $e');
-      // Optionally show a message to the user
-    }
-  },
+                // Navigate to WatchedDonationsPage with userId and currentLocation
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => WatchedDonationsPage(
+                      userId: userId,
+                      currentLocation: currentLocation,
+                    ),
+                  ),
+                );
+              } catch (e) {
+                // Handle errors (e.g., if location service is unavailable or permission denied)
+                print('Error getting location: $e');
+                // Optionally show a message to the user
+              }
+            },
           ),
 
           // Drawer List Items - Section 3
-          ListTile(
-            leading: const Icon(Icons.message),
-            title: const Text('Messages'),
+          DrawerListItem(
+            icon: Icons.message,
+            title: 'Messages',
             onTap: () {
               Navigator.push(
                 context,
@@ -239,9 +145,9 @@ class CustomDrawer extends ConsumerWidget {
               );
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.food_bank),
-            title: const Text('Manage Donations'),
+          DrawerListItem(
+            icon: Icons.food_bank,
+            title: 'Manage Donations',
             onTap: () {
               if (user != null) {
                 Navigator.push(
@@ -256,9 +162,9 @@ class CustomDrawer extends ConsumerWidget {
           const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
           // Drawer List Items - Section 4
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
+          DrawerListItem(
+            icon: Icons.settings,
+            title: 'Settings',
             onTap: () {
               Navigator.pushNamed(context, '/settings');
             },
@@ -266,9 +172,9 @@ class CustomDrawer extends ConsumerWidget {
           const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
           // Drawer List Items - Logout Section
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Log off'),
+          DrawerListItem(
+            icon: Icons.logout,
+            title: 'Log off',
             onTap: () {
               ref.read(authProvider.notifier).signOut();  // Trigger sign out
               Navigator.pushReplacementNamed(context, '/login');
