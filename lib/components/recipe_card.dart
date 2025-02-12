@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/models/recipe_model.dart';
+import 'package:shelfaware_app/pages/favourites_page.dart';
 import 'package:shelfaware_app/pages/recipe_details_page.dart';
-import 'package:shelfaware_app/services/recipe_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fuzzy/fuzzy.dart';
 
@@ -29,70 +29,95 @@ class _RecipeCardState extends State<RecipeCard> {
     _checkIfFavourite();
   }
 
- void _checkIfFavourite() async {
-  final docSnapshot = await FirebaseFirestore.instance
-      .collection('favourites')
-      .doc(widget.recipe.id.toString())
-      .get();
+  void _checkIfFavourite() async {
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('favourites')
+        .doc(widget.recipe.id.toString())
+        .get();
 
-  setState(() {
-    isFavourite = docSnapshot.exists; // Set state based on the document's existence
-  });
-}
-
-
-void _toggleFavourite() async {
-  // Toggle the favourite status (button state)
-  setState(() {
-    isFavourite = !isFavourite; 
-  });
-
-  final collectionRef = FirebaseFirestore.instance.collection('favourites');
-  final docRef = collectionRef.doc(widget.recipe.id.toString()); // Correct document reference
-
-  try {
-    if (isFavourite) {
-      // Add the recipe to the 'favourites' collection
-      await docRef.set({
-        'id': widget.recipe.id,
-        'title': widget.recipe.title,
-        'imageUrl': widget.recipe.imageUrl,
-        'ingredients': widget.recipe.ingredients.map((ingredient) => ingredient.name).toList(),
-        'totalIngredients': widget.recipe.ingredients.length, // Adding total ingredients count
-        'instructions': widget.recipe.instructions, // Adding instructions
-        'userId': FirebaseAuth.instance.currentUser?.uid ?? 'Unknown', // Adding the current user's ID
-        'timestamp': FieldValue.serverTimestamp(),  // Adding a timestamp for reference
-      });
-      print("Recipe added to favourites.");
-    } else {
-      // Remove the recipe from the 'favourites' collection
-      await docRef.delete();
-      print("Recipe removed from favourites.");
-    }
-  } catch (e) {
-    print("Error updating favourites: $e");
+    setState(() {
+      isFavourite = docSnapshot.exists; // Set state based on the document's existence
+    });
   }
-}
 
+  void _toggleFavourite() async {
+    // Toggle the favourite status (button state)
+    setState(() {
+      isFavourite = !isFavourite;
+    });
 
+    final collectionRef = FirebaseFirestore.instance.collection('favourites');
+    final docRef = collectionRef.doc(widget.recipe.id.toString()); // Correct document reference
 
-List<String> getMatchingIngredients() {
-  List<String> matchingIngredients = [];
-
-  // Create Fuzzy instance for matching ingredient names with the user input
-  var fuzzy = Fuzzy(widget.recipe.ingredients.map((ingredient) => ingredient.name).toList(), options: FuzzyOptions(threshold: 0.3));
-
-  for (var userIngredient in widget.userIngredients) {
-    var result = fuzzy.search(userIngredient);
-
-    // If a match is found (result is not empty), increment the matching count
-    if (result.isNotEmpty) {
-      matchingIngredients.add(userIngredient);
+    try {
+      if (isFavourite) {
+        // Add the recipe to the 'favourites' collection
+        await docRef.set({
+          'id': widget.recipe.id,
+          'title': widget.recipe.title,
+          'imageUrl': widget.recipe.imageUrl,
+          'ingredients': widget.recipe.ingredients.map((ingredient) => ingredient.name).toList(),
+          'totalIngredients': widget.recipe.ingredients.length, // Adding total ingredients count
+          'instructions': widget.recipe.instructions, // Adding instructions
+          'userId': FirebaseAuth.instance.currentUser?.uid ?? 'Unknown', // Adding the current user's ID
+          'timestamp': FieldValue.serverTimestamp(),  // Adding a timestamp for reference
+        });
+        print("Recipe added to favourites.");
+        _showSnackBar("Recipe added to favourites.");
+      } else {
+        // Remove the recipe from the 'favourites' collection
+        await docRef.delete();
+        print("Recipe removed from favourites.");
+      }
+    } catch (e) {
+      print("Error updating favourites: $e");
     }
   }
 
-  return matchingIngredients;
-}
+  void _showSnackBar(String message) {
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(Icons.favorite, color: Colors.red),
+          SizedBox(width: 10),
+          Expanded(child: Text(message)),
+          IconButton(
+            icon: Icon(Icons.arrow_forward),
+            onPressed: () {
+              // Navigate to Favourites Page
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FavouritesPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      duration: Duration(seconds: 3),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  List<String> getMatchingIngredients() {
+    List<String> matchingIngredients = [];
+
+    // Create Fuzzy instance for matching ingredient names with the user input
+    var fuzzy = Fuzzy(widget.recipe.ingredients.map((ingredient) => ingredient.name).toList(), options: FuzzyOptions(threshold: 0.3));
+
+    for (var userIngredient in widget.userIngredients) {
+      var result = fuzzy.search(userIngredient);
+
+      // If a match is found (result is not empty), increment the matching count
+      if (result.isNotEmpty) {
+        matchingIngredients.add(userIngredient);
+      }
+    }
+
+    return matchingIngredients;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -182,4 +207,3 @@ List<String> getMatchingIngredients() {
     );
   }
 }
-

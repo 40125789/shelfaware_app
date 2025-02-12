@@ -128,7 +128,7 @@ class _HomePageState extends ConsumerState<HomePage>
         onNavigateToFavorites: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => FavoritesPage()),
+            MaterialPageRoute(builder: (context) => FavouritesPage()),
           );
         },
         onNavigateToDonationWatchList: () {},

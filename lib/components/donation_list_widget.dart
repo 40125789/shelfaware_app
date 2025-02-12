@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:shelfaware_app/components/donation_card.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/pages/watched_donations_page.dart';
 import 'package:shelfaware_app/services/watched_donation_service.dart';
 
 
@@ -302,13 +303,40 @@ class _DonationListViewState extends State<DonationListView> {
                   // Optionally show a message to the user
                 }
               },
-              isInWatchlist: watchlistStatus[donationId] ?? false,
+             isInWatchlist: watchlistStatus[donationId] ?? false,
               onWatchlistToggle: (String donationId) {
                 setState(() {
                   if (watchlistStatus[donationId] == true) {
                     watchlistService.removeFromWatchlist(donationId);
                   } else {
                     watchlistService.addToWatchlist(donationId, donation);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            Icon(Icons.star, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text("Added to watchlist"),
+                          ],
+                        ),
+                        action: SnackBarAction(
+                          label: "→",
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WatchedDonationsPage(currentLocation: widget.currentLocation!, userId: userId ?? '',)
+                              ),
+                            );
+                          },
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      ),
+                    );
                   }
                   watchlistStatus[donationId] =
                       !(watchlistStatus[donationId] ?? false);

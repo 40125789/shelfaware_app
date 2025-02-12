@@ -10,12 +10,12 @@ import 'package:shelfaware_app/pages/recipe_details_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 // Ensure this is imported correctly
 
-class FavoritesPage extends StatefulWidget {
+class FavouritesPage extends StatefulWidget {
   @override
   _FavoritesPageState createState() => _FavoritesPageState();
 }
 
-class _FavoritesPageState extends State<FavoritesPage> {
+class _FavoritesPageState extends State<FavouritesPage> {
   late Future<List<Recipe>> favoritesFuture;
 
   @override
