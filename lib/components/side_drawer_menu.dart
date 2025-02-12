@@ -24,6 +24,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/profile_image_provider.dart';
 
 
+import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shelfaware_app/pages/chat_list_page.dart';
+import 'package:shelfaware_app/pages/groups_page.dart';
+import 'package:shelfaware_app/pages/history_page.dart';
+import 'package:shelfaware_app/pages/my_donations_page.dart';
+import 'package:shelfaware_app/pages/my_profile.dart';
+import 'package:shelfaware_app/pages/watched_donations_page.dart';
+import 'package:shelfaware_app/providers/auth_provider.dart';
+import 'package:shelfaware_app/providers/profile_image_provider.dart';
+import 'package:shelfaware_app/providers/unread_messages_provider.dart';
+import 'package:shelfaware_app/components/photo_upload.dart';
+
 final isUploadingProvider = StateProvider<bool>((ref) => false);
 
 class CustomDrawer extends ConsumerWidget {
@@ -66,9 +87,9 @@ class CustomDrawer extends ConsumerWidget {
           const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
           // Drawer List Items - Section 1
-          DrawerListItem(
-            icon: Icons.group,
-            title: 'My Groups',
+          ListTile(
+            leading: const Icon(Icons.group),
+            title: const Text('My Groups'),
             onTap: () {
               if (user != null) {
                 Navigator.push(
@@ -80,9 +101,9 @@ class CustomDrawer extends ConsumerWidget {
               }
             },
           ),
-          DrawerListItem(
-            icon: Icons.history,
-            title: 'History',
+          ListTile(
+            leading: const Icon(Icons.history),
+            title: const Text('History'),
             onTap: () {
               if (user != null) {
                 Navigator.push(
@@ -97,14 +118,14 @@ class CustomDrawer extends ConsumerWidget {
           const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
           // Drawer List Items - Section 2
-          DrawerListItem(
-            icon: Icons.favorite,
-            title: 'Recipe Favourites',
+          ListTile(
+            leading: const Icon(Icons.favorite),
+            title: const Text('Recipe Favourites'),
             onTap: onNavigateToFavorites,
           ),
-          DrawerListItem(
-            icon: Icons.star,
-            title: 'Donation WatchList',
+          ListTile(
+            leading: const Icon(Icons.star),
+            title: const Text('Donation WatchList'),
             onTap: () async {
               // Get the current user ID
               final userId = FirebaseAuth.instance.currentUser!.uid;
@@ -133,21 +154,42 @@ class CustomDrawer extends ConsumerWidget {
           ),
 
           // Drawer List Items - Section 3
-          DrawerListItem(
-            icon: Icons.message,
-            title: 'Messages',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatListPage(),
-                ),
-              );
-            },
-          ),
-          DrawerListItem(
-            icon: Icons.food_bank,
-            title: 'Manage Donations',
+      ListTile(
+  leading: Stack(
+    clipBehavior: Clip.none, // Allows the badge to overflow
+    children: [
+      const Icon(Icons.message), // Message icon
+      Positioned(
+        top: -3,
+        right: -3,
+        child: user != null
+            ? ref.watch(unreadMessagesCountProvider).when(
+                data: (unreadCount) => unreadCount > 0
+                    ? Badge(
+                        label: Text('$unreadCount'),
+                        backgroundColor: Colors.red,
+                      )
+                    : const SizedBox(),
+                loading: () => const SizedBox(),
+                error: (_, __) => const SizedBox(),
+              )
+            : const SizedBox(),
+      ),
+    ],
+  ),
+  title: const Text('Messages'),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatListPage(),
+      ),
+    );
+  },
+),
+          ListTile(
+            leading: const Icon(Icons.food_bank),
+            title: const Text('Manage Donations'),
             onTap: () {
               if (user != null) {
                 Navigator.push(
@@ -162,9 +204,9 @@ class CustomDrawer extends ConsumerWidget {
           const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
           // Drawer List Items - Section 4
-          DrawerListItem(
-            icon: Icons.settings,
-            title: 'Settings',
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
             onTap: () {
               Navigator.pushNamed(context, '/settings');
             },
@@ -172,9 +214,9 @@ class CustomDrawer extends ConsumerWidget {
           const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
 
           // Drawer List Items - Logout Section
-          DrawerListItem(
-            icon: Icons.logout,
-            title: 'Log off',
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Log off'),
             onTap: () {
               ref.read(authProvider.notifier).signOut();  // Trigger sign out
               Navigator.pushReplacementNamed(context, '/login');
