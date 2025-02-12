@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:provider/provider.dart';
 import 'package:shelfaware_app/components/bottom_navigation_bar.dart';
 import 'package:shelfaware_app/components/calendar_view_widget.dart';
@@ -19,15 +16,10 @@ import 'package:shelfaware_app/pages/recipes_page.dart';
 import 'package:shelfaware_app/pages/favourites_page.dart';
 import 'package:shelfaware_app/pages/donations_page.dart';
 import 'package:shelfaware_app/pages/statistics_page.dart';
-// Import the add_food_item page
-// Import the expiry icon component
 import 'package:shelfaware_app/controllers/auth_controller.dart'; // Ensure this import is correct
 import 'package:geolocator/geolocator.dart';
-
 import 'package:wiredash/wiredash.dart';
-
 import 'package:shelfaware_app/services/user_service.dart';
-
 import 'package:shelfaware_app/services/food_service.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 
@@ -223,86 +215,25 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
+  // Use the new utility functions for date formatting
   String formatDate(Timestamp timestamp) {
-    DateTime date = timestamp.toDate();
-    return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}";
+    return formatDate(timestamp);
   }
 
-// Function to show a popup dialog when the item is expired
-  void _showExpiredItemDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Donation Alert!"),
-          content: Text("This item has expired and cannot be donated."),
-          actions: [
-            TextButton(
-              child: Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-          ],
-        );
-      },
-    );
+  String formatExpiryDate(Timestamp expiryTimestamp) {
+    return formatExpiryDate(expiryTimestamp);
   }
 
-  Future<void> _confirmDonation(BuildContext context, String id) async {
-    bool? confirm = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Confirm Donation"),
-          content: Text("Are you sure you want to donate this item?"),
-          actions: [
-            TextButton(
-              child: Text("Cancel"),
-              onPressed: () {
-                Navigator.of(context).pop(false); // Return false
-              },
-            ),
-            TextButton(
-              child: Text("Donate"),
-              onPressed: () {
-                Navigator.of(context).pop(true); // Return true
-              },
-            ),
-          ],
-        );
-      },
-    );
 
-    if (confirm == true) {
-      await _donateFoodItem(context, id); // Proceed with donation if confirmed
-    }
-  }
+
 
   Future<void> _donateFoodItem(BuildContext context, String id) async {
     Future<Position> _getUserLocation() async {
       return await _getUserLocation();
     }
 
-    String _formatExpiryDate(Timestamp expiryTimestamp) {
-      DateTime expiryDate = expiryTimestamp.toDate();
-      DateTime today = DateTime.now();
-      int daysDifference = expiryDate.difference(today).inDays;
-
-      // Determine the expiry date message
-      if (daysDifference < 0) {
-        return 'Expired'; // If expired, show 'Expired'
-      } else if (daysDifference == 0) {
-        return 'Expires today'; // If it expires today
-      } else if (daysDifference <= 4) {
-        return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}'; // Expiring soon
-      } else {
-        return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}'; // Fresh items
-      }
-    }
-
     void _editFoodItem(String documentId) {}
-    Future<void> _deleteFoodItem(
+    return_deleteFoodItem(
         BuildContext context, String documentId) async {
       bool? confirm = await showDialog(
         context: context,

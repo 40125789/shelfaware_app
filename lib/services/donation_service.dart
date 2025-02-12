@@ -1,29 +1,12 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:lottie/lottie.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:month_picker_dialog/month_picker_dialog.dart';
-import 'package:shelfaware_app/repositories/donation_repository.dart';
-
-import 'package:shelfaware_app/services/food_item_service.dart';
-import 'package:shelfaware_app/components/donation_photo_form.dart'; // Adjust the path as necessary
-
-import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:lottie/lottie.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:shelfaware_app/repositories/donation_repository.dart';
 import 'package:shelfaware_app/services/food_item_service.dart';
 import 'package:shelfaware_app/components/donation_photo_form.dart'; // Adjust the path as necessary
+import 'package:shelfaware_app/services/dialog_service.dart';
 
 class DonationService {
   final DonationRepository _donationRepository = DonationRepository();
@@ -42,13 +25,14 @@ class DonationService {
         return;
       }
 
-      // Check if the item is expired
+     // Check if the item is expired
       Timestamp expiryTimestamp = foodItemDoc['expiryDate'];
       DateTime expiryDate = expiryTimestamp.toDate();
       if (expiryDate.isBefore(DateTime.now())) {
-        _showExpiredItemDialog(context);
+        DialogService.showExpiredItemDialog(context);
         return;
       }
+
 
       // Get the user's location
       Position location = await _getUserLocation();
@@ -113,10 +97,10 @@ class DonationService {
       if (userDoc['location'] != null) {
         GeoPoint userLocation = userDoc['location'];
         foodItemDoc['location'] =
-            GeoPoint(userLocation.latitude, userLocation.longitude);
+        GeoPoint(userLocation.latitude, userLocation.longitude);
       } else {
         foodItemDoc['location'] =
-            GeoPoint(location.latitude, location.longitude);
+        GeoPoint(location.latitude, location.longitude);
       }
 
       if (formData['imageUrl'] != null) {
@@ -137,36 +121,19 @@ class DonationService {
         'myDonations': FieldValue.arrayUnion([donationId]),
       });
 
+      // Show a success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Item donated successfully.")),
+        SnackBar(content: Text("Donation added successfully.")),
       );
-    } catch (e) {
+        } catch (e) {
       print('Error donating food item: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to donate item: $e")),
       );
-    }
-  }
+        }
+      }
 
-  static void _showExpiredItemDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Donation Alert!"),
-          content: Text("This item has expired and cannot be donated."),
-          actions: [
-            TextButton(
-              child: Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+
 
   // Fetch donation details by donationId
   Future<Map<String, dynamic>> getDonationDetails(String donationId) async {
