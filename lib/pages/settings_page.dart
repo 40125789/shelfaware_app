@@ -70,29 +70,56 @@ class SettingsPage extends ConsumerWidget {
                   const Divider(),
                   ListTile(
                     title: const Text('Messages'),
-                    trailing: Switch(
-                      value: settingsState.messagesNotifications,
-                      onChanged: (value) {
-                        ref.read(settingsProvider.notifier).toggleMessageNotifications(value);
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          settingsState.messagesNotifications ? 'ON' : 'OFF',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        Switch(
+                          value: settingsState.messagesNotifications,
+                          onChanged: (value) {
+                            ref.read(settingsProvider.notifier).toggleMessageNotifications(value);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   ListTile(
                     title: const Text('Donation Requests'),
-                    trailing: Switch(
-                      value: settingsState.requestNotifications,
-                      onChanged: (value) {
-                        ref.read(settingsProvider.notifier).toggleRequestNotifications(value);
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          settingsState.requestNotifications ? 'ON' : 'OFF',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        Switch(
+                          value: settingsState.requestNotifications,
+                          onChanged: (value) {
+                            ref.read(settingsProvider.notifier).toggleRequestNotifications(value);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   ListTile(
                     title: const Text('Expiry Alerts'),
-                    trailing: Switch(
-                      value: settingsState.expiryNotifications,
-                      onChanged: (value) {
-                        ref.read(settingsProvider.notifier).toggleExpiryNotifications(value);
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          settingsState.expiryNotifications ? 'ON' : 'OFF',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        Switch(
+                          value: settingsState.expiryNotifications,
+                          onChanged: (value) {
+                            ref.read(settingsProvider.notifier).toggleExpiryNotifications(value);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],
