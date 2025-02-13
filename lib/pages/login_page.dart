@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
 import 'package:shelfaware_app/components/square_tile.dart';
+import 'package:shelfaware_app/pages/home_page.dart';
 import 'package:shelfaware_app/services/auth_services.dart';
 import 'reset_password_page.dart';
 
@@ -28,22 +29,33 @@ class _LoginPageState extends State<LoginPage> {
     emailController.text = widget.email;
   }
 
-  void signUserIn() async {
-    showDialog(
-      context: context,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+void signUserIn() async {
+  // Show loading dialog while the login is in progress
+  showDialog(
+    context: context,
+    builder: (context) => const Center(child: CircularProgressIndicator()),
+  );
+
+  try {
+    // Sign in with email and password
+    await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: emailController.text,
+      password: passwordController.text,
     );
 
-    try {
-
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
+    // Only pop the loading dialog if the widget is still mounted
+    if (mounted) {
+      Navigator.pop(context); // Pop the loading dialog
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage()),
       );
+    }
+  } on FirebaseAuthException catch (e) {
+    // Only update the UI if the widget is still mounted
+    if (mounted) {
+      Navigator.pop(context); // Pop the loading dialog
 
-      Navigator.pop(context);
-    } on FirebaseAuthException catch (e) {
-      Navigator.pop(context);
       setState(() {
         if (e.code == 'wrong-password') {
           _errorMessage = 'Incorrect password';
@@ -53,6 +65,7 @@ class _LoginPageState extends State<LoginPage> {
       });
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
