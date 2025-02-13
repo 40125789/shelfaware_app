@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/api/firebase_api.dart';
 import 'package:shelfaware_app/controllers/expiring_items_controller.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
+import 'package:shelfaware_app/pages/my_donations_page.dart';
 import 'package:shelfaware_app/pages/settings_page.dart';
 import 'package:shelfaware_app/providers/settings_provider.dart'; // Ensure this import is correct
 import 'package:shelfaware_app/services/notification_handler.dart';
@@ -174,6 +175,16 @@ class MyApp extends ConsumerWidget {
             
           ),
           '/settings': (context) => SettingsPage(),
+          '/login': (context) => AuthPage(),
+          '/myDonations': (context) {
+            final user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              return MyDonationsPage(userId: user.uid);
+            } else {
+              return AuthPage();
+            }
+          },
+
         },
       ),
     );

@@ -141,8 +141,8 @@ class DonationService {
   }
 
   // Fetch donations for a specific user
-  Stream<List<Map<String, dynamic>>> getDonations(String userId) {
-    return _donationRepository.getDonations(userId);
+  Stream<List<Map<String, dynamic>>> getDonations(String userId, String donationId) {
+    return _donationRepository.getDonations(userId, donationId);
   }
 
   // Fetch all donations

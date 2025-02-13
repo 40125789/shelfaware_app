@@ -191,14 +191,7 @@ class CustomDrawer extends ConsumerWidget {
             leading: const Icon(Icons.food_bank),
             title: const Text('Manage Donations'),
             onTap: () {
-              if (user != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MyDonationsPage(userId: user.uid),
-                  ),
-                );
-              }
+              Navigator.pushNamed(context, '/myDonations');
             },
           ),
           const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
@@ -217,8 +210,8 @@ class CustomDrawer extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Log off'),
-            onTap: () {
-              ref.read(authProvider.notifier).signOut();  // Trigger sign out
+            onTap: () async {
+              await ref.read(authProvider.notifier).signOut();  // Trigger sign out
               Navigator.pushReplacementNamed(context, '/login');
             },
           ),

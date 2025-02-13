@@ -126,30 +126,31 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
       context: context,
       builder: (BuildContext context) {
         return DonationDetailsDialog(
-          itemName: widget.productName,
-          formattedExpiryDate: widget.expiryDate,
+       
           donorName: widget.donorName,
-          onContactDonor: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatPage(
-                  donorName: widget.donorName,
-                  userId: widget.userId,
-                  receiverEmail: widget.donorEmail,
-                  receiverId: widget.donatorId,
-                  donationId: widget.donationId,
-                  donationName: widget.productName,
-                  chatId: '',
-                ),
-              ),
-            );
-          },
+          donationLatitude: widget.donationLatitude,
+          donationLongitude: widget.donationLongitude,
+          userLatitude: widget.userLatitude,
+          userLongitude: widget.userLongitude,
+          productName: widget.productName,
+          expiryDate: widget.expiryDate,
+          donationTime: widget.donationTime,
+          pickupTimes: widget.pickupTimes,
+          pickupInstructions: widget.pickupInstructions,
+          donationId: widget.donationId,
+          donatorId: widget.donatorId,
+          donorEmail: widget.donorEmail,
+          chatId: widget.chatId,
+          donorImageUrl: widget.donorImageUrl,
           imageUrl: widget.imageUrl,
-          status: widget.status,
-        );
-      },
+          status: widget.status, receiverEmail: '',
+          );
+          },
+     
     );
+    
+      
+    
   }
 
   // Check if the current user has already requested the item

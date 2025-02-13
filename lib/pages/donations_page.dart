@@ -286,30 +286,25 @@ Future<void> _getUserLocationFromFirestore(String userId) async {
       context: context,
       builder: (BuildContext context) {
         return DonationDetailsDialog(
-          itemName: donation.itemName,
-          formattedExpiryDate: formattedExpiryDate,
           donorName: donation.donorName,
-          
-      
           imageUrl: donation.imageUrl,
-      
-          
-          onContactDonor: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatPage(
-                  donorName: donation.donorName,
-                  userId: donation.userId,
-                  receiverEmail: donation.donorEmail,
-                  receiverId: donation.donorId,
-                  donationId: donation.donationId,
-                  donationName: donation.itemName, 
-                  chatId: '',
-                ),
-              ),
-            );
-          }, status: donation.status,
+          status: donation.status,
+          donationLatitude: donation.location.latitude,
+          donationLongitude: donation.location.longitude,
+          userLatitude: _currentLocation?.latitude ?? 0.0,
+          userLongitude: _currentLocation?.longitude ?? 0.0,
+          productName: donation.itemName,
+          expiryDate: donation.expiryDate,
+          donorEmail: donation.donorEmail,
+          donatorId: donation.donorId,
+          chatId: '',
+          donorImageUrl: donation.imageUrl,
+          donationTime: DateTime.parse(donation.addedOn),
+          donationId: donation.donationId,
+          receiverEmail: donation.donorEmail,
+          pickupTimes: donation.pickupTimes,
+          pickupInstructions: donation.pickupInstructions,
+         
         );
       },
     );

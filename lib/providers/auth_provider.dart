@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -19,9 +21,10 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  StreamSubscription<User?>? _authSubscription; // Store subscription
 
   AuthNotifier() : super(AuthState(isAuthenticated: false)) {
-    _firebaseAuth.authStateChanges().listen((user) {
+    _authSubscription = _firebaseAuth.authStateChanges().listen((user) {
       state = AuthState(user: user, isAuthenticated: user != null);
     });
   }
@@ -39,9 +42,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> signOut() async {
-    await _firebaseAuth.signOut();
-    state = AuthState(user: null, isAuthenticated: false);
+    try {
+      await _firebaseAuth.signOut();
+      state = AuthState(user: null, isAuthenticated: false);
+    } catch (e) {
+      print("Error during sign-out: $e");
+    }
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel(); // Cancel the listener when no longer needed
+    super.dispose();
   }
 }
-
-

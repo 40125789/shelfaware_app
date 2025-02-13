@@ -1,28 +1,63 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'package:shelfaware_app/pages/user_donation_map.dart';
+import 'package:intl/intl.dart';
 
 class DonationDetailsDialog extends StatelessWidget {
-  final String itemName;
-  final String formattedExpiryDate;
-  final String donorName;
+  final double donationLatitude;
+  final double donationLongitude;
+  final double userLatitude;
+  final double userLongitude;
+  final String productName;
+  final String expiryDate;
   final String status;
-  final Function onContactDonor;
-  final String? imageUrl;
+  final String donorName;
+  final String chatId;
+  final String donorEmail;
+  final String donatorId;
+  final String donationId;
+  final String imageUrl;
+  final String donorImageUrl;
+  final DateTime donationTime;
+  final String pickupTimes;
+  final String pickupInstructions;
+  final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-  const DonationDetailsDialog({
+  DonationDetailsDialog({
     Key? key,
-    required this.itemName,
-    required this.formattedExpiryDate,
-    required this.donorName,
+    required this.donationLatitude,
+    required this.donationLongitude,
+    required this.userLatitude,
+    required this.userLongitude,
+    required this.productName,
+    required this.expiryDate,
     required this.status,
-    required this.onContactDonor,
-    this.imageUrl,
+    required this.donorEmail,
+    required this.donatorId,
+    required this.chatId,
+    required this.donorName,
+    required this.donorImageUrl,
+    required this.donationTime,
+    required this.imageUrl,
+    required this.donationId,
+    required receiverEmail,
+    required this.pickupTimes,
+    required this.pickupInstructions,
   }) : super(key: key);
+
+  String formatDate(String date) {
+    try {
+      DateTime parsedDate = DateTime.parse(date);
+      return DateFormat('dd/MM/yy').format(parsedDate);
+    } catch (e) {
+      return date; // Fallback if parsing fails
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.all(16), // Add margin for better alignment
+      margin: EdgeInsets.all(16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -30,20 +65,19 @@ class DonationDetailsDialog extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Ensure the card size is minimized
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Display the image on the left side
-                if (imageUrl != null)
+                if (imageUrl.isNotEmpty)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
-                      imageUrl!,
-                      height: 120, // Set the desired height for the image
-                      width: 120, // Set the desired width for the image
+                      imageUrl,
+                      height: 120,
+                      width: 120,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.broken_image,
@@ -52,27 +86,17 @@ class DonationDetailsDialog extends StatelessWidget {
                       ),
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    (loadingProgress.expectedTotalBytes ?? 1)
-                                : null,
-                          ),
-                        );
+                        return Center(child: CircularProgressIndicator());
                       },
                     ),
                   ),
-                SizedBox(width: 16), // Space between image and details
-
-                // Donation details on the right side
+                SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Donation details
                       Text(
-                        itemName,
+                        productName,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -84,17 +108,9 @@ class DonationDetailsDialog extends StatelessWidget {
                         children: [
                           Icon(Icons.person, color: Colors.green),
                           SizedBox(width: 10),
-                          Text(
-                            'Donor:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          Text('Donor:', style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 5),
-                          Flexible(
-                            child: Text(
-                              donorName,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
+                          Flexible(child: Text(donorName, overflow: TextOverflow.ellipsis)),
                         ],
                       ),
                       SizedBox(height: 10),
@@ -102,18 +118,12 @@ class DonationDetailsDialog extends StatelessWidget {
                         children: [
                           Icon(Icons.date_range, color: Colors.blue),
                           SizedBox(width: 10),
-                          Text(
-                            'Expiry:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          Text('Expiry:', style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 5),
                           Flexible(
                             child: Text(
-                              formattedExpiryDate,
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              formatDate(expiryDate),
+                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -124,17 +134,9 @@ class DonationDetailsDialog extends StatelessWidget {
                         children: [
                           Icon(Icons.info, color: Colors.orange),
                           SizedBox(width: 10),
-                          Text(
-                            'Status:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          Text('Status:', style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 5),
-                          Flexible(
-                            child: Text(
-                              status,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
+                          Flexible(child: Text(status, overflow: TextOverflow.ellipsis)),
                         ],
                       ),
                     ],
@@ -142,28 +144,55 @@ class DonationDetailsDialog extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 16), // Space between details and buttons
+            SizedBox(height: 16),
             Center(
-              child: ButtonBar(
-                alignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      onContactDonor(); // Trigger the contact donor action
-                    },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.message, size: 18, color: Colors.green),
-                        SizedBox(width: 5),
-                        Text('Contact Donor'),
-                      ],
-                    ),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30), // Rounded button
                   ),
-                
-                 
-                ],
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  backgroundColor: Colors.blue, // Adjust color if needed
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DonationMapScreen(
+                        donationLatitude: donationLatitude,
+                        donationLongitude: donationLongitude,
+                        userLatitude: userLatitude,
+                        userLongitude: userLongitude,
+                        productName: productName,
+                        expiryDate: expiryDate,
+                        status: status,
+                        donorName: donorName,
+                        chatId: chatId,
+                        donorEmail: donorEmail,
+                        donatorId: donatorId,
+                        donationId: donationId,
+                        imageUrl: imageUrl,
+                        donorImageUrl: donorImageUrl,
+                        donationTime: donationTime,
+                        pickupTimes: pickupTimes,
+                        pickupInstructions: pickupInstructions,
+                        receiverEmail: '',
+                        userId: '',
+                      ),
+                    ),
+                  );
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                  Icon(Icons.info, size: 18, color: Colors.white),
+                  SizedBox(width: 5),
+                  Text(
+                    'View Details',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  ],
+                ),
               ),
             ),
           ],

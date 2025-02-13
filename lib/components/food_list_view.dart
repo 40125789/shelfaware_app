@@ -6,10 +6,8 @@ import 'package:shelfaware_app/models/food_category.dart';
 import 'package:shelfaware_app/models/food_category_icons.dart';
 import 'package:shelfaware_app/components/expiry_icon.dart';
 import 'package:shelfaware_app/components/mark_food_dialogue.dart';
-import 'package:shelfaware_app/services/dialog_service.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
-import 'package:shelfaware_app/utils/expiry_date_utils.dart';
 
 class FoodListView extends StatelessWidget {
   final User user;
@@ -132,7 +130,7 @@ class FoodListView extends StatelessWidget {
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
-                        "Quantity: ${data['quantity']}\n${formatExpiryDate(expiryTimestamp)}",
+                        "Quantity: ${data['quantity']}\n${_formatExpiryDate(expiryTimestamp)}",
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -240,23 +238,54 @@ class FoodListView extends StatelessWidget {
     }
   }
 
-   // Use the new utility functions for date formatting
-  String formatDate(Timestamp timestamp) {
-    return ExpiryDateUtils.formatDate(timestamp);
-  }
+  String _formatExpiryDate(Timestamp expiryTimestamp) {
+    DateTime expiryDate = expiryTimestamp.toDate();
+    DateTime today = DateTime.now();
+    int daysDifference = expiryDate.difference(today).inDays;
 
-  String formatExpiryDate(Timestamp expiryTimestamp) {
-    return ExpiryDateUtils.formatExpiryDate(expiryTimestamp);
+    if (daysDifference < 0) {
+      return 'Expired';
+    } else if (daysDifference == 0) {
+      return 'Expires today';
+    } else if (daysDifference <= 4) {
+      return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}';
+    } else {
+      return 'Expires in: $daysDifference day${daysDifference == 1 ? '' : 's'}';
+    }
   }
 
   void _editFoodItem(String documentId) {
     // Implement edit functionality
   }
 
-Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
-    bool? confirm = await DialogService.showConfirmDeletionDialog(context);
+  Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
+    bool? confirm = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm Deletion"),
+          content: Text(
+              "Are you sure you want to delete this item? This action cannot be undone."),
+          actions: [
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: Text("Delete"),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
 
-    if (confirm == true) {
+
+ if (confirm == true) {
       try {
         final foodService = FoodService();
         await foodService.deleteFoodItem(documentId);
@@ -271,11 +300,30 @@ Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
       }
     }
   }
-
-  }
-
-Future<void> _confirmDonation(BuildContext context, String documentId) async {
-    bool? confirm = await DialogService.showConfirmDonationDialog(context);
+  Future<void> _confirmDonation(BuildContext context, String documentId) async {
+    bool? confirm = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm Donation"),
+          content: Text("Are you sure you want to donate this item?"),
+          actions: [
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: Text("Donate"),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
 
     if (confirm == true) {
       await _donateFoodItem(context, documentId);
@@ -287,6 +335,7 @@ Future<void> _confirmDonation(BuildContext context, String documentId) async {
       Position userPosition = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       await DonationService.donateFoodItem(context, documentId, userPosition);
+    
      
     } catch (e) {
       print('Error donating food item: $e');
@@ -295,4 +344,4 @@ Future<void> _confirmDonation(BuildContext context, String documentId) async {
       );
     }
   }
-
+}

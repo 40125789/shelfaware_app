@@ -21,7 +21,7 @@ final userDonationsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
   return authState.when(
     data: (user) {
       if (user != null) {
-        return donationService.getDonations(user.uid);
+        return donationService.getDonations(user.uid, 'donationId');
       } else {
         return Stream.value([]); // Return an empty stream if the user is not authenticated
       }

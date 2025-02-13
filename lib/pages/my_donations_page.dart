@@ -16,7 +16,10 @@ class MyDonationsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
 
-    if (!authState.isAuthenticated || authState.user == null) {
+   if (authState is AsyncError || !authState.isAuthenticated || authState.user == null) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Navigator.pushReplacementNamed(context, '/login'); // Use pushReplacementNamed to avoid stack issues
+  });
       return Scaffold(
         appBar: AppBar(
           title: const Text("Manage Donations"),
@@ -26,7 +29,6 @@ class MyDonationsPage extends ConsumerWidget {
         ),
       );
     }
-    final userId = authState.user!.uid;
     final myDonationsAsync = ref.watch(userDonationsProvider);
     final sentRequestsAsync = ref.watch(sentRequestsProvider);
 

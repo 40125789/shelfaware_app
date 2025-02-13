@@ -151,7 +151,7 @@ class DonationRepository {
   }
 
   // Fetch donations for a specific user
-  Stream<List<Map<String, dynamic>>> getDonations(String userId) {
+  Stream<List<Map<String, dynamic>>> getDonations(String userId, String donationId) {
     return _firestore
         .collection('donations')
         .where('userId', isEqualTo: userId)
