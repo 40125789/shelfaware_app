@@ -156,7 +156,7 @@ Future<void> _getUserLocationFromFirestore(String userId) async {
     // Create donation markers (excluding the logged-in user's donations)
     Set<Marker> donationMarkers = await _mapService.getMarkers(
       _currentLocation!,
-      donationLocations,
+      donationLocations.where((donation) => donation.status != 'Picked Up').toList(), // Filter out 'Picked Up' donations
       [], // This can be used for predefined points if needed
       _userId!, // Exclude the logged-in user's donations
       (donation) {
@@ -208,6 +208,7 @@ Future<void> _getUserLocationFromFirestore(String userId) async {
     print("Error loading map: $e");
   }
 }
+
 
 
 
