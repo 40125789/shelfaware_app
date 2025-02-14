@@ -13,7 +13,9 @@ class MarkFoodDialog extends StatefulWidget {
 
 class _MarkFoodDialogState extends State<MarkFoodDialog> {
   final TextEditingController _reasonController = TextEditingController();
+  final TextEditingController _consumedQuantityController = TextEditingController();
   late Map<String, dynamic> _foodItemData;
+  int _selectedConsumedQuantity = 1; // Default value for consumed quantity
 
   @override
   void initState() {
@@ -30,6 +32,7 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
     if (foodItemSnapshot.exists) {
       setState(() {
         _foodItemData = foodItemSnapshot.data()!;
+        _selectedConsumedQuantity = _foodItemData['quantity'] ?? 1; // Set initial consumed quantity
       });
     }
   }
@@ -122,8 +125,7 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        _markAsConsumed();
-                        Navigator.pop(context);  // Close the dialog
+                        _showConsumedQuantityDialog();
                       },
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white, backgroundColor: Colors.green,
@@ -206,6 +208,61 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
     );
   }
 
+  // Show consumed quantity dialog with dropdown
+  void _showConsumedQuantityDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Quantity Consumed"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<int>(
+                value: _selectedConsumedQuantity,
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedConsumedQuantity = newValue!;
+                  });
+                },
+                items: List.generate(_foodItemData['quantity'], (index) {
+                  return DropdownMenuItem(
+                    value: index + 1,
+                    child: Text('${index + 1}'),
+                  );
+                }),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (_selectedConsumedQuantity > 0) {
+                  _markAsConsumed(_selectedConsumedQuantity);
+                } else {
+                  // Ensure context is valid before showing a snack bar
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select a valid quantity')),
+                    );
+                  }
+                }
+                Navigator.pop(context);
+              },
+              child: const Text("Submit"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Mark item as discarded
   Future<void> _markAsDiscarded(String reason) async {
     final foodItemRef = FirebaseFirestore.instance
@@ -234,34 +291,57 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
   }
 
   // Mark item as consumed
-  Future<void> _markAsConsumed() async {
-    final foodItemRef = FirebaseFirestore.instance
-        .collection('foodItems')
-        .doc(widget.documentId);
-    final foodItemSnapshot = await foodItemRef.get();
+Future<void> _markAsConsumed(int quantity) async {
+  final foodItemRef = FirebaseFirestore.instance
+      .collection('foodItems')
+      .doc(widget.documentId);
+  final foodItemSnapshot = await foodItemRef.get();
 
-    if (foodItemSnapshot.exists) {
-      await FirebaseFirestore.instance.collection('history').add({
-        ...foodItemSnapshot.data()!,
-        'status': 'consumed',
-        'updatedOn': Timestamp.now(),
-        'userId': FirebaseAuth.instance.currentUser?.uid,
-      });
+  if (foodItemSnapshot.exists) {
+    Map<String, dynamic> foodItemData = foodItemSnapshot.data()!;
+    int remainingQuantity = foodItemData['quantity'] - quantity;
 
+    // Update history collection with consumed quantity
+    await FirebaseFirestore.instance.collection('history').add({
+      ...foodItemData,
+      'status': 'consumed',
+      'consumedQuantity': quantity,
+      'updatedOn': Timestamp.now(),
+      'userId': FirebaseAuth.instance.currentUser?.uid,
+    });
+
+    // If remaining quantity is 0, delete the food item from the inventory
+    if (remainingQuantity == 0) {
       await foodItemRef.delete();
 
-      // Ensure the widget is still mounted before showing the SnackBar
+      // Show the snack bar and close the dialog
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Food item marked as consumed')),
+          const SnackBar(content: Text('Food item consumed and removed from inventory')),
+        );
+      }
+    } else {
+      // Otherwise, just update the remaining quantity
+      await foodItemRef.update({'quantity': remainingQuantity});
+
+      // Show the snack bar and close the dialog
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Food item consumed')),
         );
       }
     }
+
+    // Close the dialog and return to the previous page
+    Navigator.pop(context);
   }
+}
+
+
 
   // Format expiry date
-  String _formatExpiryDate(Timestamp timestamp) {
-    DateTime date = timestamp.toDate();
-    return "${date.day}/${date.month}/${date.year}";
+  String _formatExpiryDate(Timestamp expiryTimestamp) {
+    DateTime expiryDate = expiryTimestamp.toDate();
+    return "${expiryDate.day}/${expiryDate.month}/${expiryDate.year}";
   }
 }
