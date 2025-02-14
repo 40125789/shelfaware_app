@@ -215,24 +215,28 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text("Quantity Consumed"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButton<int>(
-                value: _selectedConsumedQuantity,
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedConsumedQuantity = newValue!;
-                  });
-                },
-                items: List.generate(_foodItemData['quantity'], (index) {
-                  return DropdownMenuItem(
-                    value: index + 1,
-                    child: Text('${index + 1}'),
-                  );
-                }),
-              ),
-            ],
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButton<int>(
+                    value: _selectedConsumedQuantity,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedConsumedQuantity = newValue!;
+                      });
+                    },
+                    items: List.generate(_foodItemData['quantity'], (index) {
+                      return DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                      );
+                    }),
+                  ),
+                ],
+              );
+            },
           ),
           actions: [
             TextButton(
