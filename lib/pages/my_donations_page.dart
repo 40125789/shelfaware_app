@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/donation_request_card.dart';
 import 'package:shelfaware_app/components/my_donation_card.dart';
@@ -9,6 +9,15 @@ import 'package:shelfaware_app/pages/donation_detail_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
+import 'package:flutter/material.dart';
+import 'package:shelfaware_app/components/donation_request_card.dart';
+import 'package:shelfaware_app/components/my_donation_card.dart';
+import 'package:shelfaware_app/pages/star_review_page.dart';
+import 'package:shelfaware_app/providers/auth_provider.dart';
+import 'package:shelfaware_app/providers/donation_provider.dart';
+import 'package:shelfaware_app/pages/donation_detail_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 class MyDonationsPage extends ConsumerWidget {
   const MyDonationsPage({Key? key, required String userId}) : super(key: key);
 
@@ -16,10 +25,10 @@ class MyDonationsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
 
-   if (authState is AsyncError || !authState.isAuthenticated || authState.user == null) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    Navigator.pushReplacementNamed(context, '/login'); // Use pushReplacementNamed to avoid stack issues
-  });
+    if (authState is AsyncError || !authState.isAuthenticated || authState.user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/login'); // Use pushReplacementNamed to avoid stack issues
+      });
       return Scaffold(
         appBar: AppBar(
           title: const Text("Manage Donations"),
@@ -29,8 +38,10 @@ class MyDonationsPage extends ConsumerWidget {
         ),
       );
     }
+
     final myDonationsAsync = ref.watch(userDonationsProvider);
     final sentRequestsAsync = ref.watch(sentRequestsProvider);
+    final returnRequestCountAsync = ref.watch(donationRequestCountProvider(''));
 
     return DefaultTabController(
       length: 2,
@@ -78,13 +89,18 @@ class MyDonationsPage extends ConsumerWidget {
                           ),
                           loading: () =>
                               const Center(child: CircularProgressIndicator()),
-                          error: (error, _) =>
-                              Center(child: Text("Error: $error")),
+                          error: (error, _) {
+                            print("Error fetching request count: $error");
+                            return Center(child: Text("Error: $error"));
+                          },
                         );
                       },
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(child: Text("Error: $error")),
+              error: (error, _) {
+                print("Error fetching donations: $error");
+                return Center(child: Text("Error: $error"));
+              },
             ),
             // Sent Requests Tab
             sentRequestsAsync.when(
@@ -99,40 +115,52 @@ class MyDonationsPage extends ConsumerWidget {
                         return DonationRequestCard(
                           request: request,
                           onWithdraw: () async {
-                            // Use the context from the widget tree for navigation
-                            await ref
-                                .read(donationServiceProvider)
-                                .withdrawDonationRequest(
-                                    context, request['requestId']);
+                            try {
+                              await ref
+                                  .read(donationServiceProvider)
+                                  .withdrawDonationRequest(
+                                      context, request['requestId']);
+                            } catch (e) {
+                              print("Error withdrawing request: $e");
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Error: $e")),
+                              );
+                            }
                           },
                           onLeaveReview: () async {
-                            final hasReviewed = await ref
-                                .read(donationServiceProvider)
-                                .hasUserAlreadyReviewed(
-                                    request['donationId'], authState.user!.uid);
+                            try {
+                              final hasReviewed = await ref
+                                  .read(donationServiceProvider)
+                                  .hasUserAlreadyReviewed(
+                                      request['donationId'], authState.user!.uid);
 
-                            if (hasReviewed) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text(
-                                        'You have already left a review for this donation.')),
-                              );
-                            } else {
-                              // Now using context directly for navigation
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ReviewPage(
-                                    donorId: request['donatorId'] ?? '',
-                                    donationId: request['donationId'] ?? '',
-                                    donationImage: request['imageUrl'] ?? '',
-                                    donationName: request['productName'] ?? '',
-                                    donorImageUrl:
-                                        request['donorImageUrl'] ?? '',
-                                    donorName: request['donorName'] ?? '',
-                                    isEditing: false,
+                              if (hasReviewed) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'You have already left a review for this donation.')),
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ReviewPage(
+                                      donorId: request['donatorId'] ?? '',
+                                      donationId: request['donationId'] ?? '',
+                                      donationImage: request['imageUrl'] ?? '',
+                                      donationName: request['productName'] ?? '',
+                                      donorImageUrl:
+                                          request['donorImageUrl'] ?? '',
+                                      donorName: request['donorName'] ?? '',
+                                      isEditing: false,
+                                    ),
                                   ),
-                                ),
+                                );
+                              }
+                            } catch (e) {
+                              print("Error checking review status: $e");
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Error: $e")),
                               );
                             }
                           },
@@ -141,7 +169,10 @@ class MyDonationsPage extends ConsumerWidget {
                       },
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(child: Text("Error: $error")),
+              error: (error, _) {
+                print("Error fetching sent requests: $error");
+                return Center(child: Text("Error: $error"));
+              },
             ),
           ],
         ),

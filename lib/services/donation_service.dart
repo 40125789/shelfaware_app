@@ -156,7 +156,7 @@ class DonationService {
   }
 
   // Fetch donation request count for a specific donation
-  Stream<int> getDonationRequestCount(String donationId) {
+  Stream<int> getDonationRequestCount(String donationId, String userId) {
     return _donationRepository
         .getDonationRequests(donationId)
         .map((requests) => requests.length);

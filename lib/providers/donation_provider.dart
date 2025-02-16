@@ -51,6 +51,18 @@ final sentRequestsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
 
 // Provider for fetching donation request count (caching is useful for performance)
 final donationRequestCountProvider = StreamProvider.family<int, String>((ref, donationId) {
+  final authState = ref.watch(authStateProvider); // Watch the auth state provider
   final donationService = ref.watch(donationServiceProvider);
-  return donationService.getDonationRequestCount(donationId);
+
+  return authState.when(
+    data: (user) {
+      if (user != null) {
+        return donationService.getDonationRequestCount(donationId, user.uid);
+      } else {
+        return Stream.value(0); // Return a stream with 0 if the user is not authenticated
+      }
+    },
+    loading: () => Stream.value(0), // Return a stream with 0 while loading
+    error: (_, __) => Stream.value(0), // Return a stream with 0 on error
+  );
 });

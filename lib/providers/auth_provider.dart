@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/services/auth_services.dart';
 
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
   return FirebaseAuth.instance;
@@ -10,6 +11,11 @@ final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier();
+});
+
+final authStateProvider = StreamProvider<User?>((ref) {
+  // Replace with your actual implementation to get the auth state
+  return AuthService().authStateChanges;  
 });
 
 class AuthState {
@@ -26,6 +32,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(AuthState(isAuthenticated: false)) {
     _authSubscription = _firebaseAuth.authStateChanges().listen((user) {
       state = AuthState(user: user, isAuthenticated: user != null);
+
+      
     });
   }
 
