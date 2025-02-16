@@ -14,7 +14,6 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 });
 
 final authStateProvider = StreamProvider<User?>((ref) {
-  // Replace with your actual implementation to get the auth state
   return AuthService().authStateChanges;  
 });
 
