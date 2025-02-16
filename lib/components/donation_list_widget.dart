@@ -8,10 +8,10 @@ import 'package:shelfaware_app/components/donation_card.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
-import 'package:shelfaware_app/services/watched_donation_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shelfaware_app/providers/watched_donations_provider.dart';
 
-
-class DonationListView extends StatefulWidget {
+class DonationListView extends ConsumerStatefulWidget {
   final LatLng? currentLocation;
   final bool filterExpiringSoon;
   final bool filterNewlyAdded;
@@ -28,8 +28,7 @@ class DonationListView extends StatefulWidget {
   _DonationListViewState createState() => _DonationListViewState();
 }
 
-class _DonationListViewState extends State<DonationListView> {
-  late WatchlistService watchlistService;
+class _DonationListViewState extends ConsumerState<DonationListView> {
   Map<String, bool> watchlistStatus = {};
   Map<String, double> donorRatings = {}; // Add this line to define donorRatings
   double averageRating = 0.0;
@@ -40,9 +39,6 @@ class _DonationListViewState extends State<DonationListView> {
   @override
   void initState() {
     super.initState();
-    final String? userId = FirebaseAuth.instance.currentUser?.uid;
-    watchlistService =
-        WatchlistService(userId: userId ?? ''); // Initialize WatchlistService
 
     // Initialize filter criteria from constructor arguments
     filterExpiringSoon = widget.filterExpiringSoon;
@@ -221,7 +217,7 @@ class _DonationListViewState extends State<DonationListView> {
             }
 
             // Watchlist logic
-            watchlistService.isDonationInWatchlist(donationId).then((value) {
+            ref.read(watchedDonationsServiceProvider).isDonationInWatchlist(userId!, donationId).then((value) {
               setState(() {
                 watchlistStatus[donationId] = value;
               });
@@ -307,9 +303,9 @@ class _DonationListViewState extends State<DonationListView> {
               onWatchlistToggle: (String donationId) {
                 setState(() {
                   if (watchlistStatus[donationId] == true) {
-                    watchlistService.removeFromWatchlist(donationId);
+                    ref.read(watchedDonationsServiceProvider).removeFromWatchlist(userId!, donationId);
                   } else {
-                    watchlistService.addToWatchlist(donationId, donation);
+                    ref.read(watchedDonationsServiceProvider).addToWatchlist(userId!, donationId, donation);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Row(
@@ -325,7 +321,7 @@ class _DonationListViewState extends State<DonationListView> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => WatchedDonationsPage(currentLocation: widget.currentLocation!, userId: userId ?? '',)
+                                builder: (context) => WatchedDonationsPage(currentLocation: widget.currentLocation!)
                               ),
                             );
                           },

@@ -140,7 +140,7 @@ class CustomDrawer extends ConsumerWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => WatchedDonationsPage(
-                      userId: userId,
+                    
                       currentLocation: currentLocation,
                     ),
                   ),

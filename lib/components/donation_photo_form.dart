@@ -9,27 +9,8 @@ import 'package:shelfaware_app/providers/location_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:shelfaware_app/pages/location_page.dart';
-import 'package:shelfaware_app/services/donation_service.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shelfaware_app/providers/location_provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:shelfaware_app/pages/location_page.dart';
-import 'package:shelfaware_app/services/donation_service.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shelfaware_app/providers/location_provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 
 class AddPhotoAndDetailsForm extends ConsumerStatefulWidget {
   final Function(String) onPhotoAdded;
