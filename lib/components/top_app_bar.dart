@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:shelfaware_app/controllers/expiring_items_controller.dart'; // Import the controller // Import the ExpiringItemsScreen
+import 'package:provider/provider.dart';// Import the controller // Import the ExpiringItemsScreen
+import 'package:shelfaware_app/repositories/notification_repository.dart';
 import 'package:shelfaware_app/services/data_fetcher.dart'; // Import the DataFetcher
 import 'package:shelfaware_app/models/food_item.dart'; // Import the FoodItem model
 import 'package:shelfaware_app/services/notification_service.dart'; 
@@ -22,7 +22,7 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<int>(
-      stream: NotificationService().getUnreadNotificationCount(userId), // Call the service's stream method
+      stream: NotificationService(NotificationRepository()).getUnreadNotificationCount(userId), // Call the service's stream method
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           // Show loading indicator while fetching data

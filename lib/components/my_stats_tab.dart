@@ -5,7 +5,6 @@ import 'package:shelfaware_app/models/user_stats.dart'; // Assuming you're using
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:shelfaware_app/services/my_stats_service.dart';
 
-
 class MyStatsTab extends StatefulWidget {
   final String userId;
 
@@ -32,9 +31,12 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
   void _fetchStats() {
     setState(() {
       _userStats = _statsService.getUserStats(widget.userId, _selectedDate);
-      _consumedItems = _statsService.getConsumedItems(widget.userId, _selectedDate);
-      _discardedItems = _statsService.getDiscardedItems(widget.userId, _selectedDate);
-      _donatedItems = _statsService.getDonatedItems(widget.userId, _selectedDate);
+      _consumedItems =
+          _statsService.getConsumedItems(widget.userId, _selectedDate);
+      _discardedItems =
+          _statsService.getDiscardedItems(widget.userId, _selectedDate);
+      _donatedItems =
+          _statsService.getDonatedItems(widget.userId, _selectedDate);
     });
   }
 
@@ -47,10 +49,12 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
           child: GestureDetector(
             onTap: () => _showMonthPicker(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0), // Smaller padding
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12.0, vertical: 8.0), // Smaller padding
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20), // Smaller border radius
+                borderRadius:
+                    BorderRadius.circular(20), // Smaller border radius
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.2),
@@ -89,13 +93,13 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
                     Container(
                       height: 200,
                       child: total == 0
-                            ? Center(
+                          ? Center(
                               child: Text(
-                              'No data to display!',
-                              style: TextStyle(
-                                fontSize: 18, // Increased font size
-                              // Bold text
-                              ),
+                                'No data to display!',
+                                style: TextStyle(
+                                  fontSize: 18, // Increased font size
+                                  // Bold text
+                                ),
                               ),
                             )
                           : AnimatedSwitcher(
@@ -108,7 +112,8 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
                                     PieChartSectionData(
                                       value: (stats.consumed / total) * 100,
                                       color: Colors.green,
-                                      title: '${((stats.consumed / total) * 100).toStringAsFixed(0)}%',
+                                      title:
+                                          '${((stats.consumed / total) * 100).toStringAsFixed(0)}%',
                                       radius: 50,
                                       titleStyle: TextStyle(
                                         fontSize: 16,
@@ -120,7 +125,8 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
                                     PieChartSectionData(
                                       value: (stats.discarded / total) * 100,
                                       color: Colors.red,
-                                      title: '${((stats.discarded / total) * 100).toStringAsFixed(0)}%',
+                                      title:
+                                          '${((stats.discarded / total) * 100).toStringAsFixed(0)}%',
                                       radius: 50,
                                       titleStyle: TextStyle(
                                         fontSize: 16,
@@ -132,7 +138,8 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
                                     PieChartSectionData(
                                       value: (stats.donated / total) * 100,
                                       color: Colors.blue,
-                                      title: '${((stats.donated / total) * 100).toStringAsFixed(0)}%',
+                                      title:
+                                          '${((stats.donated / total) * 100).toStringAsFixed(0)}%',
                                       radius: 50,
                                       titleStyle: TextStyle(
                                         fontSize: 16,
@@ -147,11 +154,14 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
                                   sectionsSpace: 0,
                                   centerSpaceRadius: 40,
                                   pieTouchData: PieTouchData(
-                                    touchCallback: (FlTouchEvent event, PieTouchResponse? response) {},
+                                    touchCallback: (FlTouchEvent event,
+                                        PieTouchResponse? response) {},
                                   ),
                                 ),
-                                swapAnimationDuration: Duration(milliseconds: 800), // Animation duration
-                                swapAnimationCurve: Curves.easeInOut, // Animation curve
+                                swapAnimationDuration: Duration(
+                                    milliseconds: 800), // Animation duration
+                                swapAnimationCurve:
+                                    Curves.easeInOut, // Animation curve
                               ),
                             ),
                     ),
@@ -159,43 +169,54 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
                     FutureBuilder<List<String>>(
                       future: _consumedItems,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
                         } else if (!snapshot.hasData || snapshot.data == null) {
-                          return Center(child: Text('No consumed items found.'));
+                          return Center(
+                              child: Text('No consumed items found.'));
                         }
 
-                        return _buildExpandableTile("Consumed Items", Colors.green, snapshot.data!);
+                        return _buildExpandableTile(
+                            "Consumed Items", Colors.green, snapshot.data!);
                       },
                     ),
                     FutureBuilder<List<String>>(
                       future: _discardedItems,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
                         } else if (!snapshot.hasData || snapshot.data == null) {
-                          return Center(child: Text('No discarded items found.'));
+                          return Center(
+                              child: Text('No discarded items found.'));
                         }
 
-                        return _buildExpandableTile("Discarded Items", Colors.red, snapshot.data!);
+                        return _buildExpandableTile(
+                            "Discarded Items", Colors.red, snapshot.data!);
                       },
                     ),
                     FutureBuilder<List<String>>(
                       future: _donatedItems,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
                         } else if (!snapshot.hasData || snapshot.data == null) {
                           return Center(child: Text('No donated items found.'));
                         }
 
-                        return _buildExpandableTile("Donated Items", Colors.blue, snapshot.data!);
+                        return _buildExpandableTile(
+                            "Donated Items", Colors.blue, snapshot.data!);
                       },
                     ),
                   ],
@@ -208,9 +229,11 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildExpandableTile(String category, Color color, List<String> items) {
+  Widget _buildExpandableTile(
+      String category, Color color, List<String> items) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0), // Reduced vertical padding
+      padding:
+          const EdgeInsets.symmetric(vertical: 4.0), // Reduced vertical padding
       child: ExpansionTile(
         title: Container(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -248,8 +271,10 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(12),
             ),
             child: ListTile(
-              title: Text(item),
-              contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              title: Text(item[0].toUpperCase() + item.substring(1)),
+              // subtitle: Text(item.updatedOn), // Added extra details
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             ),
           );
         }).toList(),

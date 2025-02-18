@@ -1,15 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shelfaware_app/components/favourite_button_widget.dart';
 import 'package:shelfaware_app/components/recipe_card.dart';
 import 'package:shelfaware_app/models/recipe_model.dart';
 import 'package:shelfaware_app/services/firebase_service.dart';
 import 'package:shelfaware_app/services/recipe_service.dart';
-import 'package:shelfaware_app/pages/recipe_details_page.dart';
 
-import 'package:flutter/material.dart';
 
 class RecipesPage extends StatefulWidget {
   @override

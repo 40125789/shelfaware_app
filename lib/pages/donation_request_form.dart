@@ -1,9 +1,11 @@
 import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shelfaware_app/models/donation_request.dart';
+import 'package:shelfaware_app/services/donation_request_service.dart';
+import 'package:shelfaware_app/repositories/donation_request_repository.dart';
 
- class DonationRequestForm extends StatefulWidget {
+class DonationRequestForm extends StatefulWidget {
   final String productName;
   final String expiryDate;
   final String status;
@@ -13,7 +15,6 @@ import 'package:flutter/material.dart';
   final String imageUrl;
   final String donorImageUrl;
 
-  // Constructor to accept details from DonationMapScreen
   DonationRequestForm({
     required this.productName,
     required this.expiryDate,
@@ -22,7 +23,7 @@ import 'package:flutter/material.dart';
     required this.donatorId,
     required this.donationId,
     required this.donorImageUrl,
-    required this.imageUrl, required String donorId,
+    required this.imageUrl,
   });
 
   @override
@@ -36,7 +37,8 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
   bool _isPickupDateSelected = false;
   String? _pickupDateErrorMessage;
 
-  // Method to send the donation request to Firestore
+  final DonationRequestService _donationRequestService = DonationRequestService(DonationRequestRepository());
+
   Future<void> sendRequest() async {
     if (!_isPickupDateSelected) {
       setState(() {
@@ -46,66 +48,38 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
     }
 
     try {
-      // Get current user
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('You need to be logged in to make a request')),
-        );
-        return;
-      }
+      DonationRequest request = DonationRequest(
+        productName: widget.productName,
+        expiryDate: widget.expiryDate,
+        status: "Pending",
+        donorName: widget.donorName,
+        donatorId: widget.donatorId,
+        donationId: widget.donationId,
+        imageUrl: widget.imageUrl,
+        donorImageUrl: widget.donorImageUrl,
+        pickupDateTime: _pickupDateTime,
+        message: _messageController.text,
+        requesterId: '', // This will be set in the service layer
+        requestDate: Timestamp.now(),
+        requesterProfileImageUrl: '', // This will be set in the service layer
+      );
 
-      String requesterId = user.uid;
+      await _donationRequestService.sendRequest(request);
 
-      // Fetch the logged-in user's profile image URL from Firestore
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(requesterId)
-          .get();
-
-      String? profileImageUrl = userDoc['profileImageUrl'] ?? '';
-
-      // Create the donation request data (this will be the document data)
-      final donationRequest = {
-        'productName': widget.productName,
-        'expiryDate': widget.expiryDate,
-        'status': "Pending",
-        'donorName': widget.donorName,
-        'donatorId': widget.donatorId,
-        'donationId': widget.donationId,
-        'donorImageUrl': widget.donorImageUrl,
-        'imageUrl': widget.imageUrl,
-        'pickupDateTime': _pickupDateTime,
-        'message': _messageController.text,
-        'requesterId': requesterId,
-        'requestDate': Timestamp.now(),
-        'requesterProfileImageUrl': profileImageUrl ?? '',
-      };
-
-      // Add the document to Firestore (this is where the document is created once)
-      DocumentReference docRef = await FirebaseFirestore.instance.collection('donationRequests').add(donationRequest);
-
-      // After adding the document, the document ID becomes the requestId
-      await docRef.update({'requestId': docRef.id});
-
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Donation request sent successfully!'),
         backgroundColor: Colors.green,
       ));
 
-      // Optionally, navigate back or to another screen
       Navigator.pop(context);
     } catch (e) {
-      print("Error adding donation request: $e");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Error sending donation request'),
+        content: Text(e.toString()),
         backgroundColor: Colors.red,
       ));
     }
   }
 
-  // Date and Time Picker Method
   Future<void> _selectDateTime(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -141,7 +115,6 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Donation Request Form'),
-    
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -152,7 +125,6 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Donation Image (small square)
                   Container(
                     width: 80,
                     height: 80,
@@ -178,7 +150,6 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
                         SizedBox(height: 8),
                         Row(
                           children: [
-                            // Donor Image (small square)
                             Container(
                               width: 30,
                               height: 30,
@@ -252,4 +223,5 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
     );
   }
 }
+
 

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/trends_tab.dart';
 import 'package:shelfaware_app/components/my_stats_tab.dart';
-
-
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+
 
 
 class StatisticsPage extends StatefulWidget {

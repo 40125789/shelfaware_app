@@ -2,15 +2,48 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/providers/notification_count_provider.dart';
+import 'package:shelfaware_app/repositories/notification_repository.dart';
+
 
 class NotificationService {
-  
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  final NotificationRepository _notificationRepository;
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+
+  NotificationService(this._notificationRepository);
+
+  Future<List<Map<String, dynamic>>> fetchNotifications(String userId) {
+    return _notificationRepository.fetchNotifications(userId);
+  }
+
+  Future<void> clearAllNotifications(String userId) {
+    return _notificationRepository.clearAllNotifications(userId);
+  }
+
+  Future<void> markAsRead(String notificationId) {
+    return _notificationRepository.markAsRead(notificationId);
+  }
+
+  Future<DocumentSnapshot> fetchChat(String chatId) {
+    return _notificationRepository.fetchChat(chatId);
+  }
+
+  Future<QuerySnapshot> fetchMessages(String chatId) {
+    return _notificationRepository.fetchMessages(chatId);
+  }
+
+  Future<String> fetchReceiverName(String receiverId) {
+    return _notificationRepository.fetchReceiverName(receiverId);
+  }
+
+  Stream<int> getUnreadNotificationCount(String userId) {
+    return _notificationRepository.getUnreadNotificationCount(userId);
+  }
+
+  Future<Map<String, dynamic>?> getNotificationById(String notificationId) {
+    return _notificationRepository.getNotificationById(notificationId);
+  }
 
   // Initialize notification plugins
   Future<void> initializeNotifications(context) async {
@@ -33,7 +66,6 @@ class NotificationService {
     // Get the new unread count 
     int newCount = await getUnreadNotificationCount(FirebaseAuth.instance.currentUser!.uid).first;
     context.read(notificationCountProvider.notifier).setUnreadCount(newCount);
-    
 
     // Handle background notifications (app is in the background)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
@@ -45,121 +77,30 @@ class NotificationService {
 
   // Show a local notification
   Future<void> _showLocalNotification(String? title, String? body, String chatId) async {
-    // Define notification details
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'default_channel_id', // channelId
-      'Default Channel', // channelName
-      channelDescription: 'This is the default channel', // channelDescription
-      importance: Importance.high, // Set importance to high
-      priority: Priority.high, // Set priority to high
-      showWhen: false, // Do not show time when notification is shown
+      'default_channel_id', 
+      'Default Channel', 
+      channelDescription: 'This is the default channel', 
+      importance: Importance.high, 
+      priority: Priority.high, 
+      showWhen: false,
     );
 
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidDetails);
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidDetails);
 
-    // Show the notification
     await flutterLocalNotificationsPlugin.show(
-      0,// Notification ID (this is a unique identifier for the notification)
-      title, // Notification title
-      body, // Notification body
-      platformChannelSpecifics, // Notification details
-      payload: chatId, // Optional payload for data
+      0, 
+      title, 
+      body, 
+      platformChannelSpecifics, 
+      payload: chatId, 
     );
   }
 
   // Handle notification tap (open the app or navigate to a screen)
   void _handleNotificationTap(Map<String, dynamic> data) {
-    // Logic for handling notification tap, such as navigating to a screen
     print('Notification tapped! Data: $data');
-  }
-
-  // Fetch notifications by userId
-  Future<List<Map<String, dynamic>>> fetchNotifications(String userId) async {
-    try {
-      print('Fetching notifications for userId: $userId');
-      final snapshot = await FirebaseFirestore.instance
-          .collection('notifications') // Collection name: 'notifications'
-          .where('userId', isEqualTo: userId) // Filter by userId
-          .orderBy('timestamp', descending: true) // Order by timestamp (descending)
-          .get(); // Get the query snapshot
-
-      // Convert the query snapshot to a list of maps
-      return snapshot.docs.map((doc) {
-       Map<String, dynamic> notification = doc.data() as Map<String, dynamic>;
-      notification['notificationId'] = doc.id; // Add the document ID as 'notificationId'
-      return notification;
-    }).toList();
-    } catch (e) {
-      print('Error fetching notifications: $e');
-      return []; // Return empty list on error
-    }
-  }
-
-  // Clear all notifications for a user
-  Future<void> clearAllNotifications(String userId) async {
-    if (userId == null) return; // If userId is null, exit early
-
-    final collection = FirebaseFirestore.instance.collection('notifications');
-    final batch = FirebaseFirestore.instance.batch();
-
-    // Query notifications that belong to the current user
-    final querySnapshot = await collection.where('userId', isEqualTo: userId).get();
-
-    // Add all notifications to the batch for deletion
-    for (final doc in querySnapshot.docs) {
-      batch.delete(doc.reference);
-    }
-
-    // Commit the batch to delete all matching notifications
-    await batch.commit();
-  }
-
-  // Get unread notification count for a user
-  Stream<int> getUnreadNotificationCount(String userId) {
-    return FirebaseFirestore.instance
-        .collection('notifications')
-        .where('userId', isEqualTo: userId)
-        .where('read', isEqualTo: false) // Filter by unread status
-        .snapshots()
-        .map((querySnapshot) => querySnapshot.docs.length);
-  }
-
-  // Update the notification's read status in Firestore
-  Future<void> markAsRead(String notificationId) async {
-    await FirebaseFirestore.instance
-        .collection('notifications')
-        .doc(notificationId)
-        .update({
-      'read': true,
-    });
-  }
-
-  // Filter notifications by type (e.g., 'message' or 'expiry')
-  List<Map<String, dynamic>> filterByType(
-      List<Map<String, dynamic>> notifications, String type) {
-    return notifications
-        .where((notification) => notification['type'] == type)
-        .toList();
-  }
-
-  // Optionally, add a function to fetch specific notification by ID
-  Future<Map<String, dynamic>?> getNotificationById(String notificationId) async {
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('notifications')
-          .doc(notificationId)
-          .get();
-
-      if (doc.exists) {
-        return doc.data() as Map<String, dynamic>?;
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print('Error fetching notification: $e');
-      return null;
-    }
+    // Add logic to handle navigation based on data
   }
 
   // Request permission for push notifications

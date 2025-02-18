@@ -1,11 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/models/recipe_model.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_html/flutter_html.dart';  // Import flutter_html package
-
 import 'package:fuzzy/fuzzy.dart'; // Import the fuzzy package
 
 class RecipeDetailsPage extends StatefulWidget {

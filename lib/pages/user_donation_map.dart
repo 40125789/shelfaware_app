@@ -243,7 +243,6 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
           productName: widget.productName,
           expiryDate: widget.expiryDate,
           donationId: widget.donationId,
-          donorId: widget.donatorId,
           status: widget.status,
           donorName: widget.donorName,
           donatorId: widget.donatorId,

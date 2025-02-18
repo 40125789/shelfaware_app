@@ -4,27 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:provider/provider.dart';
-
 import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
-
-
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:shelfaware_app/providers/watched_donations_provider.dart';
 
-import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shelfaware_app/pages/user_donation_map.dart';
-import 'package:shelfaware_app/providers/watched_donations_provider.dart';
-import 'package:shelfaware_app/providers/auth_provider.dart';
+
 
 class WatchedDonationsPage extends ConsumerWidget {
   final LatLng currentLocation;

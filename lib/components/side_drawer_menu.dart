@@ -1,49 +1,18 @@
-import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:badges/badges.dart' as custom_badge;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:shelfaware_app/components/drawer_list_item.dart';
 import 'package:shelfaware_app/components/photo_upload.dart';
-
 import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/groups_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
-import 'package:shelfaware_app/pages/my_donations_page.dart';
-import 'package:shelfaware_app/pages/my_profile.dart';
-
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:shelfaware_app/providers/profile_image_provider.dart';
-
-
-import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shelfaware_app/pages/chat_list_page.dart';
-import 'package:shelfaware_app/pages/groups_page.dart';
-import 'package:shelfaware_app/pages/history_page.dart';
-import 'package:shelfaware_app/pages/my_donations_page.dart';
-import 'package:shelfaware_app/pages/my_profile.dart';
-import 'package:shelfaware_app/pages/watched_donations_page.dart';
-import 'package:shelfaware_app/providers/auth_provider.dart';
-import 'package:shelfaware_app/providers/profile_image_provider.dart';
 import 'package:shelfaware_app/providers/unread_messages_provider.dart';
-import 'package:shelfaware_app/components/photo_upload.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 final isUploadingProvider = StateProvider<bool>((ref) => false);
 
@@ -140,7 +109,6 @@ class CustomDrawer extends ConsumerWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => WatchedDonationsPage(
-                    
                       currentLocation: currentLocation,
                     ),
                   ),
@@ -154,39 +122,39 @@ class CustomDrawer extends ConsumerWidget {
           ),
 
           // Drawer List Items - Section 3
-      ListTile(
-  leading: Stack(
-    clipBehavior: Clip.none, // Allows the badge to overflow
-    children: [
-      const Icon(Icons.message), // Message icon
-      Positioned(
-        top: -3,
-        right: -3,
-        child: user != null
-            ? ref.watch(unreadMessagesCountProvider).when(
-                data: (unreadCount) => unreadCount > 0
-                    ? Badge(
-                        label: Text('$unreadCount'),
-                        backgroundColor: Colors.red,
-                      )
-                    : const SizedBox(),
-                loading: () => const SizedBox(),
-                error: (_, __) => const SizedBox(),
-              )
-            : const SizedBox(),
-      ),
-    ],
-  ),
-  title: const Text('Messages'),
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatListPage(),
-      ),
-    );
-  },
-),
+          ListTile(
+            leading: Stack(
+              clipBehavior: Clip.none, // Allows the badge to overflow
+              children: [
+                const Icon(Icons.message), // Message icon
+                Positioned(
+                  top: -3,
+                  right: -3,
+                  child: user != null
+                      ? ref.watch(unreadMessagesCountProvider).when(
+                          data: (unreadCount) => unreadCount > 0
+                              ? custom_badge.Badge(
+                                  badgeContent: Text('$unreadCount'),
+                                  badgeColor: Colors.red,
+                                )
+                              : const SizedBox(),
+                          loading: () => const SizedBox(),
+                          error: (_, __) => const SizedBox(),
+                        )
+                      : const SizedBox(),
+                ),
+              ],
+            ),
+            title: const Text('Messages'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatListPage(),
+                ),
+              );
+            },
+          ),
           ListTile(
             leading: const Icon(Icons.food_bank),
             title: const Text('Manage Donations'),
@@ -214,6 +182,28 @@ class CustomDrawer extends ConsumerWidget {
               await ref.read(authProvider.notifier).signOut();  // Trigger sign out
               Navigator.pushReplacementNamed(context, '/login');
             },
+          ),
+          const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
+          // Feedback Survey Link
+          ListTile(
+            title: ElevatedButton.icon(
+              onPressed: () {
+                // Navigate to the feedback survey link
+                const url = 'https://forms.gle/TSAYJ6F6TVtGRSZx5';
+                launchUrl(Uri.parse(url)).onError((error, stackTrace) {
+                  print('Error launching URL: $error');
+                  return false;
+                });
+              },
+              icon: const Icon(Icons.feedback, color: Colors.white),
+              label: const Text(
+                'Provide feedback!',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green, // Background color
+              ),
+            ),
           ),
         ],
       ),

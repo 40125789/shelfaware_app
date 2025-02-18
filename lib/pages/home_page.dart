@@ -86,7 +86,7 @@ class _HomePageState extends ConsumerState<HomePage>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => NotificationPage(userId: user.uid),
+        builder: (context) => NotificationPage(),
       ),
     );
   }
