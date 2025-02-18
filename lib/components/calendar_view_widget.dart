@@ -4,11 +4,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/services/food_item_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shelfaware_app/services/food_item_service.dart';
+import 'package:table_calendar/table_calendar.dart';
+
 class CalendarView extends StatefulWidget {
   final String userId;
 
-  const CalendarView(User user, {required this.userId, Key? key})
-      : super(key: key);
+  const CalendarView(User user, {required this.userId, Key? key}) : super(key: key);
 
   @override
   State<CalendarView> createState() => _CalendarViewState();
@@ -18,6 +24,7 @@ class _CalendarViewState extends State<CalendarView> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<DateTime, List<Map<String, dynamic>>> _groupedFoodItems = {};
+  final FoodItemService _foodService = FoodItemService();
 
   @override
   void initState() {
@@ -26,7 +33,6 @@ class _CalendarViewState extends State<CalendarView> {
   }
 
   /// Fetch food items from Firestore
-  FoodItemService _foodService = FoodItemService();
   void _fetchFoodItems() async {
     try {
       Stream<List<DocumentSnapshot>> foodItemsStream =
@@ -65,34 +71,42 @@ class _CalendarViewState extends State<CalendarView> {
     return _groupedFoodItems[normalizedDay] ?? [];
   }
 
-  /// Show a dialog with the food items for the selected day
-  void _showFoodItemsDialog(List<Map<String, dynamic>> items) {
-    showDialog(
+  /// Show a bottom sheet with the food items for the selected day
+  void _showFoodItemsBottomSheet(List<Map<String, dynamic>> items) {
+    showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Food Items Expiring'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return ListTile(
-                  title: Text(item['productName'] ?? 'Unnamed Item'),
-                  subtitle: Text('Quantity: ${item['quantity']}'),
-                );
-              },
-            ),
+        return Container(
+          padding: EdgeInsets.all(16.0),
+          height: MediaQuery.of(context).size.height * 0.5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Food Items Expiring',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return ListTile(
+                      title: Text(item['productName'] ?? 'Unnamed Item'),
+                      subtitle: Text('Quantity: ${item['quantity']}'),
+                    );
+                  },
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Close'),
+              ),
+            ],
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Close'),
-            ),
-          ],
         );
       },
     );
@@ -113,8 +127,8 @@ class _CalendarViewState extends State<CalendarView> {
               _focusedDay = focusedDay;
             });
 
-            // Show the dialog when a day is selected
-            _showFoodItemsDialog(_getItemsForDay(selectedDay));
+            // Show the bottom sheet when a day is selected
+            _showFoodItemsBottomSheet(_getItemsForDay(selectedDay));
           },
           eventLoader: _getItemsForDay,
           calendarStyle: CalendarStyle(
@@ -149,28 +163,6 @@ class _CalendarViewState extends State<CalendarView> {
               return Container(); // No marker for days without events
             },
           ),
-        ),
-        const SizedBox(height: 10),
-        Expanded(
-          child: _getItemsForDay(_selectedDay ?? DateTime.now()).isEmpty
-              ? const Center(
-                  child: Text(
-                    "No food items expiring on this date.",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount:
-                      _getItemsForDay(_selectedDay ?? DateTime.now()).length,
-                  itemBuilder: (context, index) {
-                    final item =
-                        _getItemsForDay(_selectedDay ?? DateTime.now())[index];
-                    return ListTile(
-                      title: Text(item['productName'] ?? 'Unnamed Item'),
-                      subtitle: Text('Quantity: ${item['quantity']}'),
-                    );
-                  },
-                ),
         ),
       ],
     );
