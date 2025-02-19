@@ -8,7 +8,6 @@ import 'package:shelfaware_app/models/product_details.dart';
 import 'package:shelfaware_app/components/product_detail_dialogue.dart';
 import 'package:shelfaware_app/services/camera_service.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shelfaware_app/services/food_service.dart';
 import 'package:shelfaware_app/services/food_suggestions_service.dart';
 
 import 'dart:async';
@@ -55,16 +54,29 @@ class _FoodItemFormState extends State<FoodItemForm> {
   void initState() {
     super.initState();
 
-    if (widget.isRecreated && widget.foodItem != null) {
-      _productNameController.text = widget.foodItem!.productName;
-      _expiryDateController.text =
-          formatDate(widget.foodItem!.expiryDate.toDate());
-      _quantity = widget.foodItem!.quantity;
-      _quantityController.text = _quantity.toString();
-      _storageLocationController.text = widget.foodItem!.storageLocation;
-      _notesController.text = widget.foodItem!.notes;
-      _productImage = widget.productImage;
-      _category = widget.foodItem!.category;
+    if (widget.isRecreated || widget.foodItem != null) {
+      if (widget.foodItem is Map) {
+        _productNameController.text = widget.foodItem['productName'] ?? null;
+        _expiryDateController.text =
+            formatDate(widget.foodItem['expiryDate'].toDate());
+        _quantity = widget.foodItem['quantity'] ?? 1;
+        _quantityController.text = _quantity.toString();
+        _storageLocationController.text =
+            widget.foodItem['storageLocation'] ?? '';
+        _notesController.text = widget.foodItem['notes'] ?? '';
+        _productImage = widget.productImage;
+        _category = widget.foodItem['category'] ?? 'All';
+      } else if (widget.foodItem is FoodHistory) {
+        _productNameController.text = widget.foodItem.productName;
+        _expiryDateController.text =
+            formatDate(widget.foodItem.expiryDate.toDate());
+        _quantity = widget.foodItem.quantity;
+        _quantityController.text = _quantity.toString();
+        _storageLocationController.text = widget.foodItem.storageLocation;
+        _notesController.text = widget.foodItem.notes;
+        _productImage = widget.productImage;
+        _category = widget.foodItem.category;
+      }
     } else {
       _expiryDateController.text = formatDate(_expiryDate);
     }

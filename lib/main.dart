@@ -4,18 +4,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shelfaware_app/api/firebase_api.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
 import 'package:shelfaware_app/pages/settings_page.dart';
 import 'package:shelfaware_app/providers/settings_provider.dart'; // Ensure this import is correct
-import 'package:shelfaware_app/services/notification_handler.dart';
 import 'package:wiredash/wiredash.dart';
 import 'firebase_options.dart';
 import 'pages/auth_page.dart';
-import 'package:provider/provider.dart';
-import 'controllers/bottom_nav_controller.dart';
-import 'controllers/auth_controller.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -24,9 +22,12 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final appDocumentDir = await getApplicationDocumentsDirectory();
+  await Hive.initFlutter(appDocumentDir.path);
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
 
   // Initialize Firebase App Check
   await FirebaseAppCheck.instance.activate(

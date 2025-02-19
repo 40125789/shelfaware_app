@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shelfaware_app/components/food_item_form.dart';
 import 'package:shelfaware_app/models/food_category.dart';
 import 'package:shelfaware_app/models/food_category_icons.dart';
 import 'package:shelfaware_app/components/expiry_icon.dart';
@@ -144,7 +145,7 @@ class FoodListView extends StatelessWidget {
                             icon: Icon(Icons.more_vert),
                             onSelected: (String value) {
                               if (value == 'edit') {
-                                _editFoodItem(documentId);
+                                _editFoodItem(context, documentId);
                               } else if (value == 'delete') {
                                 _deleteFoodItem(context, documentId);
                               } else if (value == 'donate') {
@@ -254,8 +255,47 @@ class FoodListView extends StatelessWidget {
     }
   }
 
-  void _editFoodItem(String documentId) {
-    // Implement edit functionality
+  void _editFoodItem(BuildContext context, String documentId) async {
+    final foodItemDoc = await FirebaseFirestore.instance
+        .collection('foodItems')
+        .doc(documentId)
+        .get();
+    final foodItemData = foodItemDoc.data();
+
+    if (foodItemData != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Scaffold(
+            appBar: AppBar(title: Text('Edit Food Item')),
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: FoodItemForm(
+                isRecreated: false,
+                foodItem: foodItemData,
+                productImage: foodItemData['productImage'],
+                onSave: (productName, expiryDate, quantity, storageLocation,
+                    notes, category, productImage) {
+                  FirebaseFirestore.instance
+                      .collection('foodItems')
+                      .doc(documentId)
+                      .update({
+                    'productName': productName,
+                    'expiryDate': expiryDate,
+                    'quantity': quantity,
+                    'storageLocation': storageLocation,
+                    'notes': notes,
+                    'category': category,
+                    'productImage': productImage,
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
@@ -284,8 +324,7 @@ class FoodListView extends StatelessWidget {
       },
     );
 
-
- if (confirm == true) {
+    if (confirm == true) {
       try {
         final foodService = FoodService();
         await foodService.deleteFoodItem(documentId);
@@ -300,6 +339,7 @@ class FoodListView extends StatelessWidget {
       }
     }
   }
+
   Future<void> _confirmDonation(BuildContext context, String documentId) async {
     bool? confirm = await showDialog(
       context: context,
@@ -335,8 +375,6 @@ class FoodListView extends StatelessWidget {
       Position userPosition = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       await DonationService.donateFoodItem(context, documentId, userPosition);
-    
-     
     } catch (e) {
       print('Error donating food item: $e');
       ScaffoldMessenger.of(context).showSnackBar(
