@@ -6,10 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 
-import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
-
 class MyDonationCard extends StatelessWidget {
   final Map<String, dynamic> donation;
   final int requestCount;
@@ -84,10 +80,11 @@ class MyDonationCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          "Status: $status",
-                          style: const TextStyle(color: Colors.grey),
-                        ),
+                        if (status != 'Reserved')
+                          Text(
+                            "Status: $status",
+                            style: const TextStyle(color: Colors.grey),
+                          ),
                         const SizedBox(height: 4),
                         Text(
                           "Date Added: $formattedDate",
@@ -126,14 +123,22 @@ class MyDonationCard extends StatelessWidget {
             if (status == 'Picked Up')
               Positioned.fill(
                 child: Container(
-                  color: Colors.lightGreen.withOpacity(0.5),
+                  color: Colors.white.withOpacity(0.7),
                   alignment: Alignment.center,
-                  child: const Text(
-                    'Donated',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Donated',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),

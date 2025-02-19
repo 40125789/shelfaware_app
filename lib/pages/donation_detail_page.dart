@@ -6,6 +6,7 @@ import 'package:shelfaware_app/services/donation_service.dart';
 
 class DonationDetailsPage extends StatelessWidget {
   final String donationId;
+  
   final DonationService donationService = DonationService();
 
   DonationDetailsPage({required this.donationId});
@@ -90,22 +91,46 @@ class DonationDetailsPage extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 20),
-                if (donation['status'] == 'Reserved')
-                  ElevatedButton(
-                    onPressed: () async {
-                      await donationService.updateDonationStatus(
-                          donationId, 'Picked Up');
-                      await donationService.updateDonationRequestStatus(
-                          donationId, 'Picked Up');
-                      // Refresh the UI
-                      Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  DonationDetailsPage(donationId: donationId)));
-                    },
-                    child: Text("Mark as Picked Up"),
-                  ),
+              SizedBox(height: 20),
+if (donation['status'] == 'Reserved')
+  ElevatedButton(
+    onPressed: () async {
+      // Fetch all requests related to the donation
+      List<Map<String, dynamic>> requests =
+          await donationService.getDonationRequests(donationId).first;
+
+      // Find the request with status "Accepted"
+      var acceptedRequest = requests.firstWhere(
+        (request) => request['status'] == 'Accepted',
+        orElse: () => {}, // Provide a default empty object if no match is found
+      );
+
+      // Ensure there's an accepted request before proceeding
+      if (acceptedRequest.isNotEmpty) {
+        final String requestId = acceptedRequest['requestId'];
+
+        // Update both the donation and the accepted request status
+        await donationService.updateDonationStatus(donationId, 'Picked Up');
+        await donationService.updateDonationRequestStatus(
+            donationId, requestId, 'Picked Up');
+
+        // Refresh the UI
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DonationDetailsPage(donationId: donationId),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No accepted request found for this donation')),
+        );
+      }
+    },
+    child: Text("Mark as Picked Up"),
+  ),
+
+                
                 SizedBox(height: 20),
 
                 // Donation Requests Section

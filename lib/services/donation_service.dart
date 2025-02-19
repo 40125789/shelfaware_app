@@ -176,8 +176,8 @@ class DonationService {
 
   // Update donation request status
   Future<void> updateDonationRequestStatus(
-      String donationId, String status) async {
-    await _donationRepository.updateDonationRequestStatus(donationId, status);
+      String donationId, String status, String requestId) async {
+    await _donationRepository.updateDonationRequestStatus(donationId, status, requestId);
   }
 
   // Fetch requester's name by userId

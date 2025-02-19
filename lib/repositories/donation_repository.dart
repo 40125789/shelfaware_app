@@ -43,19 +43,14 @@ class DonationRepository {
         .update({'status': status});
   }
 
-  Future<void> updateDonationRequestStatus(
-      String donationId, String status) async {
-    final requestSnapshot = await _firestore
+ Future<void> updateDonationRequestStatus(
+      String donationId, String requestId, String status) async {
+    await _firestore
         .collection('donationRequests')
-        .where('donationId', isEqualTo: donationId)
-        .get();
-    for (var doc in requestSnapshot.docs) {
-      await _firestore
-          .collection('donationRequests')
-          .doc(doc.id)
-          .update({'status': status});
-    }
+        .doc(requestId)
+        .update({'status': status, 'donationId': donationId});
   }
+
 
   Future<void> acceptDonationRequest(
       String donationId, String requestId, String requesterId) async {
