@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 
+import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
+
+import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
+
 class MyDonationCard extends StatelessWidget {
   final Map<String, dynamic> donation;
   final int requestCount;
@@ -92,14 +100,23 @@ class MyDonationCard extends StatelessWidget {
                             style: const TextStyle(color: Colors.green),
                           ),
                         const SizedBox(height: 8),
-                        Text(
-                          "$requestCount request${requestCount != 1 ? 's' : ''}",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
+                        if (requestCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 4, horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              "$requestCount request${requestCount != 1 ? 's' : ''}",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
