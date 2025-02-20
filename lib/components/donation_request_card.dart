@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -24,7 +22,10 @@ class DonationRequestCard extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (context) => FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance.collection('donations').doc(request['donationId']).get(),
+          future: FirebaseFirestore.instance
+              .collection('donations')
+              .doc(request['donationId'])
+              .get(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
@@ -32,7 +33,9 @@ class DonationRequestCard extends StatelessWidget {
               );
             }
 
-            if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+            if (snapshot.hasError ||
+                !snapshot.hasData ||
+                !snapshot.data!.exists) {
               return Scaffold(
                 appBar: AppBar(title: const Text('Error')),
                 body: const Center(child: Text('Donation not found')),
@@ -59,6 +62,7 @@ class DonationRequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final productName = request['productName'] ?? 'Unnamed Product';
+    final donorName = request['donorName'] ?? '';
     final requestDate = request['requestDate']?.toDate();
     final status = request['status'] ?? 'Pending';
     final pickupDateTime = request['pickupDateTime']?.toDate();
@@ -109,12 +113,37 @@ class DonationRequestCard extends StatelessWidget {
               ? Icon(Icons.food_bank, color: Colors.white)
               : null,
         ),
-        title: Column(
+         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              productName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: productName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const TextSpan(
+                    text: ' from ',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                    ),
+                  ),
+                  TextSpan(
+                    text: donorName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
@@ -158,7 +187,8 @@ class DonationRequestCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       "Request Sent: ",
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.grey),
                     ),
                     Text(
                       formattedRequestDate,
@@ -169,11 +199,13 @@ class DonationRequestCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                    const Icon(Icons.calendar_today,
+                        size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
                       "Pickup Date: ",
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.grey),
                     ),
                     Text(
                       formattedPickupDate,
@@ -183,54 +215,59 @@ class DonationRequestCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    PopupMenuButton<String>(
-                      onSelected: (value) {
-                        if (value == 'message') {
-                          _messageDonor(context);
-                        } else if (value == 'withdraw') {
-                          onWithdraw();
-                        } else if (value == 'review' && !hasLeftReview) {
-                          onLeaveReview();
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'message',
-                          child: ListTile(
-                            leading: const Icon(Icons.message, color: Colors.blue),
-                            title: const Text('Message Donor'),
-                          ),
-                        ),
-                        if (status != "Picked Up")
-                          PopupMenuItem(
-                            value: 'withdraw',
-                            child: ListTile(
-                              leading: const Icon(Icons.cancel, color: Colors.red),
-                              title: const Text('Withdraw Request'),
-                            ),
-                          ),
-                        if (status == "Picked Up" && !hasLeftReview)
-                          PopupMenuItem(
-                            value: 'review',
-                            child: ListTile(
-                              leading: const Icon(Icons.star_rate, color: Colors.green),
-                              title: const Text('Leave a Review'),
-                            ),
-                          ),
-                        if (hasLeftReview)
-                          PopupMenuItem(
-                            value: 'review',
-                            enabled: false,
-                            child: ListTile(
-                              leading: const Icon(Icons.star_rate, color: Colors.grey),
-                              title: const Text('Leave a Review (Already Done)', style: TextStyle(color: Colors.grey)),
-                              subtitle: const Text("You've already left a review!", style: TextStyle(color: Colors.grey)),
-                            ),
-                          ),
-                      ],
+                    ElevatedButton.icon(
+                      onPressed: () => _messageDonor(context),
+                      icon: const Icon(Icons.message, color: Colors.white),
+                      label: const Text('Message Donor'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 4, horizontal: 8),
+                        textStyle: const TextStyle(fontSize: 12),
+                        foregroundColor: Colors.white,
+                      ),
                     ),
+                    if (status != "Picked Up")
+                      ElevatedButton.icon(
+                        onPressed: onWithdraw,
+                        icon: const Icon(Icons.cancel, color: Colors.white),
+                        label: const Text('Withdraw Request'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4, horizontal: 8),
+                          textStyle: const TextStyle(fontSize: 12),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    if (status == "Picked Up" && !hasLeftReview)
+                      ElevatedButton.icon(
+                        onPressed: onLeaveReview,
+                        icon: const Icon(Icons.star_rate, color: Colors.white),
+                        label: const Text('Leave a Review'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4, horizontal: 8),
+                          textStyle: const TextStyle(fontSize: 12),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    if (hasLeftReview)
+                      ElevatedButton.icon(
+                        onPressed: null,
+                        icon: const Icon(Icons.star_rate, color: Colors.white),
+                        label: const Text('Review Left'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4, horizontal: 8),
+                          textStyle: const TextStyle(fontSize: 12),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
                   ],
                 ),
               ],

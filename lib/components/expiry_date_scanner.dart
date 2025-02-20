@@ -53,7 +53,9 @@ class ScanExpiryDate extends StatelessWidget {
 
  DateTime? _parseExpiryDate(String text) {
     final dateFormats = [
-      DateFormat('dd/MM/yyyy'),
+ 
+    
+    DateFormat('dd/MM/yyyy'),
       DateFormat('MM/dd/yyyy'),
       DateFormat('yyyy/MM/dd'),
       DateFormat('dd-MM-yyyy'),
@@ -62,8 +64,10 @@ class ScanExpiryDate extends StatelessWidget {
       DateFormat('dd MMM yyyy'),
       DateFormat('MMM dd, yyyy'),
       DateFormat('dd.MM.yyyy'), // Added format for 21.01.2024
+      DateFormat('yyyy.MM.dd'), // Added format for 2024.01.21
+      DateFormat('yyyyMMdd'),   // Added format for 20240121
+      DateFormat('ddMMyyyy'),   // Added format for 21012024
     ];
-
 
    for (var format in dateFormats) {
       try {
