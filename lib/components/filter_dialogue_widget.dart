@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
+
 class FilterDialog extends StatefulWidget {
   final bool filterExpiringSoon;
   final bool filterNewlyAdded;
@@ -52,17 +54,24 @@ class _FilterDialogState extends State<FilterDialog> {
               topRight: Radius.circular(16.0),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _buildHeader(context),
-              SizedBox(height: 20),
-              _buildSortOptions(),
-              SizedBox(height: 20),
-              _buildDistanceOptions(),
-              SizedBox(height: 20),
-              _buildApplyButton(),
-            ],
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _buildHeader(context),
+                  SizedBox(height: 20),
+                  _buildSortOptions(),
+                  SizedBox(height: 20),
+                  _buildDistanceOptions(),
+                  SizedBox(height: 20),
+                  _buildApplyButton(),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -129,51 +138,50 @@ class _FilterDialogState extends State<FilterDialog> {
     );
   }
 
-Widget _buildDistanceOptions() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('Maximum Distance:'),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Add space between buttons
-        children: [0.3, 0.6, 1.3].map((distance) {
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0), // Add spacing between buttons
-              child: _buildToggleButton(
-                label: '${distance.toStringAsFixed(1)} miles',
-                isSelected: filterDistance == distance,
-                onPressed: () {
-                  setState(() {
-                    filterDistance = filterDistance == distance ? null : distance;
-                  });
-                  widget.onDistanceChanged(filterDistance);
-                },
+  Widget _buildDistanceOptions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Maximum Distance:'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Add space between buttons
+          children: [0.3, 0.6, 1.3].map((distance) {
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0), // Add spacing between buttons
+                child: _buildToggleButton(
+                  label: '${distance.toStringAsFixed(1)} miles',
+                  isSelected: filterDistance == distance,
+                  onPressed: () {
+                    setState(() {
+                      filterDistance = filterDistance == distance ? null : distance;
+                    });
+                    widget.onDistanceChanged(filterDistance);
+                  },
+                ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToggleButton({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onPressed,
+  }) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), // Reduced padding
+        foregroundColor: isSelected ? Colors.white : Colors.black,
+        backgroundColor: isSelected ? Colors.green : Colors.grey[200],
       ),
-    ],
-  );
-}
-
-Widget _buildToggleButton({
-  required String label,
-  required bool isSelected,
-  required VoidCallback onPressed,
-}) {
-  return ElevatedButton(
-    onPressed: onPressed,
-    style: ElevatedButton.styleFrom(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), // Reduced padding
-      foregroundColor: isSelected ? Colors.white : Colors.black,
-      backgroundColor: isSelected ? Colors.green : Colors.grey[200],
-    ),
-    child: Text(label),
-  );
-}
-
+      child: Text(label),
+    );
+  }
 
   Widget _buildApplyButton() {
     return SizedBox(

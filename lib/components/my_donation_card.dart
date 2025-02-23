@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
-
-import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MyDonationCard extends StatelessWidget {
   final Map<String, dynamic> donation;
@@ -22,13 +19,13 @@ class MyDonationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final productName = donation['productName'] ?? 'Unnamed Product';
-    final donatedAt = donation['donatedAt']?.toDate();
+    final donatedAt = donation['donatedAt'] as Timestamp?;
     final status = donation['status'] ?? 'Pending';
     final imageUrl = donation['imageUrl'] ?? '';
     final assignedToName = donation['assignedToName'] ?? '';
 
     final formattedDate = donatedAt != null
-        ? DateFormat('dd MMM yyyy, HH:mm').format(donatedAt)
+        ? DateFormat('dd MMM yyyy, HH:mm').format(donatedAt.toDate())
         : 'Unknown Date';
 
     return GestureDetector(
@@ -126,8 +123,8 @@ class MyDonationCard extends StatelessWidget {
                   color: Colors.white.withOpacity(0.7),
                   alignment: Alignment.center,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 8, horizontal: 16),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     decoration: BoxDecoration(
                       color: Colors.green,
                       borderRadius: BorderRadius.circular(12),

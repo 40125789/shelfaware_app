@@ -93,6 +93,7 @@ dependencies:
   path_provider: ^2.1.5
   hive: ^2.0.0
   hive_flutter: ^1.0.0
+  fake_cloud_firestore: 3.0.2
   
 
 
@@ -100,15 +101,24 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  test: ^1.16.0
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  hive_generator: 2.0.1
+  build_runner: ^2.0.0
+  mockito: ^5.4.5
+  firebase_core_platform_interface: ^5.4.0
+  firebase_auth_platform_interface: 7.5.1
+  firebase_auth_mocks: 0.14.1
+
+
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
-  hive_generator: ^1.0.0
-  build_runner: ^2.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

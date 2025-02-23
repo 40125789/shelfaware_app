@@ -1,8 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/src/fake_cloud_firestore_instance.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth_mocks/src/firebase_auth_mocks_base.dart';
 
 
 class WatchedDonationsRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+
+  WatchedDonationsRepository({required FirebaseFirestore firebaseFirestore, required FirebaseAuth firebaseAuth})
+      : _firestore = firebaseFirestore,
+        _auth = firebaseAuth;
 
   Stream<QuerySnapshot> getWatchedDonations(String userId) {
     return _firestore
@@ -53,6 +61,8 @@ class WatchedDonationsRepository {
         'addedOn': FieldValue.serverTimestamp(),
         'donorId': donationData['donorId'],
         'donationId': donationId,
+        'pickupTimes': donationData['pickupTimes'],
+        'pickupInstructions': donationData['pickupInstructions'],
         'isWatched': donationData['isWatched'] ?? true,
       });
     } catch (e) {

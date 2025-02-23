@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/repositories/watched_donations_repository.dart';
 import 'package:shelfaware_app/services/watched_donations_service.dart';
@@ -7,7 +9,9 @@ import 'package:shelfaware_app/providers/auth_provider.dart';
 
 
 final watchedDonationsRepositoryProvider = Provider<WatchedDonationsRepository>((ref) {
-  return WatchedDonationsRepository();
+  final firebaseFirestore = FirebaseFirestore.instance;
+  final firebaseAuth = FirebaseAuth.instance;
+  return WatchedDonationsRepository(firebaseFirestore: firebaseFirestore, firebaseAuth: firebaseAuth);
 });
 
 final watchedDonationsServiceProvider = Provider<WatchedDonationsService>((ref) {

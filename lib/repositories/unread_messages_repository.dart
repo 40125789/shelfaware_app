@@ -1,7 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 class UnreadMessagesRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+
+  UnreadMessagesRepository({required FirebaseFirestore firestore, required FirebaseAuth auth})
+      : _firestore = firestore,
+        _auth = auth;
 
   Stream<QuerySnapshot> getChats(String currentUserId) {
     return _firestore

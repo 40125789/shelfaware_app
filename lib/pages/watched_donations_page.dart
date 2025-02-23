@@ -9,8 +9,6 @@ import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart';
 
-
-
 class WatchedDonationsPage extends ConsumerWidget {
   final LatLng currentLocation;
 
@@ -48,6 +46,8 @@ class WatchedDonationsPage extends ConsumerWidget {
               String donorId = donation['donorId'] ?? '';
               Timestamp? donationTime = donation['addedOn'];
               bool isWatched = donation['isWatched'] ?? false;
+              String pickupTimes = donation['pickupTimes'] ?? 'Not specified';
+              String pickupInstructions = donation['pickupInstructions'] ?? 'Not specified';
 
               if (location == null) {
                 return Card(
@@ -139,8 +139,8 @@ class WatchedDonationsPage extends ConsumerWidget {
                               imageUrl: imageUrl ?? '',
                               donationId: donations[index].id,
                               receiverEmail: 'receiverEmail', // Replace with actual receiverEmail if available
-                              pickupTimes: '', // Replace with actual pickupTimes if available
-                              pickupInstructions: '', // Replace with actual pickupInstructions if available
+                              pickupTimes: pickupTimes,
+                              pickupInstructions: pickupInstructions,
                             ),
                           ),
                         );

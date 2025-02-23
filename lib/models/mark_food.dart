@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class MarkFood {
   final String id;
   final String? productName;
@@ -48,19 +47,19 @@ class MarkFood {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'productName': productName,
-      'productImage': productImage,
-      'quantity': quantity,
-      'expiryDate': expiryDate,
-      'notes': notes,
-      'storageLocation': storageLocation,
-      'addedOn': addedOn,
-      'category': category,
-      'status': status,
-      'updatedOn': updatedOn,
-      'userId': userId,
-    };
+    final map = <String, dynamic>{};
+    if (productName != null) map['productName'] = productName;
+    if (productImage != null) map['productImage'] = productImage;
+    map['quantity'] = quantity;
+    if (expiryDate != null) map['expiryDate'] = expiryDate;
+    if (notes != null) map['notes'] = notes;
+    if (storageLocation != null) map['storageLocation'] = storageLocation;
+    if (addedOn != null) map['addedOn'] = addedOn;
+    if (category != null) map['category'] = category;
+    if (status != null) map['status'] = status;
+    if (updatedOn != null) map['updatedOn'] = updatedOn;
+    if (userId != null) map['userId'] = userId;
+    return map;
   }
 
   MarkFood copyWith({

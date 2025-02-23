@@ -8,26 +8,6 @@ import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/donation_request_form.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:shelfaware_app/components/donation_details_dialogue.dart';
-import 'package:shelfaware_app/pages/chat_page.dart';
-import 'package:shelfaware_app/pages/donation_request_form.dart';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:shelfaware_app/components/donation_details_dialogue.dart';
-import 'package:shelfaware_app/pages/chat_page.dart';
-import 'package:shelfaware_app/pages/donation_request_form.dart';
-
 class DonationMapScreen extends StatefulWidget {
   final double donationLatitude;
   final double donationLongitude;

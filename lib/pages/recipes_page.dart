@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/recipe_card.dart';
 import 'package:shelfaware_app/models/recipe_model.dart';
+import 'package:shelfaware_app/repositories/favourites_repository.dart';
 import 'package:shelfaware_app/services/firebase_service.dart';
 import 'package:shelfaware_app/services/recipe_service.dart';
 
@@ -53,7 +54,7 @@ class _RecipesPageState extends State<RecipesPage> {
                 padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                 child: RecipeCard(
                   recipe: recipes[index],
-                  userIngredients: userIngredients, 
+                  userIngredients: userIngredients, favouritesRepository: FavouritesRepository(), 
                 ),
               );
             },

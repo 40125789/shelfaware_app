@@ -7,6 +7,15 @@ import 'package:shelfaware_app/providers/donation_provider.dart';
 import 'package:shelfaware_app/pages/donation_detail_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter/material.dart';
+import 'package:shelfaware_app/components/donation_request_card.dart';
+import 'package:shelfaware_app/components/my_donation_card.dart';
+import 'package:shelfaware_app/pages/star_review_page.dart';
+import 'package:shelfaware_app/providers/auth_provider.dart';
+import 'package:shelfaware_app/providers/donation_provider.dart';
+import 'package:shelfaware_app/pages/donation_detail_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shelfaware_app/components/request_status_filter.dart';
 
 class MyDonationsPage extends ConsumerWidget {
   const MyDonationsPage({Key? key, required String userId}) : super(key: key);
@@ -95,69 +104,77 @@ class MyDonationsPage extends ConsumerWidget {
             // Sent Requests Tab
             sentRequestsAsync.when(
               data: (requests) => requests.isEmpty
-                  ? const Center(child: Text("No sent donation requests"))
-                  : ListView.builder(
-                      itemCount: requests.length,
-                      itemBuilder: (context, index) {
-                        final request = requests[index];
-                        final hasLeftReview = request['hasLeftReview'] ?? false;
+                    ? const Center(child: Text("No sent donation requests"))
+                    : Column(
+                      children: [
+                      const RequestStatusFilter(), // Use the new filter component
+                      Expanded(
+                        child: ListView.builder(
+                        itemCount: requests.length,
+                        itemBuilder: (context, index) {
+                          final request = requests[index];
+                          final hasLeftReview = request['hasLeftReview'] ?? false;
+                          final status = request['status'] ?? 'Pending';
 
-                        return DonationRequestCard(
+                          if (ref.watch(requestStatusFilterProvider) != 'All' &&
+                            ref.watch(requestStatusFilterProvider) != status) {
+                          return Container();
+                          }
+
+                          return DonationRequestCard(
                           request: request,
                           onWithdraw: () async {
                             try {
-                              await ref
-                                  .read(donationServiceProvider)
-                                  .withdrawDonationRequest(
-                                      context, request['requestId']);
+                            await ref
+                              .read(donationServiceProvider)
+                              .withdrawDonationRequest(context, request['requestId']);
                             } catch (e) {
-                              print("Error withdrawing request: $e");
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Error: $e")),
-                              );
+                            print("Error withdrawing request: $e");
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: $e")),
+                            );
                             }
                           },
                           onLeaveReview: () async {
                             try {
-                              final hasReviewed = await ref
-                                  .read(donationServiceProvider)
-                                  .hasUserAlreadyReviewed(
-                                      request['donationId'], authState.user!.uid);
+                            final hasReviewed = await ref
+                              .read(donationServiceProvider)
+                              .hasUserAlreadyReviewed(request['donationId'], authState.user!.uid);
 
-                              if (hasReviewed) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          'You have already left a review for this donation.')),
-                                );
-                              } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ReviewPage(
-                                      donorId: request['donatorId'] ?? '',
-                                      donationId: request['donationId'] ?? '',
-                                      donationImage: request['imageUrl'] ?? '',
-                                      donationName: request['productName'] ?? '',
-                                      donorImageUrl:
-                                          request['donorImageUrl'] ?? '',
-                                      donorName: request['donorName'] ?? '',
-                                      isEditing: false,
-                                    ),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              print("Error checking review status: $e");
+                            if (hasReviewed) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Error: $e")),
+                              const SnackBar(content: Text('You have already left a review for this donation.')),
                               );
+                            } else {
+                              Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ReviewPage(
+                                donorId: request['donatorId'] ?? '',
+                                donationId: request['donationId'] ?? '',
+                                donationImage: request['imageUrl'] ?? '',
+                                donationName: request['productName'] ?? '',
+                                donorImageUrl: request['donorImageUrl'] ?? '',
+                                donorName: request['donorName'] ?? '',
+                                isEditing: false,
+                                ),
+                              ),
+                              );
+                            }
+                            } catch (e) {
+                            print("Error checking review status: $e");
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: $e")),
+                            );
                             }
                           },
                           hasLeftReview: hasLeftReview,
-                        );
-                      },
-                    ),
+                          );
+                        },
+                        ),
+                      ),
+                      ],
+                  ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) {
                 print("Error fetching sent requests: $error");

@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CategoryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
