@@ -12,7 +12,9 @@ class FoodCategoryIcons {
     FoodCategory.grains: FontAwesomeIcons.breadSlice,  // Grains
     FoodCategory.tinned: FontAwesomeIcons.prescriptionBottle, // Tinned foods
     FoodCategory.meat: FontAwesomeIcons.drumstickBite,      // Meat
-    FoodCategory.vegetables: FontAwesomeIcons.carrot,   // Vegetables
+    FoodCategory.vegetables: FontAwesomeIcons.carrot, // Vegetables
+    FoodCategory.beverage: FontAwesomeIcons.bottleWater, // Beverages
+    
   };
 
   // Method to get icon for food category

@@ -9,6 +9,8 @@ import 'package:shelfaware_app/components/expiry_icon.dart';
 import 'package:shelfaware_app/components/mark_food_dialogue.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
+import 'package:lottie/lottie.dart'; 
+
 
 class FoodListView extends StatelessWidget {
   final User user;
@@ -35,7 +37,36 @@ class FoodListView extends StatelessWidget {
           return const Center(child: Text('Error fetching food items'));
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text('No food items found'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Lottie.network(
+                  'https://lottie.host/0505d746-774d-4081-a0cb-4b797aad8532/EjHnwNTimz.json',
+                  width: 200,
+                  height: 200,
+                  repeat: false,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                 "Nothing here yet",
+                  style: TextStyle(
+                    fontSize:16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Add food items to get started',
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
         }
 
         final filteredItems = selectedFilter == 'All'
@@ -77,7 +108,7 @@ class FoodListView extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '($itemCount)',
+                      '($itemCount items)', // Show the number of items in the category
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

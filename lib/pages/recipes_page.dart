@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shelfaware_app/components/recipe_card.dart';
 import 'package:shelfaware_app/models/recipe_model.dart';
 import 'package:shelfaware_app/repositories/favourites_repository.dart';
@@ -59,12 +60,35 @@ class _RecipesPageState extends State<RecipesPage> {
               );
             },
           );
-        } else {
-          return Center(child: Text("No recipes found."));
-        }
-      },
-    );
-  }
-}
+            } else {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 200,
+                      height: 200,
+                      child: Lottie.network('https://lottie.host/60243a93-e8c7-43e3-9851-9e0cfd6d6036/lASmWT1IPT.json'),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      "No recipes found!",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Add food items to see them here",
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+        );
+      }
+    }
+
+
 
 

@@ -12,6 +12,7 @@ import 'package:shelfaware_app/services/food_suggestions_service.dart';
 
 import 'dart:async';
 
+
 class FoodItemForm extends StatefulWidget {
   final bool isRecreated;
   final dynamic foodItem;
@@ -39,7 +40,7 @@ class _FoodItemFormState extends State<FoodItemForm> {
   final TextEditingController _notesController = TextEditingController();
   final FoodSuggestionsService _foodSuggestionsService =
       FoodSuggestionsService();
-  DateTime _expiryDate = DateTime.now();
+  DateTime? _expiryDate;
   Timer? _debounce;
 
   List<String> _categoryOptions = ['All'];
@@ -56,9 +57,9 @@ class _FoodItemFormState extends State<FoodItemForm> {
 
     if (widget.isRecreated || widget.foodItem != null) {
       if (widget.foodItem is Map) {
-        _productNameController.text = widget.foodItem['productName'] ?? null;
-        _expiryDateController.text =
-            formatDate(widget.foodItem['expiryDate'].toDate());
+        _productNameController.text = widget.foodItem['productName'] ?? '';
+        _expiryDate = widget.foodItem['expiryDate'].toDate();
+        _expiryDateController.text = formatDate(_expiryDate!);
         _quantity = widget.foodItem['quantity'] ?? 1;
         _quantityController.text = _quantity.toString();
         _storageLocationController.text =
@@ -68,8 +69,8 @@ class _FoodItemFormState extends State<FoodItemForm> {
         _category = widget.foodItem['category'] ?? 'All';
       } else if (widget.foodItem is FoodHistory) {
         _productNameController.text = widget.foodItem.productName;
-        _expiryDateController.text =
-            formatDate(widget.foodItem.expiryDate.toDate());
+        _expiryDate = widget.foodItem.expiryDate.toDate();
+        _expiryDateController.text = formatDate(_expiryDate!);
         _quantity = widget.foodItem.quantity;
         _quantityController.text = _quantity.toString();
         _storageLocationController.text = widget.foodItem.storageLocation;
@@ -77,8 +78,6 @@ class _FoodItemFormState extends State<FoodItemForm> {
         _productImage = widget.productImage;
         _category = widget.foodItem.category;
       }
-    } else {
-      _expiryDateController.text = formatDate(_expiryDate);
     }
 
     _fetchFilterOptions();
@@ -322,19 +321,19 @@ class _FoodItemFormState extends State<FoodItemForm> {
                   onTap: () async {
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
-                      initialDate: _expiryDate,
+                      initialDate: _expiryDate ?? DateTime.now(),
                       firstDate: DateTime.now(),
                       lastDate: DateTime(2101),
                     );
                     if (pickedDate != null && pickedDate != _expiryDate) {
                       setState(() {
                         _expiryDate = pickedDate;
-                        _expiryDateController.text = formatDate(_expiryDate);
+                        _expiryDateController.text = formatDate(_expiryDate!);
                       });
                     }
                   },
                   child: AbsorbPointer(
-                    child: TextField(
+                    child: TextFormField(
                       controller: _expiryDateController,
                       decoration: InputDecoration(
                         labelText: 'Expiry Date',
@@ -345,6 +344,12 @@ class _FoodItemFormState extends State<FoodItemForm> {
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                       ),
+                      validator: (value) {
+                        if (_expiryDate == null) {
+                          return 'Please select an expiry date';
+                        }
+                        return null;
+                      },
                       readOnly: true,
                     ),
                   ),
@@ -355,7 +360,7 @@ class _FoodItemFormState extends State<FoodItemForm> {
                 onDateDetected: (DateTime date) {
                   setState(() {
                     _expiryDate = date;
-                    _expiryDateController.text = formatDate(_expiryDate);
+                    _expiryDateController.text = formatDate(_expiryDate!);
                   });
                 },
               ),
@@ -388,7 +393,7 @@ class _FoodItemFormState extends State<FoodItemForm> {
           Row(
             children: [
               Expanded(
-                child: TextField(
+                child: TextFormField(
                   controller: _quantityController,
                   decoration: InputDecoration(
                     labelText: 'Quantity',
@@ -413,7 +418,7 @@ class _FoodItemFormState extends State<FoodItemForm> {
             ],
           ),
           const SizedBox(height: 20),
-          TextField(
+          TextFormField(
             controller: _storageLocationController,
             decoration: InputDecoration(
               labelText: 'Storage Location',
@@ -426,7 +431,7 @@ class _FoodItemFormState extends State<FoodItemForm> {
             ),
           ),
           const SizedBox(height: 20),
-          TextField(
+          TextFormField(
             controller: _notesController,
             decoration: InputDecoration(
               labelText: 'Notes (Optional)',
@@ -446,7 +451,7 @@ class _FoodItemFormState extends State<FoodItemForm> {
                 if (_formKey.currentState!.validate()) {
                   widget.onSave(
                     _productNameController.text,
-                    _expiryDate,
+                    _expiryDate!,
                     _quantity,
                     _storageLocationController.text,
                     _notesController.text,

@@ -6,7 +6,8 @@ enum FoodCategory {
   grains,
   tinned,
   meat,
-  vegetables,
+  vegetables, 
+  beverage,
  
   // add more categories as needed
 }

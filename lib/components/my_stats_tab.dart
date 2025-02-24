@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shelfaware_app/models/user_stats.dart'; // Assuming you're using the pie_chart package
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:shelfaware_app/services/my_stats_service.dart';
@@ -94,12 +95,16 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
                       height: 200,
                       child: total == 0
                           ? Center(
-                              child: Text(
-                                'No data to display!',
-                                style: TextStyle(
-                                  fontSize: 18, // Increased font size
-                                  // Bold text
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                Lottie.network(
+                                'https://lottie.host/b6581299-f5e1-4e6f-84cb-856b088bcae4/YX0MBWmDwC.json',
+                                height: 160,
+                                width: 160,
+                                fit: BoxFit.cover,
                                 ),
+                                ],
                               ),
                             )
                           : AnimatedSwitcher(

@@ -147,18 +147,24 @@ class _HomePageState extends ConsumerState<HomePage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Filter Dropdown on the left
-                    FilterDropdown(
-                      selectedFilter: selectedFilter,
-                      filterOptions: filterOptions,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedFilter = newValue!;
-                        });
-                      },
+                    Row(
+                      children: [
+                       // Add category icon
+                        const SizedBox(width: 8),
+                        FilterDropdown(
+                          selectedFilter: selectedFilter,
+                          filterOptions: filterOptions,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedFilter = newValue!;
+                            });
+                          },
+                        ),
+                      ],
                     ),
                     Row(
                       children: [

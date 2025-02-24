@@ -1,106 +1,57 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shelfaware_app/services/food_item_service.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shelfaware_app/notifiers/food_item_notifier.dart';
+import 'package:shelfaware_app/components/food_items_bottom_sheet.dart'; // Import the FoodItemsBottomSheet component
 
-
-class CalendarView extends StatefulWidget {
+class CalendarView extends ConsumerStatefulWidget {
   final String userId;
 
-  const CalendarView(User user, {required this.userId, Key? key}) : super(key: key);
+  const CalendarView(User user, {required this.userId, Key? key})
+      : super(key: key);
 
   @override
-  State<CalendarView> createState() => _CalendarViewState();
+  _CalendarViewState createState() => _CalendarViewState();
 }
 
-class _CalendarViewState extends State<CalendarView> {
+class _CalendarViewState extends ConsumerState<CalendarView> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  Map<DateTime, List<Map<String, dynamic>>> _groupedFoodItems = {};
-  final FoodItemService _foodService = FoodItemService();
 
   @override
   void initState() {
     super.initState();
-    _fetchFoodItems();
-  }
-
-  /// Fetch food items from Firestore
-  void _fetchFoodItems() async {
-    try {
-      Stream<List<DocumentSnapshot>> foodItemsStream =
-          _foodService.getUserFoodItems(widget.userId);
-
-      foodItemsStream.listen((snapshot) {
-        Map<DateTime, List<Map<String, dynamic>>> groupedItems = {};
-
-        for (var doc in snapshot) {
-          final data = doc.data() as Map<String, dynamic>;
-          Timestamp expiryTimestamp = data['expiryDate'];
-          DateTime expiryDate = DateTime(
-            expiryTimestamp.toDate().year,
-            expiryTimestamp.toDate().month,
-            expiryTimestamp.toDate().day,
-          );
-
-          if (groupedItems[expiryDate] == null) {
-            groupedItems[expiryDate] = [];
-          }
-          groupedItems[expiryDate]!.add(data);
-        }
-
-        setState(() {
-          _groupedFoodItems = groupedItems;
-        });
-      });
-    } catch (e) {
-      print('Error fetching food items: $e');
-    }
+    ref.read(foodItemProvider.notifier).fetchFoodItems(widget.userId);
   }
 
   /// Get food items for a specific day
   List<Map<String, dynamic>> _getItemsForDay(DateTime day) {
+    final foodItems = ref.watch(foodItemProvider);
     DateTime normalizedDay = DateTime(day.year, day.month, day.day);
-    return _groupedFoodItems[normalizedDay] ?? [];
+    return foodItems.where((item) {
+      final expiryTimestamp = item['expiryDate'] as Timestamp;
+      final expiryDate = DateTime(
+        expiryTimestamp.toDate().year,
+        expiryTimestamp.toDate().month,
+        expiryTimestamp.toDate().day,
+      );
+      return expiryDate == normalizedDay;
+    }).toList();
   }
 
   /// Show a bottom sheet with the food items for the selected day
-  void _showFoodItemsBottomSheet(List<Map<String, dynamic>> items) {
+  void _showFoodItemsBottomSheet(DateTime selectedDate) {
+    final items = _getItemsForDay(selectedDate);
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16.0),
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Food Items Expiring',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return ListTile(
-                      title: Text(item['productName'] ?? 'Unnamed Item'),
-                      subtitle: Text('Quantity: ${item['quantity']}'),
-                    );
-                  },
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('Close'),
-              ),
-            ],
-          ),
+        return FoodItemsBottomSheet(
+          items: items,
+          userId: widget.userId,
+          selectedDate: selectedDate,
         );
       },
     );
@@ -122,7 +73,7 @@ class _CalendarViewState extends State<CalendarView> {
             });
 
             // Show the bottom sheet when a day is selected
-            _showFoodItemsBottomSheet(_getItemsForDay(selectedDay));
+            _showFoodItemsBottomSheet(selectedDay);
           },
           eventLoader: _getItemsForDay,
           calendarStyle: CalendarStyle(
