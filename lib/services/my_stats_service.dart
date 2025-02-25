@@ -1,8 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/models/user_stats.dart';
 import 'package:shelfaware_app/repositories/my_stats_repository.dart';
 
 class StatsService {
-  final StatsRepository _repository = StatsRepository();
+  final StatsRepository _repository = StatsRepository(firestore: FirebaseFirestore.instance);
 
   Future<UserStats> getUserStats(String userId, DateTime date) {
     return _repository.fetchUserStats(userId, date);

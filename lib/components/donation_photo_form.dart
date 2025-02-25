@@ -18,12 +18,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shelfaware_app/pages/location_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
-import 'package:shelfaware_app/services/location_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/location_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/services/location_service.dart';
 
 class AddPhotoAndDetailsForm extends ConsumerStatefulWidget {
   final Function(String) onPhotoAdded;
@@ -48,6 +48,7 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
   GoogleMapController? mapController;
   bool _isPhotoMissing = false;
   bool _isFetchingLocation = true;
+  bool _isUploadingPhoto = false; // Add this variable
   LatLng? _currentLocation;
   Set<Marker> _markers = {};
 
@@ -116,10 +117,17 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
     );
 
     if (image != null) {
+      setState(() {
+        _isUploadingPhoto = true; // Set loading state to true
+      });
+
       String? url = await DonationService().uploadDonationImage(File(image.path));
+
       setState(() {
         _imageUrl = url;
+        _isUploadingPhoto = false; // Set loading state to false
       });
+
       widget.onPhotoAdded(url!);
     }
   }
@@ -174,35 +182,37 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
                 onTap: _pickImage,
                 child: Column(
                   children: [
-                    _imageUrl == null
-                        ? Container(
-                            height: 120,
-                            width: 120,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.grey, width: 1),
-                            ),
-                            child: ClipOval(
-                              child: Image.asset(
-                                'assets/camera.png', // Your image path here
-                                fit: BoxFit.cover,
+                    _isUploadingPhoto // Show loading indicator while uploading
+                        ? CircularProgressIndicator()
+                        : _imageUrl == null
+                            ? Container(
+                                height: 120,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.grey, width: 1),
+                                ),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/camera.png', // Your image path here
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                height: 120,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.grey, width: 1),
+                                ),
+                                child: ClipOval(
+                                  child: Image.network(
+                                    _imageUrl!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                               ),
-                            ),
-                          )
-                        : Container(
-                            height: 120,
-                            width: 120,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.grey, width: 1),
-                            ),
-                            child: ClipOval(
-                              child: Image.network(
-                                _imageUrl!,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
                     SizedBox(height: 8),
                     Text(
                       'Take Photo',

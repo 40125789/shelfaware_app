@@ -132,7 +132,7 @@ class _FoodItemsBottomSheetState extends State<FoodItemsBottomSheet> {
                   ref
                       .read(foodItemProvider.notifier)
                       .fetchFoodItems(widget.userId); // Refresh the state
-                },
+                }, foodItems: [],
               ),
             ),
           ),

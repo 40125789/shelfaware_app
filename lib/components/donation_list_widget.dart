@@ -303,16 +303,38 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
               onWatchlistToggle: (String donationId) {
                 setState(() {
                   if (watchlistStatus[donationId] == true) {
-                    ref.read(watchedDonationsServiceProvider).removeFromWatchlist(userId!, donationId);
-                  } else {
-                    ref.read(watchedDonationsServiceProvider).addToWatchlist(userId!, donationId, donation);
+                    ref.read(watchedDonationsServiceProvider).removeFromWatchlist(userId, donationId);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Row(
                           children: [
-                            Icon(Icons.star, color: Colors.green),
+                            Icon(
+                              Icons.star_border,
+                              color: Colors.green,
+                            ),
                             SizedBox(width: 8),
-                            Text("Added to watchlist"),
+                            Text("Removed from watchlist"),
+                          ],
+                        ),
+                      
+                      ),
+                    );
+                  } else {
+                    ref.read(watchedDonationsServiceProvider).addToWatchlist(userId, donationId, donation);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            Icon(
+                              watchlistStatus[donationId] == true ? Icons.star_border : Icons.star,
+                              color: watchlistStatus[donationId] == true ? Colors.green : Colors.green,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              watchlistStatus[donationId] == true
+                                  ? "Removed from watchlist"
+                                  : "Added to watchlist",
+                            ),
                           ],
                         ),
                         action: SnackBarAction(
@@ -326,11 +348,9 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
                             );
                           },
                         ),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        
+                      
+                     
                       ),
                     );
                   }

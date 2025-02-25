@@ -1,28 +1,26 @@
-// filter_dropdown.dart
-import 'package:flutter/material.dart';
-import 'package:shelfaware_app/models/food_category.dart';
-import 'package:shelfaware_app/models/food_category_icons.dart';
-
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/models/food_category.dart';
 import 'package:shelfaware_app/models/food_category_icons.dart';
 
 class FilterDropdown extends StatelessWidget {
-  final String selectedFilter;
+  final String? selectedFilter; // Nullable so that hint shows when null
   final List<String> filterOptions;
   final ValueChanged<String?> onChanged;
+  final Widget? hint; // Optional hint widget
 
   const FilterDropdown({
     Key? key,
     required this.selectedFilter,
     required this.filterOptions,
     required this.onChanged,
+    this.hint,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return DropdownButton<String>(
       value: selectedFilter,
+      hint: hint ?? const Text('Select Category'),
       onChanged: onChanged,
       items: filterOptions.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(

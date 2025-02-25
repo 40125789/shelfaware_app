@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,7 @@ class _DonationRequestFormState extends State<DonationRequestForm> {
   bool _isPickupDateSelected = false;
   String? _pickupDateErrorMessage;
 
-  final DonationRequestService _donationRequestService = DonationRequestService(DonationRequestRepository());
+  final DonationRequestService _donationRequestService = DonationRequestService(DonationRequestRepository(firebaseFirestore: FirebaseFirestore.instance, firebaseAuth: FirebaseAuth.instance));
 
   Future<void> sendRequest() async {
     if (!_isPickupDateSelected) {

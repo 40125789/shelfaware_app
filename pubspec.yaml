@@ -93,7 +93,7 @@ dependencies:
   path_provider: ^2.1.5
   hive: ^2.0.0
   hive_flutter: ^1.0.0
-  fake_cloud_firestore: 3.0.2
+
   
 
 
@@ -111,6 +111,10 @@ dev_dependencies:
   firebase_core_platform_interface: ^5.4.0
   firebase_auth_platform_interface: 7.5.1
   firebase_auth_mocks: 0.14.1
+  fake_cloud_firestore: 3.0.2
+  firebase_storage_mocks: 0.7.0 
+  
+ 
 
 
 

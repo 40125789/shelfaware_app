@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/expiry_date_scanner.dart';
+import 'package:shelfaware_app/components/filter_dropdown.dart';
 import 'package:shelfaware_app/models/food_history.dart';
 import 'package:shelfaware_app/services/food_api_service.dart';
 import 'package:shelfaware_app/services/food_item_service.dart';
@@ -12,8 +13,9 @@ import 'package:shelfaware_app/services/food_suggestions_service.dart';
 
 import 'dart:async';
 
-
 class FoodItemForm extends StatefulWidget {
+
+    final List<dynamic> foodItems; // Accept a list of food items
   final bool isRecreated;
   final dynamic foodItem;
   final String? productImage;
@@ -21,7 +23,9 @@ class FoodItemForm extends StatefulWidget {
 
   FoodItemForm({
     required this.isRecreated,
-    this.foodItem,
+   required this.foodItems,
+  this.foodItem,
+  
     this.productImage,
     required this.onSave,
   });
@@ -314,60 +318,65 @@ class _FoodItemFormState extends State<FoodItemForm> {
                 },
               ),
             ),
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: _expiryDate ?? DateTime.now(),
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime(2101),
-                    );
-                    if (pickedDate != null && pickedDate != _expiryDate) {
-                      setState(() {
-                        _expiryDate = pickedDate;
-                        _expiryDateController.text = formatDate(_expiryDate!);
-                      });
-                    }
-                  },
-                  child: AbsorbPointer(
-                    child: TextFormField(
-                      controller: _expiryDateController,
-                      decoration: InputDecoration(
-                        labelText: 'Expiry Date',
-                        hintText: 'Select expiry date',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (_expiryDate == null) {
-                          return 'Please select an expiry date';
-                        }
-                        return null;
-                      },
-                      readOnly: true,
-                    ),
-                  ),
-                ),
+Row(
+  children: [
+    Expanded(
+      child: GestureDetector(
+        onTap: () async {
+          // Ensure initial date is not before firstDate (DateTime.now())
+          DateTime initialDate = (_expiryDate != null && _expiryDate!.isBefore(DateTime.now()))
+              ? DateTime.now()
+              : _expiryDate ?? DateTime.now();
+  
+          DateTime? pickedDate = await showDatePicker(
+            context: context,
+            initialDate: initialDate,
+            firstDate: DateTime.now(),
+            lastDate: DateTime(2101),
+          );
+          if (pickedDate != null && pickedDate != _expiryDate) {
+            setState(() {
+              _expiryDate = pickedDate;
+              _expiryDateController.text = formatDate(_expiryDate!);
+            });
+          }
+        },
+        child: AbsorbPointer(
+          child: TextFormField(
+            controller: _expiryDateController,
+            decoration: InputDecoration(
+              labelText: 'Expiry Date',
+              hintText: 'Select expiry date',
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
               ),
-              ScanExpiryDate(
-                controller: _expiryDateController,
-                onDateDetected: (DateTime date) {
-                  setState(() {
-                    _expiryDate = date;
-                    _expiryDateController.text = formatDate(_expiryDate!);
-                  });
-                },
-              ),
-            ],
+            ),
+            validator: (value) {
+              if (_expiryDate == null) {
+                return 'Please select an expiry date';
+              }
+              return null;
+            },
+            readOnly: true,
           ),
+        ),
+      ),
+    ),
+    ScanExpiryDate(
+      controller: _expiryDateController,
+      onDateDetected: (DateTime date) {
+        setState(() {
+          _expiryDate = date;
+          _expiryDateController.text = formatDate(_expiryDate!);
+        });
+      },
+    ),
+  ],
+),
           const SizedBox(height: 20),
-          DropdownButtonFormField<String>(
+       DropdownButtonFormField<String>(
             value: _categoryOptions.contains(_category) ? _category : 'All',
             items: _categoryOptions
                 .map((category) => DropdownMenuItem<String>(

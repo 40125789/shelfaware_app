@@ -320,7 +320,7 @@ class FoodListView extends StatelessWidget {
                     'productImage': productImage,
                   });
                   Navigator.pop(context);
-                },
+                }, foodItems: [],
               ),
             ),
           ),

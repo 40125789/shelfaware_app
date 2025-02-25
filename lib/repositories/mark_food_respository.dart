@@ -1,9 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/models/mark_food.dart';
 
 
 class MarkFoodRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+
+  MarkFoodRepository({required FirebaseFirestore firebaseFirestore, required FirebaseAuth auth})
+      : _firestore = firebaseFirestore,
+        _auth = auth;
 
   Future<MarkFood?> fetchFoodItem(String documentId) async {
     final foodItemRef = _firestore.collection('foodItems').doc(documentId);

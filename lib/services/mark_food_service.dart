@@ -5,7 +5,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class MarkFoodService {
-  final MarkFoodRepository _repository = MarkFoodRepository();
+  final MarkFoodRepository _repository = MarkFoodRepository(
+    firebaseFirestore: FirebaseFirestore.instance,
+    auth: FirebaseAuth.instance,
+  );
 
   Future<MarkFood?> getFoodItem(String documentId) async {
     return await _repository.fetchFoodItem(documentId);

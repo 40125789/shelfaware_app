@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';// Import the controller // Import the ExpiringItemsScreen
-import 'package:shelfaware_app/repositories/notification_repository.dart';
-import 'package:shelfaware_app/services/data_fetcher.dart'; // Import the DataFetcher
-import 'package:shelfaware_app/models/food_item.dart'; // Import the FoodItem model
-import 'package:shelfaware_app/services/notification_service.dart'; 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/pages/location_page.dart';
+import 'package:shelfaware_app/providers/notification_count_provider.dart';
+import 'package:shelfaware_app/repositories/notification_repository.dart';
+import 'package:shelfaware_app/services/notification_service.dart';
 
 
-class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
+class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback onNotificationPressed;
   final String userId;
@@ -20,25 +19,11 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<int>(
-      stream: NotificationService(NotificationRepository()).getUnreadNotificationCount(userId), // Call the service's stream method
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          // Show loading indicator while fetching data
-          return AppBar(
-            title: Text(title),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
-            ],
-          );
-        }
-
-        // If data is available, set unread count
-        int unreadCount = snapshot.data ?? 0;
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Consumer(
+      builder: (context, ref, child) {
+final unreadCount = ref.watch(notificationCountProvider);
+   
 
         return AppBar(
           title: Text(title),

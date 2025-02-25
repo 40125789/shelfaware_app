@@ -5,16 +5,16 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
 class DonationRepository {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth auth;
+  final FirebaseFirestore _firestore;
 
+  DonationRepository({required this.auth, required FirebaseFirestore firestore}) : _firestore = firestore;
   Future<Map<String, dynamic>> getDonationDetails(String donationId) async {
     DocumentSnapshot donationDoc =
         await _firestore.collection('donations').doc(donationId).get();
     return donationDoc.exists ? donationDoc.data() as Map<String, dynamic> : {};
   }
-
-  Stream<List<Map<String, dynamic>>> getDonationRequests(String donationId) {
+Stream<List<Map<String, dynamic>>> getDonationRequests(String donationId) {
     return _firestore
         .collection('donationRequests')
         .where('donationId', isEqualTo: donationId)
@@ -118,7 +118,7 @@ class DonationRepository {
   }
 
   Future<String?> uploadDonationImage(File image) async {
-    final String userId = _auth.currentUser!.uid;
+    final String userId = auth.currentUser!.uid;
     final String imageName =
         "donation_${DateTime.now().millisecondsSinceEpoch}.jpg";
     final Reference storageRef = FirebaseStorage.instance

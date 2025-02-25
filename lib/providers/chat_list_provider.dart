@@ -1,11 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/repositories/chat_list_repository.dart';
 import 'package:shelfaware_app/services/chat_list_service.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 
 final chatListRepositoryProvider = Provider<ChatListRepository>((ref) {
-  return ChatListRepository();
+  return ChatListRepository(
+    firebaseFirestore: FirebaseFirestore.instance,
+    firebaseAuth: FirebaseAuth.instance,
+  );
 });
 
 final chatListServiceProvider = Provider<ChatListService>((ref) {

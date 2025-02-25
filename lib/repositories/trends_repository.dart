@@ -1,7 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TrendsRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+ final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+
+  TrendsRepository({required FirebaseAuth auth, required FirebaseFirestore firestore})
+      : _auth = auth,
+        _firestore = firestore;
 
   Future<List<Map<String, dynamic>>> fetchHistoryData(String userId) async {
     try {

@@ -4,62 +4,74 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class ChatRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
-  Future<void> sendMessage(
-    String donationId,
-    String messageContent,
-    String receiverId,
-    String donorEmail,
-    String productName,
-  ) async {
-    try {
-      final String currentUser = _auth.currentUser!.uid;
-      final String currentUserEmail = _auth.currentUser!.email!;
-      final Timestamp timestamp = Timestamp.now();
+  ChatRepository({required FirebaseFirestore firebaseFirestore, required FirebaseAuth firebaseAuth})
+      : _firestore = firebaseFirestore,
+        _auth = firebaseAuth;
 
-      // Generate chatId using donationId and userIds
-      String chatId = _generateChatId(donationId, currentUser, receiverId);
+Future<void> sendMessage(
+  String donationId,
+  String messageContent,
+  String receiverId,
+  String donorEmail,
+  String productName,
+) async {
+  try {
+    // Safely handle potential null currentUser or currentUserEmail
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      throw Exception("User is not logged in");
+    }
 
-      // Reference to the chat document
-      final chatDocRef = _firestore.collection('chats').doc(chatId);
+    final String currentUserId = currentUser.uid;
+    final String currentUserEmail = currentUser.email ?? 'Unknown';  // Handle null email
 
-      // Initialize chat document if it doesn't exist
-      final chatDoc = await chatDocRef.get();
-      if (!chatDoc.exists) {
-        // If the chat document doesn't exist, create it
-        await chatDocRef.set({
-          'participants': [currentUser, receiverId],
-          'lastMessage': messageContent,
-          'lastMessageTimestamp': timestamp,
-          'product': {
-            'productName': productName,
-            'donationId': donationId,
-          },
-        });
-      }
+    final Timestamp timestamp = Timestamp.now();
 
-      // Add the message to the messages subcollection
-      await chatDocRef.collection('messages').add({
-        'senderId': currentUser,
-        'senderEmail': currentUserEmail,
-        'receiverEmail': donorEmail,
-        'receiverId': receiverId,
-        'message': messageContent,
-        'timestamp': timestamp,
-        'isRead': false,
-      });
+    // Generate chatId using donationId and userIds
+    String chatId = _generateChatId(donationId, currentUserId, receiverId);
 
-      // Update last message in the chat document
-      await chatDocRef.update({
+    // Reference to the chat document
+    final chatDocRef = _firestore.collection('chats').doc(chatId);
+
+    // Initialize chat document if it doesn't exist
+    final chatDoc = await chatDocRef.get();
+    if (!chatDoc.exists) {
+      // If the chat document doesn't exist, create it
+      await chatDocRef.set({
+        'participants': [currentUserId, receiverId],
         'lastMessage': messageContent,
         'lastMessageTimestamp': timestamp,
+        'product': {
+          'productName': productName,
+          'donationId': donationId,
+        },
       });
-    } catch (e) {
-      throw Exception("Failed to send message: $e");
     }
+
+    // Add the message to the messages subcollection
+    await chatDocRef.collection('messages').add({
+      'senderId': currentUserId,
+      'senderEmail': currentUserEmail,
+      'receiverEmail': donorEmail,
+      'receiverId': receiverId,
+      'message': messageContent,
+      'timestamp': timestamp,
+      'isRead': false,
+    });
+
+    // Update last message in the chat document
+    await chatDocRef.update({
+      'lastMessage': messageContent,
+      'lastMessageTimestamp': timestamp,
+    });
+  } catch (e) {
+    throw Exception("Failed to send message: $e");
   }
+}
+
 
   // Helper method to generate a unique chatId for the donation
   String _generateChatId(String donationId, String donorId, String receiverId) {

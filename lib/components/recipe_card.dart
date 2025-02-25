@@ -48,24 +48,24 @@ class _RecipeCardState extends State<RecipeCard> {
 
     try {
       if (isFavourite) {
-        await widget.favouritesRepository.addFavourite({
-          'id': widget.recipe.id,
-          'title': widget.recipe.title,
-          'imageUrl': widget.recipe.imageUrl,
-          'ingredients': widget.recipe.ingredients
-              .map((ingredient) => ingredient.name)
-              .toList(),
-          'totalIngredients': widget.recipe.ingredients.length,
-          'instructions': widget.recipe.instructions,
-          'userId':
-              widget.favouritesRepository.auth.currentUser?.uid ?? 'Unknown',
-          'timestamp': FieldValue.serverTimestamp(),
-        });
-        _showSnackBar("Recipe added to favourites.");
+      await widget.favouritesRepository.addFavourite({
+        'id': widget.recipe.id,
+        'title': widget.recipe.title,
+        'imageUrl': widget.recipe.imageUrl,
+        'ingredients': widget.recipe.ingredients
+          .map((ingredient) => ingredient.name)
+          .toList(),
+        'totalIngredients': widget.recipe.ingredients.length,
+        'instructions': widget.recipe.instructions,
+        'userId':
+          widget.favouritesRepository.auth.currentUser?.uid ?? 'Unknown',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      _showSnackBar("Recipe added to favourites.");
       } else {
-        await widget.favouritesRepository
-            .removeFavourite(widget.recipe.id.toString());
-        _showSnackBar("Recipe removed from favourites.");
+      await widget.favouritesRepository
+        .removeFavourite(widget.recipe.id.toString());
+      _showSnackBar("Recipe removed from favourites.");
       }
     } catch (e) {
       print("Error updating favourites: $e");
@@ -124,12 +124,12 @@ class _RecipeCardState extends State<RecipeCard> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
+            MaterialPageRoute(
             builder: (context) => RecipeDetailsPage(
               recipe: widget.recipe,
-              matchedIngredients: matchingIngredients,
+              matchedIngredients: matchingIngredients.toSet().toList(),
               onFavoritesChanged: () {
-                setState(() {});
+              setState(() {});
               },
             ),
           ),

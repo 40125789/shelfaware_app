@@ -3,12 +3,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
-import 'package:shelfaware_app/utils/notification_date_utils.dart'; // Import the utility file
+import 'package:shelfaware_app/utils/notification_date_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:shelfaware_app/providers/notification_provider.dart';
+import 'package:shelfaware_app/notifiers/notification_notifier.dart';
+import 'package:shelfaware_app/state/notification_state.dart';
 
-
+final notificationProvider = StateNotifierProvider<NotificationNotifier, NotificationState>((ref) {
+  final userId = ref.watch(authStateProvider).value!.uid;
+  final notificationService = ref.watch(notificationServiceProvider);
+  return NotificationNotifier(notificationService: notificationService, userId: userId);
+});
 
 class NotificationPage extends ConsumerWidget {
   const NotificationPage({Key? key}) : super(key: key);
@@ -32,12 +38,10 @@ class NotificationPage extends ConsumerWidget {
               onPressed: () async {
                 Navigator.of(context).pop();
                 try {
-                  final userId = ref.read(authStateProvider).value!.uid;
-                  await ref.read(notificationServiceProvider).clearAllNotifications(userId);
+                  await ref.read(notificationProvider.notifier).clearAllNotifications();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('All notifications cleared')),
                   );
-                  ref.refresh(notificationsProvider);
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Failed to clear notifications: $e')),
@@ -54,7 +58,7 @@ class NotificationPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notificationsAsyncValue = ref.watch(notificationsProvider);
+    final notificationState = ref.watch(notificationProvider);
 
     return DefaultTabController(
       length: 3,
@@ -82,19 +86,17 @@ class NotificationPage extends ConsumerWidget {
             ],
           ),
         ),
-        body: notificationsAsyncValue.when(
-          data: (notifications) {
-            return TabBarView(
-              children: [
-                _buildNotificationList(context, filterByType(notifications, 'expiry'), ref),
-                _buildNotificationList(context, filterByType(notifications, 'message'), ref),
-                _buildNotificationList(context, filterByType(notifications, 'request'), ref),
-              ],
-            );
-          },
-          loading: () => Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(child: Text('Error: $error')),
-        ),
+        body: notificationState.isLoading
+            ? Center(child: CircularProgressIndicator())
+            : notificationState.error != null
+                ? Center(child: Text('Error: ${notificationState.error}'))
+                : TabBarView(
+                    children: [
+                      _buildNotificationList(context, filterByType(notificationState.notifications, 'expiry'), ref),
+                      _buildNotificationList(context, filterByType(notificationState.notifications, 'message'), ref),
+                      _buildNotificationList(context, filterByType(notificationState.notifications, 'request'), ref),
+                    ],
+                  ),
       ),
     );
   }
@@ -121,9 +123,7 @@ class NotificationPage extends ConsumerWidget {
           child: InkWell(
             onTap: () async {
               try {
-                print("Notification: $notification");  // Debugging line
                 String? notificationId = notification['id'];
-                print("Notification ID: $notificationId");  // Debugging line
                 if (notificationId == null) return;
 
                 final notificationDetails = await ref.read(notificationByIdProvider(notificationId).future);
@@ -132,8 +132,7 @@ class NotificationPage extends ConsumerWidget {
                 if (notificationDetails['type'] == 'message') {
                   String? chatId = notificationDetails['chatId'];
                   if (chatId != null && chatId.isNotEmpty) {
-                    await ref.read(notificationServiceProvider).markAsRead(notificationId);
-                    ref.refresh(notificationsProvider); // Refresh notifications
+                    await ref.read(notificationProvider.notifier).markAsRead(notificationId);
 
                     DocumentSnapshot chatSnapshot = await ref.read(notificationServiceProvider).fetchChat(chatId);
                     if (chatSnapshot.exists) {
@@ -183,8 +182,7 @@ class NotificationPage extends ConsumerWidget {
                   }
                 } else if (notificationDetails['type'] == 'request') {
                   if (notificationId.isNotEmpty) {
-                    await ref.read(notificationServiceProvider).markAsRead(notificationId);
-                    ref.refresh(notificationsProvider); // Refresh notifications
+                    await ref.read(notificationProvider.notifier).markAsRead(notificationId);
                     Navigator.push(
                       context,
                       MaterialPageRoute(

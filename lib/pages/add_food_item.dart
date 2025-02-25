@@ -4,6 +4,7 @@ import 'package:shelfaware_app/services/food_item_service.dart';
 import 'package:shelfaware_app/components/food_item_form.dart';
 
 class AddFoodItem extends StatefulWidget {
+   final List<dynamic> foodItems;
   final FoodHistory? foodItem;
   final String? productImage;
   final bool isRecreated;
@@ -12,6 +13,8 @@ class AddFoodItem extends StatefulWidget {
     Key? key,
     this.foodItem,
     this.isRecreated = false,
+    required this.foodItems,
+  
     this.productImage,
   }) : super(key: key);
 
@@ -92,7 +95,7 @@ class _AddFoodItemState extends State<AddFoodItem> {
               foodItem: widget.foodItem,
               isRecreated: widget.isRecreated,
               productImage: widget.productImage,
-              onSave: _saveFoodItem,
+              onSave: _saveFoodItem, foodItems: [],
             ),
           ),
         ),

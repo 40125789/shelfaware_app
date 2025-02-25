@@ -1,4 +1,6 @@
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/services/trends_service.dart';
 import 'package:shelfaware_app/repositories/trends_repository.dart';
@@ -20,7 +22,7 @@ class _TrendsTabState extends State<TrendsTab> {
   @override
   void initState() {
     super.initState();
-    TrendsRepository trendsRepository = TrendsRepository();
+    TrendsRepository trendsRepository = TrendsRepository(auth: FirebaseAuth.instance, firestore: FirebaseFirestore.instance);
     trendsService = TrendsService(trendsRepository);
     trendsFuture = trendsService.fetchTrends(widget.userId);
     joinDurationFuture = trendsService.fetchJoinDuration(widget.userId);

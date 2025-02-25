@@ -1,7 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChatListRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+
+  ChatListRepository({required FirebaseFirestore firebaseFirestore, required FirebaseAuth firebaseAuth})
+      : _firestore = firebaseFirestore,
+        _auth = firebaseAuth;
 
   Stream<QuerySnapshot> getChats(String userId, bool isDescending) {
     return _firestore

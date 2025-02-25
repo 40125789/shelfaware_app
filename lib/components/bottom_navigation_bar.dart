@@ -4,6 +4,15 @@ import 'package:shelfaware_app/pages/add_food_item.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
+import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/pages/recipes_page.dart';
+import 'package:shelfaware_app/pages/donations_page.dart';
+import 'package:shelfaware_app/pages/statistics_page.dart';
+import 'package:shelfaware_app/pages/add_food_item.dart';
+
 class BottomNavigationBarComponent extends ConsumerStatefulWidget {
   final PageController pageController;
 
@@ -27,15 +36,27 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
       });
     });
 
-    // Push the AddFoodItem screen when FAB is tapped
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => AddFoodItem(
-         
-        ),
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child:  AddFoodItem(foodItems: []), // Pass the required 'foodItems' argument
+          );
+        },
+      )
+    );
+  }
 
-      ),
+  void _onItemTapped(int index) {
+    ref.read(bottomNavControllerProvider.notifier).navigateTo(index);
+
+    widget.pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300), // Smooth animation
+      curve: Curves.easeInOut,
     );
   }
 
@@ -48,14 +69,7 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
       children: [
         BottomNavigationBar(
           currentIndex: selectedIndex,
-          onTap: (index) {
-            ref.read(bottomNavControllerProvider.notifier).navigateTo(index); // Update Riverpod state
-           widget.pageController.animateToPage(
-  index,
-  duration: const Duration(milliseconds: 300),
-  curve: Curves.easeInOut,
-);
-          },
+          onTap: _onItemTapped,
           selectedItemColor: Colors.green,
           unselectedItemColor: Colors.grey,
           showUnselectedLabels: true,
@@ -82,18 +96,26 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
                 color: _isPressed ? Colors.green[800] : Colors.green,
                 shape: BoxShape.circle,
               ),
-              child: const CircleAvatar(
+              child: CircleAvatar(
                 radius: 22,
                 backgroundColor: Colors.transparent,
-                child: Icon(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 150),
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                  return ScaleTransition(scale: animation, child: child);
+                  },
+                  child: Icon(
                   Icons.add,
+                  key: ValueKey<bool>(_isPressed),
                   color: Colors.white,
                   size: 24,
+                  ),
+                ),
                 ),
               ),
             ),
           ),
-        ),
+        
       ],
     );
   }

@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/models/user_stats.dart';
 
 class StatsRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+ final FirebaseFirestore firestore;
+
+  StatsRepository({required this.firestore});
 
   Future<UserStats> fetchUserStats(String userId, DateTime date) async {
-    var snapshot = await _firestore
+    var snapshot = await firestore
         .collection('history')
         .where('userId', isEqualTo: userId)
         .get();
@@ -26,7 +28,7 @@ class StatsRepository {
       }
     }
 
-    var donationSnapshot = await _firestore
+    var donationSnapshot = await firestore
         .collection('donations')
         .where('userId', isEqualTo: userId)
         .where('status', isEqualTo: 'Picked Up')
@@ -50,7 +52,7 @@ class StatsRepository {
   }
 
   Future<List<String>> fetchConsumedItems(String userId, DateTime date) async {
-    var snapshot = await _firestore
+    var snapshot = await firestore
         .collection('history')
         .where('userId', isEqualTo: userId)
         .get();
@@ -73,7 +75,7 @@ class StatsRepository {
   }
 
   Future<List<String>> fetchDiscardedItems(String userId, DateTime date) async {
-    var snapshot = await _firestore
+    var snapshot = await firestore
         .collection('history')
         .where('userId', isEqualTo: userId)
         .get();
@@ -96,7 +98,7 @@ class StatsRepository {
   }
 
   Future<List<String>> fetchDonatedItems(String userId, DateTime date) async {
-    var donationSnapshot = await _firestore
+    var donationSnapshot = await firestore
         .collection('donations')
         .where('userId', isEqualTo: userId)
         .where('status', isEqualTo: 'Picked Up')

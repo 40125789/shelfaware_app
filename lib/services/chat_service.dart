@@ -4,7 +4,10 @@ import 'package:shelfaware_app/repositories/chat_repository.dart';
 
 
 class ChatService {
-  final ChatRepository _chatRepository = ChatRepository();
+  final ChatRepository _chatRepository = ChatRepository(
+    firebaseFirestore: FirebaseFirestore.instance,
+    firebaseAuth: FirebaseAuth.instance,
+  );
 
   Stream<User?> get userStream => FirebaseAuth.instance.authStateChanges();
 

@@ -9,7 +9,10 @@ import 'package:shelfaware_app/components/donation_photo_form.dart'; // Adjust t
 import 'package:shelfaware_app/services/dialog_service.dart';
 
 class DonationService {
-  final DonationRepository _donationRepository = DonationRepository();
+  final DonationRepository _donationRepository = DonationRepository(
+    auth: FirebaseAuth.instance,
+    firestore: FirebaseFirestore.instance,
+  );
   static final FoodItemService _fooditemService = FoodItemService();
 
   static Future<void> donateFoodItem(

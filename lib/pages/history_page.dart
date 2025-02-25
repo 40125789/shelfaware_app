@@ -31,12 +31,18 @@ class _HistoryPageState extends State<HistoryPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => AddFoodItem(
+            builder: (context) => AddFoodItem(
             foodItem: selectedFoodItems.first,
             isRecreated: true,
+            foodItems: selectedFoodItems,
+           
           ),
         ),
-      );
+      ).then((_) {
+        if (selectedFoodItems.length > 1) {
+          _onRecreateSelected(selectedFoodItems.sublist(1));
+        }
+      });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

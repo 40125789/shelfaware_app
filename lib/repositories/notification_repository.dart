@@ -51,9 +51,13 @@ class NotificationRepository {
           .where('userId', isEqualTo: userId)
           .get();
 
+      WriteBatch batch = _firestore.batch();
+
       for (var doc in snapshot.docs) {
-        await doc.reference.delete();
+        batch.delete(doc.reference);
       }
+
+      await batch.commit();
     } catch (e) {
       print('Error clearing notifications: $e');
     }
