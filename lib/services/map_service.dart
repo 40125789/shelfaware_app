@@ -1,12 +1,9 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shelfaware_app/models/donation.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart'; // Import the ImageConfiguration class
-
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:intl/intl.dart';
+
 
 class MapService {
   // Updated method to handle both user donations and predefined donation points

@@ -1,9 +1,6 @@
 import 'package:latlong2/latlong.dart' as latlong2;
-import 'package:shelfaware_app/components/donation_list_widget.dart';
 import 'package:shelfaware_app/models/donation.dart';
-import 'package:shelfaware_app/components/filter_dialogue_widget.dart';
-import 'package:shelfaware_app/pages/donations_page.dart';
-import 'package:flutter/material.dart';
+
 
 List<DonationLocation> filterDonations(
   List<DonationLocation> donations,

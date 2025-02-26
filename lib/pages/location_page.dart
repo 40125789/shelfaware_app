@@ -3,22 +3,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-import 'package:permission_handler/permission_handler.dart';
-
-// Import Firebase Authentication
-
-import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-import 'package:permission_handler/permission_handler.dart';
+import 'package:shelfaware_app/services/location_service.dart';
+import 'package:shelfaware_app/utils/address_suggestion_util.dart';
 
 class LocationPage extends StatefulWidget {
   @override
@@ -34,6 +20,7 @@ class _LocationPageState extends State<LocationPage> {
   bool _isLocationSelected = false;
   bool _isLoading = true;
   List<dynamic> _addressSuggestions = [];
+  final LocationService _locationService = LocationService();
 
   @override
   void initState() {
@@ -47,7 +34,6 @@ class _LocationPageState extends State<LocationPage> {
 
     if (user != null) {
       try {
-        // Fetch the saved location from Firestore
         DocumentSnapshot userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -56,7 +42,6 @@ class _LocationPageState extends State<LocationPage> {
         if (userDoc.exists && userDoc.data() != null) {
           GeoPoint? geoPoint = userDoc['location'];
           if (geoPoint != null) {
-            // Use the saved location if available
             setState(() {
               _currentLocation = LatLng(geoPoint.latitude, geoPoint.longitude);
               _isLoading = false;
@@ -76,12 +61,10 @@ class _LocationPageState extends State<LocationPage> {
           }
         }
       } catch (e) {
-        // Handle errors if any
         print('Error fetching saved location: $e');
       }
     }
 
-    // If no saved location, use the geolocator
     if (_currentLocation.latitude == 0.0 && _currentLocation.longitude == 0.0) {
       _getCurrentLocation();
     }
@@ -89,28 +72,17 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      PermissionStatus status = await Permission.location.request();
-      if (!status.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Location permission is required')),
-        );
-        return;
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
+      Position position = await _locationService.getCurrentLocation();
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
-        _selectedLocation = _currentLocation; // Set the selected location
-        _isLocationSelected = true; // Mark location as selected
+        _selectedLocation = _currentLocation;
+        _isLocationSelected = true;
         _isLoading = false;
 
         _markers.add(Marker(
           markerId: MarkerId('user_location'),
           position: _currentLocation,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
           infoWindow: InfoWindow(title: 'Your Location'),
         ));
 
@@ -131,34 +103,16 @@ class _LocationPageState extends State<LocationPage> {
     }
   }
 
-  Future<void> _searchAddressSuggestions(String query) async {
-    if (query.isEmpty) {
+  void _onAddressChanged() {
+    AddressSuggestionUtil.fetchAddressSuggestions(_addressController.text).then((suggestions) {
       setState(() {
-        _addressSuggestions = [];
+        _addressSuggestions = suggestions;
       });
-      return;
-    }
-
-    var response = await http.get(
-      Uri.parse(
-        'https://api.mapbox.com/geocoding/v5/mapbox.places/$query.json?access_token=pk.eyJ1Ijoic215dGg2NjgiLCJhIjoiY200MDdncmZtMjhuZDJsczdoY2V1bnRneiJ9.LDb-l-_uzNOgzmqgFYMDjQ&limit=5',
-      ),
-    );
-
-    if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
-      setState(() {
-        _addressSuggestions = data['features'];
-      });
-    } else {
+    }).catchError((error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching address suggestions')),
       );
-    }
-  }
-
-  void _onAddressChanged() {
-    _searchAddressSuggestions(_addressController.text);
+    });
   }
 
   void _onSuggestionSelected(String address, double lat, double lon) {
@@ -184,33 +138,21 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   void _setCurrentLocation() async {
-    // Check if _selectedLocation has been set
-    if (_isLocationSelected &&
-        _selectedLocation.latitude != 0.0 &&
-        _selectedLocation.longitude != 0.0) {
-      // Save the selected location to Firestore
+    if (_isLocationSelected && _selectedLocation.latitude != 0.0 && _selectedLocation.longitude != 0.0) {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         try {
-          // Log the current values
-          print(
-              'Saving location: ${_selectedLocation.latitude}, ${_selectedLocation.longitude}');
-
-          // Firestore update
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set({
-            'location': GeoPoint(
-                _selectedLocation.latitude, _selectedLocation.longitude),
+            'location': GeoPoint(_selectedLocation.latitude, _selectedLocation.longitude),
           }, SetOptions(merge: true));
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Location saved successfully!')),
           );
         } catch (e) {
-          // Log error if any
-          print('Error saving location: $e');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error saving location: $e')),
           );
@@ -237,7 +179,6 @@ class _LocationPageState extends State<LocationPage> {
       ),
       body: Stack(
         children: [
-          // Google Map widget
           _isLoading
               ? Center(child: CircularProgressIndicator())
               : GoogleMap(
@@ -250,8 +191,6 @@ class _LocationPageState extends State<LocationPage> {
                   },
                   markers: _markers,
                 ),
-
-          // Positioned container for search results
           if (_addressSuggestions.isNotEmpty)
             Positioned(
               top: 70,
@@ -276,8 +215,6 @@ class _LocationPageState extends State<LocationPage> {
                 ),
               ),
             ),
-
-          // Positioned text field for searching addresses
           Positioned(
             top: 8,
             left: 10,
@@ -295,28 +232,25 @@ class _LocationPageState extends State<LocationPage> {
             ),
           ),
           Positioned(
-            bottom: 0, // Position buttons at the very bottom
+            bottom: 0,
             left: 10,
             right: 10,
             child: Column(
               children: [
-                // Just text with an icon, not a button
-                GestureDetector(
-                  onTap: _getCurrentLocation, // Trigger action when tapped
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.my_location, size: 20, color: Colors.blue), // Location icon
-                      SizedBox(width: 8),
-                      Text(
-                        'Locate Me',
-                        style: TextStyle(fontSize: 16, color: Colors.blue),
-                      ),
-                    ],
+                ElevatedButton.icon(
+                  onPressed: _getCurrentLocation,
+                  icon: Icon(Icons.my_location, size: 20, color: Colors.white),
+                  label: Text(
+                    'Locate Me',
+                    style: TextStyle(fontSize: 14, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    shape: StadiumBorder(),
+                    backgroundColor: Colors.blue,
+                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
                   ),
                 ),
                 SizedBox(height: 8),
-                // Set as Current Location button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -331,7 +265,7 @@ class _LocationPageState extends State<LocationPage> {
                     ),
                   ),
                 ),
-                SizedBox(height: 16), // Add extra spacing below the button
+                SizedBox(height: 16),
               ],
             ),
           ),

@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shelfaware_app/components/donation_card.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -72,20 +73,50 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
     }
 
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
-
     return StreamBuilder(
       stream: FirebaseFirestore.instance.collection('donations').snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-        if (!snapshot.hasData) {
-          return Center(child: CircularProgressIndicator());
+      if (!snapshot.hasData) {
+        return Center(child: CircularProgressIndicator());
+      }
+      // Initially, show all donations within a 10-mile radius by default
+      var donations = snapshot.data!.docs.where((doc) {
+        var donation = doc.data() as Map<String, dynamic>;
+        if (donation['donorId'] == userId) return false;
+
+        GeoPoint? location = donation['location'];
+        if (location != null) {
+        double distanceInMeters = Geolocator.distanceBetween(
+          widget.currentLocation!.latitude,
+          widget.currentLocation!.longitude,
+          location.latitude,
+          location.longitude,
+        );
+        double distanceInMiles = distanceInMeters / 1609.34;
+        return distanceInMiles <= 10.0;
         }
+        return false;
+      }).toList();
 
-        // Initially, show all donations without any filter applied
-        var donations = snapshot.data!.docs.where((doc) {
-          var donation = doc.data() as Map<String, dynamic>;
-          return donation['donorId'] != userId;
-        }).toList();
-
+      if (donations.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 200,
+                height: 200,
+                child: Lottie.network('https://lottie.host/fb6c778f-ef74-4a0b-a0b1-74658a49b5b8/MfI0YXgMZ1.json'),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'No donations available within your local area!',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            ],
+          ),
+        );
+      }
         // Apply filters after initial load
         if (filterExpiringSoon || filterNewlyAdded || filterDistance > 0.0) {
           donations = donations.where((doc) {

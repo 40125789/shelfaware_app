@@ -3,17 +3,59 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:shelfaware_app/models/donation.dart';
 import 'package:shelfaware_app/repositories/donation_repository.dart';
 import 'package:shelfaware_app/services/food_item_service.dart';
 import 'package:shelfaware_app/components/donation_photo_form.dart'; // Adjust the path as necessary
 import 'package:shelfaware_app/services/dialog_service.dart';
 
 class DonationService {
+
   final DonationRepository _donationRepository = DonationRepository(
     auth: FirebaseAuth.instance,
     firestore: FirebaseFirestore.instance,
   );
   static final FoodItemService _fooditemService = FoodItemService();
+
+  Future<List<DonationLocation>> fetchDonationLocations(String userId, LatLng currentLocation, bool filterExpiringSoon, bool filterNewlyAdded, double filterDistance) async {
+    List<DonationLocation> donations = await _donationRepository.fetchDonationLocations(userId);
+
+    // Enforce a default distance filter of 10 miles.
+    const double defaultDistance = 10.0;
+    donations.removeWhere((donation) {
+      final distance = donation.filterDistance(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        donation.location.latitude,
+        donation.location.longitude,
+      );
+      return distance > defaultDistance;
+    });
+
+    // Apply additional filters if enabled.
+    if (filterExpiringSoon) {
+      donations.removeWhere((donation) {
+        DateTime expiryDate = DateTime.parse(donation.expiryDate);
+        return !expiryDate.isBefore(DateTime.now().add(Duration(days: 7)));
+      });
+    }
+    if (filterNewlyAdded) {
+      donations.sort((a, b) => b.addedOn.compareTo(a.addedOn));
+    }
+    if (filterDistance > 0) {
+      donations.removeWhere((donation) {
+        final distance = donation.filterDistance(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          donation.location.latitude,
+          donation.location.longitude,
+        );
+        return distance > filterDistance;
+      });
+    }
+    return donations;
+  }
 
   static Future<void> donateFoodItem(
       BuildContext context, String id, Position position) async {
@@ -224,12 +266,11 @@ class DonationService {
         desiredAccuracy: LocationAccuracy.high);
   }
 
-  Future updateDonationStatus(String donationId, String status) async {
-    return await FirebaseFirestore.instance
-        .collection('donations')
-        .doc(donationId)
-        .update({'status': status});
+  
+  Future<void> updateDonationStatus(String donationId, String status) async {
+    await _donationRepository.updateDonationStatus(donationId, status);
   }
+
 
   Stream<List<Map<String, dynamic>>> getDonationRequests(String donationId) {
     final String donorId = FirebaseAuth.instance.currentUser!.uid;

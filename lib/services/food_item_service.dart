@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/repositories/food_item_repository.dart';
 
-// Service to interact with food-related data
 class FoodItemService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FoodItemRepository _repository;
+
+  FoodItemService({FoodItemRepository? repository})
+      : _repository = repository ?? FoodItemRepository();
 
   Future<void> saveFoodItem({
     required String productName,
@@ -16,13 +17,13 @@ class FoodItemService {
     required String category,
     required String? productImage,
   }) async {
-    User? currentUser = FirebaseAuth.instance.currentUser;
+    User? currentUser = _repository.getCurrentUser();
 
     if (currentUser == null) {
       throw Exception('No user is logged in. Please log in first.');
     }
 
-    await _firestore.collection('foodItems').add({
+    await _repository.addFoodItem({
       'productName': productName,
       'expiryDate': expiryDate,
       'quantity': quantity,
@@ -35,22 +36,13 @@ class FoodItemService {
     });
   }
 
-
-
-  // Fetch food items for a specific user
   Stream<List<DocumentSnapshot>> getUserFoodItems(String userId) {
-    return _firestore
-        .collection('foodItems')
-        .where('userId', isEqualTo: userId)
-        .snapshots()
-        .map((snapshot) => snapshot.docs);
+    return _repository.getUserFoodItems(userId);
   }
 
-  // Fetch food item by ID
-
-    Future<Map<String, dynamic>?> fetchFoodItemById(String id) async {
+  Future<Map<String, dynamic>?> fetchFoodItemById(String id) async {
     try {
-      DocumentSnapshot doc = await _firestore.collection('foodItems').doc(id).get();
+      DocumentSnapshot doc = await _repository.getFoodItemById(id);
       if (doc.exists) {
         return doc.data() as Map<String, dynamic>?;
       }
@@ -60,11 +52,10 @@ class FoodItemService {
     return null;
   }
 
-  // Fetch categories for filter options
   Future<List<String>> fetchFoodCategories() async {
     try {
-      final snapshot = await _firestore.collection('categories').get();
-      List<String> categories = snapshot.docs
+      final snapshot = await _repository.getCategories();
+      List<String> categories = snapshot
           .map((doc) => doc['Food Type']?.toString() ?? '')
           .toList();
       categories.removeWhere((category) => category.isEmpty);

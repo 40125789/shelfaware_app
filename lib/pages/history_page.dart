@@ -31,11 +31,10 @@ class _HistoryPageState extends State<HistoryPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => AddFoodItem(
+          builder: (context) => AddFoodItem(
             foodItem: selectedFoodItems.first,
             isRecreated: true,
             foodItems: selectedFoodItems,
-           
           ),
         ),
       ).then((_) {
@@ -221,7 +220,7 @@ class _HistoryPageState extends State<HistoryPage> {
                       child: ListTile(
                         contentPadding: EdgeInsets.all(15),
                         title: Text(
-                          foodItem.productName,
+                          '${foodItem.productName} x ${foodItem.quantity}',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Row(

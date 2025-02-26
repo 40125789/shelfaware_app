@@ -197,7 +197,7 @@ class CustomDrawer extends ConsumerWidget {
               },
               icon: const Icon(Icons.feedback, color: Colors.white),
               label: const Text(
-                'Provide feedback!',
+                'Feedback Survey',
                 style: TextStyle(color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(

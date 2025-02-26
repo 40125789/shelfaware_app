@@ -62,6 +62,63 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
   }
 });
 
+exports.sendExpiredItemNotifications = functions.pubsub.schedule("every 24 hours").onRun(async () => {
+  const db = admin.firestore();
+  const currentDate = admin.firestore.Timestamp.now();
+
+  try {
+    const expiredItemsSnapshot = await db.collection("foodItems")
+      .where("expiryDate", "<", currentDate) // Only items past the expiry date
+      .get();
+
+    if (expiredItemsSnapshot.empty) return null;
+
+    const messaging = admin.messaging();
+
+    expiredItemsSnapshot.forEach(async (doc) => {
+      const foodItem = doc.data();
+      const { userId, productName, expiryDate } = foodItem;
+
+      if (!userId || !productName || !expiryDate) return;
+
+      const userDoc = await db.collection("users").doc(userId).get();
+      if (!userDoc.exists) return;
+
+      const userData = userDoc.data();
+      const fcmToken = userData.fcm_token;
+      if (!fcmToken) return;
+
+      // Save notification to Firestore
+      const notificationDoc = {
+        userId,
+        type: 'expiry', // Type of notification
+        title: "Expired Food Alert",
+        body: `Your ${productName} has expired! Consider discarding it safely.`,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        read: false,
+      };
+      await db.collection("notifications").add(notificationDoc);
+
+      // Send the push notification
+      const message = {
+        token: fcmToken,
+        notification: {
+          title: "Expired Food Alert",
+          body: `Your ${productName} has expired! Consider discarding it safely.`,
+        },
+        data: {
+          foodItemId: doc.id,
+          expiryDate: expiryDate.toDate().toISOString(),
+        },
+      };
+
+      await messaging.send(message);
+    });
+  } catch (error) {
+    console.error("Error sending expired item notifications:", error);
+  }
+});
+
 exports.sendMessageNotification = functions.firestore
 .document("chats/{chatId}/messages/{messageId}")
 .onCreate(async (snapshot, context) => {
@@ -296,6 +353,87 @@ exports.sendMessageNotification = functions.firestore
     return null;
   });
 
+  // Trigger when the donation request status changes to "Denied"
+exports.sendRequestDeniedNotification = functions.firestore
+.document('donationRequests/{requestId}')
+.onUpdate(async (change, context) => {
+    // Get the new and old values of the donation request document
+    const newValue = change.after.data();
+    const oldValue = change.before.data();
+
+    // Check if the status has changed to "Denied"
+    if (newValue.status === 'Declined' && oldValue.status !== 'Declined') {
+        const requesterId = newValue.requesterId;
+        const productName = newValue.productName;
+
+        try {
+            // Retrieve the requester data from the 'users' collection
+            const userRef = admin.firestore().collection('users').doc(requesterId);
+            const userSnapshot = await userRef.get();
+            
+            if (!userSnapshot.exists) {
+                console.log('User not found');
+                return null;
+            }
+
+            const user = userSnapshot.data();
+            const requesterToken = user.fcm_token;  // Assuming the user document has an FCM token field
+            const requesterFirstName = user.firstName; // Assuming the user's first name is stored in Firestore
+
+            if (!requesterToken) {
+                console.log('No FCM token found for the user');
+                return null;
+            }
+
+            // Check the user's notification preferences
+            const notificationPreferences = user.notificationPreferences || {};
+            if (notificationPreferences.requests === false) {
+                console.log('User has disabled request notifications');
+                return null;  // If the user has disabled requests notifications, don't send a message
+            }
+
+            // Create the message body
+            const messageBody = `${requesterFirstName}, unfortunately, your request for ${productName} has been declined\nPlease check out other donations available'`;
+
+            // Send a notification to the requester
+            const message = {
+                notification: {
+                    title: 'Donation Request Declined',
+                    body: messageBody,
+                },
+                token: requesterToken,
+            };
+
+            // Send the notification using Firebase Cloud Messaging (FCM)
+            await admin.messaging().send(message);
+            console.log('Denial notification sent successfully.');
+
+            // Add a document to the notifications collection with type "request_denied"
+            const notificationDoc = {
+                type: "request",
+                userId: requesterId,
+                requesterId: requesterId,
+                productName: productName,
+                title: 'Donation Request Denied',
+                body: messageBody,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                read: false,  // Track the notification status
+            };
+
+            await admin.firestore().collection('notifications').add(notificationDoc);
+            console.log("Denial notification document added to the 'notifications' collection.");
+
+        } catch (error) {
+            console.error('Error sending denial notification: ', error);
+        }
+
+        return null;
+    }
+
+    return null;  // If the status hasn't changed to "Denied", do nothing
+});
+
+
 // Trigger when the donation request status changes to "Accepted"
 exports.sendRequestAcceptedNotification = functions.firestore
     .document('donationRequests/{requestId}')
@@ -376,5 +514,7 @@ exports.sendRequestAcceptedNotification = functions.firestore
             return null;
         }
 
-        return null;  // If the status hasn't changed to "Accepted", do nothing
+        return null;
+        
+       
     });

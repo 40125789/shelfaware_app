@@ -4,14 +4,6 @@ import 'package:shelfaware_app/pages/add_food_item.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
-import 'package:shelfaware_app/pages/recipes_page.dart';
-import 'package:shelfaware_app/pages/donations_page.dart';
-import 'package:shelfaware_app/pages/statistics_page.dart';
-import 'package:shelfaware_app/pages/add_food_item.dart';
 
 class BottomNavigationBarComponent extends ConsumerStatefulWidget {
   final PageController pageController;

@@ -98,8 +98,22 @@ class MyDonationsPage extends ConsumerWidget {
                     ? const Center(child: Text("No sent donation requests"))
                     : Column(
                       children: [
-                      const RequestStatusFilter(), // Use the new filter component
-                      Expanded(
+                        const RequestStatusFilter(), // Use the new filter component
+                        if (requests.where((request) => 
+                        ref.watch(requestStatusFilterProvider) == 'All' || 
+                        ref.watch(requestStatusFilterProvider) == request['status']
+                        ).isEmpty)
+                        const Expanded(
+                          child: Center(
+                          child: Text(
+                            "No requests match the selected filter",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          ),
+                        )
+                        else
+
+                        Expanded(
                         child: ListView.builder(
                         itemCount: requests.length,
                         itemBuilder: (context, index) {

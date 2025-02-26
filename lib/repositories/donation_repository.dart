@@ -4,11 +4,33 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
+import 'package:shelfaware_app/models/donation.dart';
+
 class DonationRepository {
   final FirebaseAuth auth;
   final FirebaseFirestore _firestore;
 
   DonationRepository({required this.auth, required FirebaseFirestore firestore}) : _firestore = firestore;
+
+Future<List<DonationLocation>> fetchDonationLocations(String userId) async {
+    try {
+      QuerySnapshot snapshot = await _firestore.collection('donations').get();
+      final donations = snapshot.docs.map((doc) {
+        var donation = DonationLocation.fromFirestore(doc.data() as Map<String, dynamic>);
+        if (donation.id != userId) {
+          return donation;
+        }
+        return null;
+      }).whereType<DonationLocation>().toList();
+      return donations;
+    } catch (e) {
+      print('Error fetching donation locations: $e');
+      return [];
+    }
+  }
+
+
+
   Future<Map<String, dynamic>> getDonationDetails(String donationId) async {
     DocumentSnapshot donationDoc =
         await _firestore.collection('donations').doc(donationId).get();
