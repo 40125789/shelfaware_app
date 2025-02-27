@@ -26,7 +26,7 @@ class _RecipeDetailsPageState extends State<RecipeDetailsPage> {
   @override
   void initState() {
     super.initState();
-    _isFavorite = _checkIfFavorite(widget.recipe);
+   
     fuzzyMatcher = Fuzzy(widget.matchedIngredients); // Initialize Fuzzy matcher with matched ingredients
   }
 
@@ -87,14 +87,7 @@ class _RecipeDetailsPageState extends State<RecipeDetailsPage> {
                               ),
                               softWrap: true,
                             ),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              _isFavorite ? Icons.favorite : Icons.favorite_border,
-                              color: Colors.red,
-                            ),
-                            onPressed: _toggleFavorite,
-                          ),
+                          ),    
                         ],
                       ),
                     ),

@@ -13,7 +13,7 @@ class Ingredient {
     return Ingredient(
       name: json['name'] ?? 'Unknown',
       amount: json['amount'] ?? 0.0,
-      unit: json['unit'] ?? '',
+      unit: json['unit'] ?? 0.0,  
     );
   }
 }
@@ -84,6 +84,8 @@ class Recipe {
           .toList(),
       'sourceUrl': sourceUrl,
       'summary': summary,
+      
+
     };
   }
 }

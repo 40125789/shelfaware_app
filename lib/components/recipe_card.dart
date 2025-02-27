@@ -8,6 +8,7 @@ import 'package:shelfaware_app/repositories/favourites_repository.dart';
 import 'package:shelfaware_app/components/favourite_button.dart';
 import 'package:shelfaware_app/components/matching_ingredients_text.dart';
 
+
 class RecipeCard extends StatefulWidget {
   final Recipe recipe;
   final List<String> userIngredients;
@@ -53,7 +54,11 @@ class _RecipeCardState extends State<RecipeCard> {
           'title': widget.recipe.title,
           'imageUrl': widget.recipe.imageUrl,
           'ingredients': widget.recipe.ingredients
-              .map((ingredient) => ingredient.name)
+              .map((ingredient) => {
+                'name': ingredient.name,
+                'unit': ingredient.unit,
+                'amount': ingredient.amount
+              })
               .toList(),
           'totalIngredients': widget.recipe.ingredients.length,
           'instructions': widget.recipe.instructions,
@@ -61,22 +66,22 @@ class _RecipeCardState extends State<RecipeCard> {
               widget.favouritesRepository.auth.currentUser?.uid ?? 'Unknown',
           'timestamp': FieldValue.serverTimestamp(),
         });
-        _showSnackBar("Recipe added to favourites.");
+        _showSnackBar("Recipe added to favourites.", Icons.favorite);
       } else {
         await widget.favouritesRepository
             .removeFavourite(widget.recipe.id.toString());
-        _showSnackBar("Recipe removed from favourites.");
+        _showSnackBar("Recipe removed from favourites.", Icons.favorite_border);
       }
     } catch (e) {
       print("Error updating favourites: $e");
     }
   }
 
-  void _showSnackBar(String message) {
+  void _showSnackBar(String message, IconData icon) {
     final snackBar = SnackBar(
       content: Row(
         children: [
-          Icon(Icons.favorite, color: Colors.red),
+          Icon(icon, color: Colors.red),
           SizedBox(width: 10),
           Expanded(child: Text(message)),
           IconButton(

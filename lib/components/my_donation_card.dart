@@ -8,12 +8,14 @@ class MyDonationCard extends StatelessWidget {
   final int requestCount;
   final VoidCallback onTap;
   final String userId;
+  final String assignedToName;
 
   const MyDonationCard({
     required this.donation,
     required this.requestCount,
     required this.onTap,
     required this.userId,
+  required this.assignedToName,
   });
 
   @override

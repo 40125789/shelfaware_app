@@ -41,7 +41,11 @@ class _FavoritesPageState extends State<FavouritesPage> {
           summary: data['summary'] ?? 'No summary available.',
           sourceUrl: data['sourceUrl'] ?? '',
           ingredients: (data['ingredients'] as List<dynamic>? ?? [])
-              .map((ingredient) => Ingredient(name: ingredient, amount: 0, unit: ''))
+              .map((ingredient) => Ingredient(
+                name: ingredient['name'] ?? 'Unknown',
+                amount: ingredient['amount'] ?? 0.0,
+                unit: ingredient['unit'] ?? ''
+              ))
               .toList(),
           instructions: data['instructions'] ?? '',
         );
@@ -88,7 +92,10 @@ class _FavoritesPageState extends State<FavouritesPage> {
                           builder: (context) => RecipeDetailsPage(
                             recipe: recipe,
                             onFavoritesChanged: _refreshFavorites,
-                            matchedIngredients: [], // Update this to pass actual matched ingredients
+                            matchedIngredients: [],
+
+                            
+                           
                           ),
                         ),
                       );

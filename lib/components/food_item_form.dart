@@ -3,7 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/expiry_date_scanner.dart';
 import 'package:shelfaware_app/components/filter_dropdown.dart';
 import 'package:shelfaware_app/models/food_history.dart';
-import 'package:shelfaware_app/services/open_food_facts_api_service.dart';
+
+
 import 'package:shelfaware_app/services/food_item_service.dart';
 import 'package:shelfaware_app/models/product_details.dart';
 import 'package:shelfaware_app/components/product_detail_dialogue.dart';
@@ -12,6 +13,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shelfaware_app/services/food_suggestions_service.dart';
 
 import 'dart:async';
+
+import 'package:shelfaware_app/services/open_food_facts_api.dart';
 
 class FoodItemForm extends StatefulWidget {
 

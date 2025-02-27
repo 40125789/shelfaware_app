@@ -11,15 +11,20 @@ import 'package:shelfaware_app/components/donation_photo_form.dart'; // Adjust t
 import 'package:shelfaware_app/services/dialog_service.dart';
 
 class DonationService {
-
   final DonationRepository _donationRepository = DonationRepository(
     auth: FirebaseAuth.instance,
     firestore: FirebaseFirestore.instance,
   );
   static final FoodItemService _fooditemService = FoodItemService();
 
-  Future<List<DonationLocation>> fetchDonationLocations(String userId, LatLng currentLocation, bool filterExpiringSoon, bool filterNewlyAdded, double filterDistance) async {
-    List<DonationLocation> donations = await _donationRepository.fetchDonationLocations(userId);
+  Future<List<DonationLocation>> fetchDonationLocations(
+      String userId,
+      LatLng currentLocation,
+      bool filterExpiringSoon,
+      bool filterNewlyAdded,
+      double filterDistance) async {
+    List<DonationLocation> donations =
+        await _donationRepository.fetchDonationLocations(userId);
 
     // Enforce a default distance filter of 10 miles.
     const double defaultDistance = 10.0;
@@ -70,14 +75,13 @@ class DonationService {
         return;
       }
 
-     // Check if the item is expired
+      // Check if the item is expired
       Timestamp expiryTimestamp = foodItemDoc['expiryDate'];
       DateTime expiryDate = expiryTimestamp.toDate();
       if (expiryDate.isBefore(DateTime.now())) {
         DialogService.showExpiredItemDialog(context);
         return;
       }
-
 
       // Get the user's location
       Position location = await _getUserLocation();
@@ -133,7 +137,7 @@ class DonationService {
       foodItemDoc['donorEmail'] = donorEmail;
       foodItemDoc['donated'] = true;
       foodItemDoc['donatedAt'] = Timestamp.now();
-      foodItemDoc['status'] = 'available';
+      foodItemDoc['status'] = 'Available';
       foodItemDoc['donationId'] = donationId;
       foodItemDoc['pickupTimes'] = formData['pickupTimes'] ?? '';
       foodItemDoc['pickupInstructions'] = formData['pickupInstructions'] ?? '';
@@ -142,10 +146,10 @@ class DonationService {
       if (userDoc['location'] != null) {
         GeoPoint userLocation = userDoc['location'];
         foodItemDoc['location'] =
-        GeoPoint(userLocation.latitude, userLocation.longitude);
+            GeoPoint(userLocation.latitude, userLocation.longitude);
       } else {
         foodItemDoc['location'] =
-        GeoPoint(location.latitude, location.longitude);
+            GeoPoint(location.latitude, location.longitude);
       }
 
       if (formData['imageUrl'] != null) {
@@ -170,15 +174,17 @@ class DonationService {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Donation added successfully.")),
       );
-        } catch (e) {
+    } catch (e) {
       print('Error donating food item: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to donate item: $e")),
       );
-        }
-      }
+    }
+  }
 
-
+  Future<String?> getAssigneeProfileImage(String donationId) async {
+    return await _donationRepository.getAssigneeProfileImage(donationId);
+  }
 
   // Fetch donation details by donationId
   Future<Map<String, dynamic>> getDonationDetails(String donationId) async {
@@ -186,7 +192,8 @@ class DonationService {
   }
 
   // Fetch donations for a specific user
-  Stream<List<Map<String, dynamic>>> getDonations(String userId, String donationId) {
+  Stream<List<Map<String, dynamic>>> getDonations(
+      String userId, String donationId) {
     return _donationRepository.getDonations(userId, donationId);
   }
 
@@ -222,7 +229,8 @@ class DonationService {
   // Update donation request status
   Future<void> updateDonationRequestStatus(
       String donationId, String status, String requestId) async {
-    await _donationRepository.updateDonationRequestStatus(donationId, status, requestId);
+    await _donationRepository.updateDonationRequestStatus(
+        donationId, status, requestId);
   }
 
   // Fetch requester's name by userId
@@ -266,11 +274,9 @@ class DonationService {
         desiredAccuracy: LocationAccuracy.high);
   }
 
-  
   Future<void> updateDonationStatus(String donationId, String status) async {
     await _donationRepository.updateDonationStatus(donationId, status);
   }
-
 
   Stream<List<Map<String, dynamic>>> getDonationRequests(String donationId) {
     final String donorId = FirebaseAuth.instance.currentUser!.uid;

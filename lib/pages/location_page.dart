@@ -49,7 +49,8 @@ class _LocationPageState extends State<LocationPage> {
               _markers.add(Marker(
                 markerId: MarkerId('user_location'),
                 position: _currentLocation,
-                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                icon: BitmapDescriptor.defaultMarkerWithHue(
+                    BitmapDescriptor.hueRed),
                 infoWindow: InfoWindow(title: 'Your Location'),
               ));
             });
@@ -72,7 +73,9 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      Position position = await _locationService.getCurrentLocation();
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
         _selectedLocation = _currentLocation;
@@ -104,7 +107,8 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   void _onAddressChanged() {
-    AddressSuggestionUtil.fetchAddressSuggestions(_addressController.text).then((suggestions) {
+    AddressSuggestionUtil.fetchAddressSuggestions(_addressController.text)
+        .then((suggestions) {
       setState(() {
         _addressSuggestions = suggestions;
       });
@@ -138,7 +142,9 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   void _setCurrentLocation() async {
-    if (_isLocationSelected && _selectedLocation.latitude != 0.0 && _selectedLocation.longitude != 0.0) {
+    if (_isLocationSelected &&
+        _selectedLocation.latitude != 0.0 &&
+        _selectedLocation.longitude != 0.0) {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         try {
@@ -146,7 +152,8 @@ class _LocationPageState extends State<LocationPage> {
               .collection('users')
               .doc(user.uid)
               .set({
-            'location': GeoPoint(_selectedLocation.latitude, _selectedLocation.longitude),
+            'location': GeoPoint(
+                _selectedLocation.latitude, _selectedLocation.longitude),
           }, SetOptions(merge: true));
 
           ScaffoldMessenger.of(context).showSnackBar(

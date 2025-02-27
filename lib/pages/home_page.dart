@@ -23,6 +23,7 @@ import 'package:shelfaware_app/services/user_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 
+
 class HomePage extends ConsumerStatefulWidget {
   HomePage({super.key});
 
@@ -73,10 +74,12 @@ class _HomePageState extends ConsumerState<HomePage>
   Future<void> getUserData() async {
     try {
       final userData = await UserService.getUserData(user.uid);
-      setState(() {
-        firstName = userData['firstName'];
-        lastName = userData['lastName'];
-      });
+      if (mounted) {
+        setState(() {
+          firstName = userData['firstName'];
+          lastName = userData['lastName'];
+        });
+      }
     } catch (e) {
       print('Error fetching user data: $e');
     }
@@ -94,9 +97,11 @@ class _HomePageState extends ConsumerState<HomePage>
   Future<void> _fetchFilterOptions() async {
     try {
       final categories = await foodService.fetchFilterOptions();
-      setState(() {
-        filterOptions = ['All', ...categories];
-      });
+      if (mounted) {
+        setState(() {
+          filterOptions = ['All', ...categories];
+        });
+      }
     } catch (e) {
       print('Error fetching filter options: $e');
     }
@@ -147,13 +152,13 @@ class _HomePageState extends ConsumerState<HomePage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                 Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Filter Dropdown on the left
                     Row(
                       children: [
-                       // Add category icon
+                        // Add category icon
                         const SizedBox(width: 8),
                         FilterDropdown(
                           selectedFilter: selectedFilter,
@@ -229,9 +234,6 @@ class _HomePageState extends ConsumerState<HomePage>
   String formatExpiryDate(Timestamp expiryTimestamp) {
     return formatExpiryDate(expiryTimestamp);
   }
-
-
-
 
   Future<void> _donateFoodItem(BuildContext context, String id) async {
     Future<Position> _getUserLocation() async {

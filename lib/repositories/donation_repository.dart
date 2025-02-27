@@ -50,6 +50,42 @@ Stream<List<Map<String, dynamic>>> getDonationRequests(String donationId) {
     });
   }
 
+
+
+Future<String?> getAssigneeProfileImage(String donationId) async {
+  try {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Step 1: Get the assignedTo ID from the donations collection
+    DocumentSnapshot donationDoc = await firestore
+        .collection('donations') // Adjust if your collection name is different
+        .doc(donationId)
+        .get();
+
+    if (donationDoc.exists && donationDoc.data() != null) {
+      String? assignedToId = donationDoc.get('assignedTo');
+
+      if (assignedToId != null && assignedToId.isNotEmpty) {
+        // Step 2: Use the assignedTo ID to fetch the profileImageUrl from the users collection
+        DocumentSnapshot userDoc = await firestore
+            .collection('users') // Adjust if needed
+            .doc(assignedToId)
+            .get();
+
+        if (userDoc.exists && userDoc.data() != null) {
+          return userDoc.get('profileImageUrl'); // Ensure this matches your Firestore field
+        }
+      }
+    }
+    print("No assigned user found or user profile does not exist.");
+    return null;
+  } catch (e) {
+    print("Error fetching profile image: $e");
+    return null;
+  }
+}
+
+
   Future<String> getRequesterName(String requesterId) async {
     DocumentSnapshot userDoc =
         await _firestore.collection('users').doc(requesterId).get();

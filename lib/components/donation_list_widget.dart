@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,6 +10,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart';
+import 'package:shelfaware_app/services/user_service.dart';
+
+
+
 
 class DonationListView extends ConsumerStatefulWidget {
   final LatLng? currentLocation;
@@ -30,8 +33,9 @@ class DonationListView extends ConsumerStatefulWidget {
 }
 
 class _DonationListViewState extends ConsumerState<DonationListView> {
+  final UserService _userService = UserService();
   Map<String, bool> watchlistStatus = {};
-  Map<String, double> donorRatings = {}; // Add this line to define donorRatings
+  Map<String, double> donorRatings = {};
   double averageRating = 0.0;
   bool filterExpiringSoon = false;
   bool filterNewlyAdded = false;
@@ -49,7 +53,6 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
 
   Future<void> fetchDonorRating(String donorId) async {
     if (donorRatings.containsKey(donorId)) return; // Avoid fetching if already fetched
-
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(donorId).get();
       if (userDoc.exists && userDoc.data() != null) {
@@ -74,49 +77,54 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
 
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
     return StreamBuilder(
-      stream: FirebaseFirestore.instance.collection('donations').snapshots(),
+      stream: FirebaseFirestore.instance
+        .collection('donations')
+        .orderBy('addedOn', descending: true)
+        .snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-      if (!snapshot.hasData) {
-        return Center(child: CircularProgressIndicator());
-      }
-      // Initially, show all donations within a 10-mile radius by default
-      var donations = snapshot.data!.docs.where((doc) {
-        var donation = doc.data() as Map<String, dynamic>;
-        if (donation['donorId'] == userId) return false;
-
-        GeoPoint? location = donation['location'];
-        if (location != null) {
-        double distanceInMeters = Geolocator.distanceBetween(
-          widget.currentLocation!.latitude,
-          widget.currentLocation!.longitude,
-          location.latitude,
-          location.longitude,
-        );
-        double distanceInMiles = distanceInMeters / 1609.34;
-        return distanceInMiles <= 10.0;
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
         }
-        return false;
-      }).toList();
+        // Initially, show all donations within a 10-mile radius by default
+        var donations = snapshot.data!.docs.where((doc) {
+          var donation = doc.data() as Map<String, dynamic>;
+          if (donation['donorId'] == userId) return false;
 
-      if (donations.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 200,
-                height: 200,
-                child: Lottie.network('https://lottie.host/fb6c778f-ef74-4a0b-a0b1-74658a49b5b8/MfI0YXgMZ1.json'),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'No donations available within your local area!',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-        );
-      }
+          GeoPoint? location = donation['location'];
+          if (location != null) {
+            double distanceInMeters = Geolocator.distanceBetween(
+              widget.currentLocation!.latitude,
+              widget.currentLocation!.longitude,
+              location.latitude,
+              location.longitude,
+            );
+            double distanceInMiles = distanceInMeters / 1609.34;
+            return distanceInMiles <= 10.0;
+          }
+          return false;
+        }).toList();
+
+        if (donations.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: Lottie.network(
+                      'https://lottie.host/fb6c778f-ef74-4a0b-a0b1-74658a49b5b8/MfI0YXgMZ1.json'),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'No donations available within your local area!',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        }
+
         // Apply filters after initial load
         if (filterExpiringSoon || filterNewlyAdded || filterDistance > 0.0) {
           donations = donations.where((doc) {
@@ -248,11 +256,16 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
             }
 
             // Watchlist logic
-            ref.read(watchedDonationsServiceProvider).isDonationInWatchlist(userId!, donationId).then((value) {
-              setState(() {
-                watchlistStatus[donationId] = value;
-              });
-            });
+            ref
+                .read(watchedDonationsServiceProvider)
+                .isDonationInWatchlist(userId!, donationId)
+                .then((value) {
+                if (watchlistStatus[donationId] != value) {
+                  setState(() {
+                    watchlistStatus[donationId] = value;
+                  });
+                }
+            }); 
 
             // Calculate if the donation is "Newly Added" (within 24 hours)
             bool isNewlyAdded = false;
@@ -318,10 +331,10 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
                         imageUrl: donation['imageUrl']?.isNotEmpty ?? false
                             ? donation['imageUrl']
                             : 'assets/placeholder.png',
-                        donorImageUrl: donorImageUrl,
+                        donorImageUrl: donorImageUrl ?? '',
                         donationTime: donation['addedOn'].toDate(),
-                         pickupTimes: donation['pickupTimes'] ?? ''
-                         , pickupInstructions: donation['pickupInstructions'] ?? ''
+                        pickupTimes: donation['pickupTimes'] ?? '',
+                        pickupInstructions: donation['pickupInstructions'] ?? '',
                       ),
                     ),
                   );
@@ -330,63 +343,61 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
                   // Optionally show a message to the user
                 }
               },
-             isInWatchlist: watchlistStatus[donationId] ?? false,
-              onWatchlistToggle: (String donationId) {
+                isInWatchlist: watchlistStatus[donationId] ?? false,
+                onWatchlistToggle: (String donationId) {
                 setState(() {
                   if (watchlistStatus[donationId] == true) {
-                    ref.read(watchedDonationsServiceProvider).removeFromWatchlist(userId, donationId);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            Icon(
-                              Icons.star_border,
-                              color: Colors.green,
-                            ),
+                  ref
+                    .read(watchedDonationsServiceProvider)
+                    .removeFromWatchlist(userId, donationId);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                    content: Row(
+                      children: [
+                      Icon(
+                        Icons.star_border,
+                        color: Colors.green,
+                      ),
                             SizedBox(width: 8),
                             Text("Removed from watchlist"),
                           ],
                         ),
-                      
+                        duration: Duration(seconds: 2),
                       ),
                     );
                   } else {
-                    ref.read(watchedDonationsServiceProvider).addToWatchlist(userId, donationId, donation);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            Icon(
-                              watchlistStatus[donationId] == true ? Icons.star_border : Icons.star,
-                              color: watchlistStatus[donationId] == true ? Colors.green : Colors.green,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              watchlistStatus[donationId] == true
-                                  ? "Removed from watchlist"
-                                  : "Added to watchlist",
-                            ),
-                          ],
-                        ),
-                        action: SnackBarAction(
-                          label: "→",
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => WatchedDonationsPage(currentLocation: widget.currentLocation!)
+                    ref
+                        .read(watchedDonationsServiceProvider)
+                        .addToWatchlist(userId, donationId, donation);
+                    ScaffoldMessenger.of(context)
+                      ..hideCurrentSnackBar() // Hides any active Snackbar
+                      ..showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(
+                                Icons.star,
+                                color: Colors.green,
                               ),
-                            );
-                          },
+                              SizedBox(width: 8),
+                              Text("Added to watchlist"),
+                              IconButton(
+                                icon: Icon(Icons.arrow_forward, color: Colors.green),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => WatchedDonationsPage(currentLocation: widget.currentLocation!),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          duration: Duration(seconds: 2), // Ensures auto-dismiss
                         ),
-                        
-                      
-                     
-                      ),
-                    );
+                      );
                   }
-                  watchlistStatus[donationId] =
-                      !(watchlistStatus[donationId] ?? false);
                 });
               },
             );

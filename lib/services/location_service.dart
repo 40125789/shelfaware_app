@@ -44,7 +44,7 @@ class LocationService {
     await openAppSettings();
   }
 
-  static Future<Position> getUserLocation() async {
+  Future<Position> getUserLocation() async {
     LocationPermission permission;
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {

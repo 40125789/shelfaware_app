@@ -1,16 +1,22 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shelfaware_app/repositories/donation_request_repository.dart';
 
 class DonationRequestCard extends StatelessWidget {
   final Map<String, dynamic> request;
   final VoidCallback onWithdraw;
   final VoidCallback onLeaveReview;
   final bool hasLeftReview;
+  final DonationRequestRepository _repository = DonationRequestRepository(
+    firebaseFirestore: FirebaseFirestore.instance,
+    firebaseAuth: FirebaseAuth.instance,
+  );
 
-  const DonationRequestCard({
+  DonationRequestCard({
     required this.request,
     required this.onWithdraw,
     required this.onLeaveReview,
@@ -22,10 +28,7 @@ class DonationRequestCard extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (context) => FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance
-              .collection('donations')
-              .doc(request['donationId'])
-              .get(),
+          future: _repository.getDonationById(request['donationId']),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
@@ -113,7 +116,7 @@ class DonationRequestCard extends StatelessWidget {
               ? Icon(Icons.food_bank, color: Colors.white)
               : null,
         ),
-         title: Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             RichText(

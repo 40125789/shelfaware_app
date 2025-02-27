@@ -56,12 +56,15 @@ class _DonationsScreenState extends State<DonationsPage> with SingleTickerProvid
     _getUserId();
   }
 
+ 
   Future<void> _getUserId() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      setState(() {
-        _userId = user.uid;
-      });
+      if (mounted) {
+        setState(() {
+          _userId = user.uid;
+        });
+      }
       await _getUserLocationFromFirestore(user.uid);
     } else {
       print("User is not logged in");
@@ -132,6 +135,9 @@ class _DonationsScreenState extends State<DonationsPage> with SingleTickerProvid
           _markers = {
             ..._markers,
             ...foodBankMarkers,
+         
+            
+            
           };
         });
       }

@@ -9,7 +9,8 @@ import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart';
 
-class WatchedDonationsPage extends ConsumerWidget {
+
+class WatchedDonationsPage extends ConsumerStatefulWidget {
   final LatLng currentLocation;
 
   WatchedDonationsPage({
@@ -17,8 +18,43 @@ class WatchedDonationsPage extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  _WatchedDonationsPageState createState() => _WatchedDonationsPageState();
+}
+
+class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
+  LatLng? _userLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserLocation();
+  }
+
+  Future<void> _fetchUserLocation() async {
+    final user = ref.read(authStateProvider).value;
+    if (user != null) {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (userDoc.exists && userDoc.data() != null) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        final GeoPoint? geoPoint = userData['location'];
+        if (geoPoint != null) {
+          setState(() {
+            _userLocation = LatLng(geoPoint.latitude, geoPoint.longitude);
+          });
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final watchedDonationsStream = ref.watch(watchedDonationsStreamProvider);
+    final user = ref.watch(authStateProvider).value;
+    if (user == null) {
+      return Center(child: Text('User not logged in.'));
+    }
+
+    final currentLocation = _userLocation ?? widget.currentLocation;
 
     return Scaffold(
       appBar: AppBar(

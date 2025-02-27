@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:shelfaware_app/models/product_details.dart';
-import 'package:shelfaware_app/services/open_food_facts_api_service.dart'; // Adjust the import path as necessary
+import 'package:shelfaware_app/services/open_food_facts_api.dart'; // Adjust the import path as necessary
 
 // Ensure your FoodApiService and ProductDetails are imported
 

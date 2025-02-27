@@ -9,6 +9,7 @@ import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/donation_request_form.dart';
 
 class DonationMapScreen extends StatefulWidget {
+  
   final double donationLatitude;
   final double donationLongitude;
   final double userLatitude;
@@ -26,6 +27,7 @@ class DonationMapScreen extends StatefulWidget {
   final DateTime donationTime;
   final String pickupTimes;
   final String pickupInstructions;
+  final double? donorRating;  
   String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   DonationMapScreen({
@@ -48,6 +50,7 @@ class DonationMapScreen extends StatefulWidget {
     required receiverEmail,
     required this.pickupTimes,
     required this.pickupInstructions,
+   this.donorRating,
   });
 
   @override
@@ -308,6 +311,23 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                           ),
                         )
                       : Container(),
+
+                      // Display donor rating if available
+                      if (widget.donorRating != null)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              color: Colors.yellow,
+                              size: 20,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              widget.donorRating!.toStringAsFixed(1),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
 
                   // Donation details section
                   Padding(

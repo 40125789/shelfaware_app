@@ -6,9 +6,19 @@ class DonationRequestRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
+
   DonationRequestRepository({required FirebaseFirestore firebaseFirestore, required FirebaseAuth firebaseAuth})
       : _firestore = firebaseFirestore,
         _auth = firebaseAuth;
+
+    Future<DocumentSnapshot> getDonationById(String donationId) async {
+    try {
+      return await _firestore.collection('donations').doc(donationId).get();
+    } catch (e) {
+      print('Error fetching donation: $e');
+      rethrow;
+    }
+  }
 
   Future<void> addDonationRequest(DonationRequest request) async {
     try {

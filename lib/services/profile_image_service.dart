@@ -21,13 +21,15 @@ class _ProfileImageState extends State<ProfileImage> {
     _fetchProfileImage();
   }
 
-  Future<void> _fetchProfileImage() async {
+    Future<void> _fetchProfileImage() async {
     // Fetch the donor's profile image URL from Firestore or Firebase Storage
     var userData = await FirebaseFirestore.instance.collection('users').doc(widget.donorId).get();
     if (userData.exists) {
-      setState(() {
-        profileImageUrl = userData['profileImageUrl']; // Make sure this field exists in Firestore
-      });
+      if (mounted) {
+        setState(() {
+          profileImageUrl = userData['profileImageUrl']; // Make sure this field exists in Firestore
+        });
+      }
     }
   }
 
