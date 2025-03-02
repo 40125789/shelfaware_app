@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shelfaware_app/components/status_icon_widget.dart';
 
 class MyDonationCard extends StatelessWidget {
   final Map<String, dynamic> donation;
@@ -15,7 +16,7 @@ class MyDonationCard extends StatelessWidget {
     required this.requestCount,
     required this.onTap,
     required this.userId,
-  required this.assignedToName,
+    required this.assignedToName,
   });
 
   @override
@@ -79,11 +80,7 @@ class MyDonationCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
-                        if (status != 'Reserved')
-                          Text(
-                            "Status: $status",
-                            style: const TextStyle(color: Colors.grey),
-                          ),
+                        StatusIconWidget(status: status),
                         const SizedBox(height: 4),
                         Text(
                           "Date Added: $formattedDate",

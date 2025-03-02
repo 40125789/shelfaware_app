@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
 import 'package:shelfaware_app/components/square_tile.dart';
@@ -13,7 +14,7 @@ class LoginPage extends StatefulWidget {
   const LoginPage({super.key, required this.email, required this.onTap});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  _LoginPageState createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
@@ -22,50 +23,50 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   String? _errorMessage;
 
-   @override
+  @override
   void initState() {
     super.initState();
     // Set the email field to the pre-filled email passed from Registration
     emailController.text = widget.email;
   }
 
-void signUserIn() async {
-  // Show loading dialog while the login is in progress
-  showDialog(
-    context: context,
-    builder: (context) => const Center(child: CircularProgressIndicator()),
-  );
-
-  try {
-    // Sign in with email and password
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: emailController.text,
-      password: passwordController.text,
+  void signUserIn() async {
+    // Show loading dialog while the login is in progress
+    showDialog(
+      context: context,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    // Only pop the loading dialog if the widget is still mounted
-    if (mounted) {
-      Navigator.pop(context); // Pop the loading dialog
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+    try {
+      // Sign in with email and password
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
       );
-    }
-  } on FirebaseAuthException catch (e) {
-    // Only update the UI if the widget is still mounted
-    if (mounted) {
-      Navigator.pop(context); // Pop the loading dialog
 
-      setState(() {
-        if (e.code == 'wrong-password') {
-          _errorMessage = 'Incorrect password';
-        } else {
-          _errorMessage = e.message;
-        }
-      });
+      // Only pop the loading dialog if the widget is still mounted
+      if (mounted) {
+        Navigator.pop(context); // Pop the loading dialog
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      // Only update the UI if the widget is still mounted
+      if (mounted) {
+        Navigator.pop(context); // Pop the loading dialog
+
+        setState(() {
+          if (e.code == 'wrong-password') {
+            _errorMessage = 'Incorrect password';
+          } else {
+            _errorMessage = e.message;
+          }
+        });
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +116,9 @@ void signUserIn() async {
                       obscureText: _obscurePassword,
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
@@ -141,11 +144,13 @@ void signUserIn() async {
                   child: GestureDetector(
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const ResetPasswordPage()),
+                      MaterialPageRoute(
+                          builder: (context) => const ResetPasswordPage()),
                     ),
                     child: const Text(
                       'Forgot password?',
-                      style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Colors.blue, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -204,13 +209,15 @@ void signUserIn() async {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Not a member?', style: TextStyle(color: Colors.grey[700])),
+                    Text('Not a member?',
+                        style: TextStyle(color: Colors.grey[700])),
                     const SizedBox(width: 4),
                     GestureDetector(
                       onTap: widget.onTap,
                       child: const Text(
                         'Register Now',
-                        style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: Colors.blue, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],

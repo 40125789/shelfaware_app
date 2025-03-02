@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shelfaware_app/services/profile_image_service.dart';
-
+import 'package:shelfaware_app/components/status_icon_widget.dart';
 
 class DonationCard extends StatefulWidget {
   final String productName;
@@ -190,15 +190,7 @@ class _DonationCardState extends State<DonationCard> {
                           ],
                         ),
                         SizedBox(height: 8),
-                        Text(
-                          'Status: ${widget.status}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        StatusIconWidget(status: widget.status),
                         SizedBox(height: 8),
                         Row(
                           children: [

@@ -35,7 +35,7 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
         pageBuilder: (context, animation, secondaryAnimation) {
           return FadeTransition(
             opacity: animation,
-            child:  AddFoodItem(foodItems: []), // Pass the required 'foodItems' argument
+            child: AddFoodItem(foodItems: []), // Pass the required 'foodItems' argument
           );
         },
       )
@@ -44,14 +44,16 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
 
   void _onItemTapped(int index) {
     ref.read(bottomNavControllerProvider.notifier).navigateTo(index);
-
-    widget.pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300), // Smooth animation
-      curve: Curves.easeInOut,
-    );
+    widget.pageController.jumpToPage(index);
+    
   }
-
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widget.pageController.addListener(() {
+      setState(() {});
+    });
+  }
   @override
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(bottomNavControllerProvider);
@@ -94,20 +96,19 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 150),
                   transitionBuilder: (Widget child, Animation<double> animation) {
-                  return ScaleTransition(scale: animation, child: child);
+                    return FadeTransition(opacity: animation, child: child);
                   },
                   child: Icon(
-                  Icons.add,
-                  key: ValueKey<bool>(_isPressed),
-                  color: Colors.white,
-                  size: 24,
+                    Icons.add,
+                    key: ValueKey<bool>(_isPressed),
+                    color: Colors.white,
+                    size: 24,
                   ),
-                ),
                 ),
               ),
             ),
           ),
-        
+        ),
       ],
     );
   }

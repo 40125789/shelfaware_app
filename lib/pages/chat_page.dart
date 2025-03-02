@@ -180,10 +180,10 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           DonationDetailsHeader(
             donationName: widget.donationName,
-            receiverEmail: widget.receiverEmail,
+           
+          
             donationId: widget.donationId,
-            currentStatus: _currentStatus,
-            onUpdateStatus: (newStatus) => _updateDonationStatus(context, newStatus),
+        
           ),
           Expanded(child: _buildMessageList(chatId)),
           UserInput(

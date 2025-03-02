@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/services/unread_messages_service.dart';
 import 'package:shelfaware_app/repositories/unread_messages_repository.dart';
@@ -14,7 +15,7 @@ final unreadMessagesServiceProvider = Provider((ref) {
   return UnreadMessagesService(repository);
 });
 
-final unreadMessagesCountProvider = StreamProvider<int>((ref) {
+final unreadMessagesCountProvider = StreamProvider.autoDispose<int>((ref) {
   final authState = ref.watch(authProvider);
   final user = authState.user;
   

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shelfaware_app/components/status_icon_widget.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:intl/intl.dart';
 
@@ -106,24 +107,28 @@ class DonationDetailsDialog extends StatelessWidget {
                       SizedBox(height: 10),
                       Row(
                         children: [
-                          Icon(Icons.person, color: Colors.green),
                           SizedBox(width: 10),
-                          Text('Donor:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Donor:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 5),
-                          Flexible(child: Text(donorName, overflow: TextOverflow.ellipsis)),
+                          Flexible(
+                              child: Text(donorName,
+                                  overflow: TextOverflow.ellipsis)),
                         ],
                       ),
                       SizedBox(height: 10),
                       Row(
                         children: [
-                          Icon(Icons.date_range, color: Colors.blue),
                           SizedBox(width: 10),
-                          Text('Expiry:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Expiry:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 5),
                           Flexible(
                             child: Text(
                               formatDate(expiryDate),
-                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -132,11 +137,12 @@ class DonationDetailsDialog extends StatelessWidget {
                       SizedBox(height: 10),
                       Row(
                         children: [
-                          Icon(Icons.info, color: Colors.orange),
                           SizedBox(width: 10),
-                          Text('Status:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Status:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 5),
-                          Flexible(child: Text(status, overflow: TextOverflow.ellipsis)),
+                          StatusIconWidget(status: status),
+                          SizedBox(width: 5),
                         ],
                       ),
                     ],
@@ -185,12 +191,12 @@ class DonationDetailsDialog extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                  Icon(Icons.info, size: 18, color: Colors.white),
-                  SizedBox(width: 5),
-                  Text(
-                    'View Details',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                    Icon(Icons.info, color: Colors.white),
+                    SizedBox(width: 5),
+                    Text(
+                      'View Details',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ],
                 ),
               ),

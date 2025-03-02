@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/pages/location_page.dart';
 import 'package:shelfaware_app/providers/notification_count_provider.dart';
-import 'package:shelfaware_app/repositories/notification_repository.dart';
-import 'package:shelfaware_app/services/notification_service.dart';
+
 
 
 class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -26,11 +25,17 @@ final unreadCount = ref.watch(notificationCountProvider);
    
 
         return AppBar(
-          title: Text(title),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           actions: [
             // Location Icon with Navigation to LocationPage
             IconButton(
-              icon: Icon(Icons.location_on, color: Colors.grey[800]),
+              icon: Icon(Icons.location_on),
               onPressed: () async {
                 // Navigate to LocationPage to let the user change their location
                 await Navigator.push(
@@ -43,7 +48,7 @@ final unreadCount = ref.watch(notificationCountProvider);
             Stack(
               children: [
                 IconButton(
-                  icon: Icon(Icons.notifications, color: Colors.grey[800]),
+                  icon: Icon(Icons.notifications),
                   onPressed: onNotificationPressed, 
                 ),
                 if (unreadCount > 0) // Show badge if there are unread notifications

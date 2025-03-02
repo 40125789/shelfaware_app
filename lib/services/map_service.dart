@@ -42,7 +42,9 @@ class MapService {
             position: donation.location,
             infoWindow: InfoWindow(
               title: donation.itemName,
-              snippet: 'Expires: $formattedExpiryDate', // Use formatted date
+              snippet: 'Expires: $formattedExpiryDate', 
+              
+              // Use formatted date
             ),
             icon: await BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(48, 48)), 'assets/custom_marker_donation.png'), // Custom icon for donation markers
             onTap: () => onMarkerTap(donation), // Tap handler

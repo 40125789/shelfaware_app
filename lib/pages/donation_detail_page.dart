@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shelfaware_app/components/status_icon_widget.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/components/reserved_donation_dialog.dart';
 import 'package:shelfaware_app/components/picked_up_donation_dialog.dart';
@@ -87,7 +88,7 @@ class DonationDetailsPage extends StatelessWidget {
                           Text(
                               "Added On: ${DateFormat('dd MMM yyyy').format(donation['donatedAt'].toDate())}"),
                           SizedBox(height: 8),
-                          Text("Status: ${donation['status']}"),
+                         StatusIconWidget(status: donation['status']),
                         ],
                       ),
                     ),

@@ -5,11 +5,12 @@ import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shelfaware_app/components/donation_details_dialogue.dart';
+import 'package:shelfaware_app/components/pickedUp_dialog.dart';
+import 'package:shelfaware_app/components/status_icon_widget.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/donation_request_form.dart';
 
 class DonationMapScreen extends StatefulWidget {
-  
   final double donationLatitude;
   final double donationLongitude;
   final double userLatitude;
@@ -27,7 +28,7 @@ class DonationMapScreen extends StatefulWidget {
   final DateTime donationTime;
   final String pickupTimes;
   final String pickupInstructions;
-  final double? donorRating;  
+  final double? donorRating;
   String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   DonationMapScreen({
@@ -50,7 +51,7 @@ class DonationMapScreen extends StatefulWidget {
     required receiverEmail,
     required this.pickupTimes,
     required this.pickupInstructions,
-   this.donorRating,
+    this.donorRating,
   });
 
   @override
@@ -109,7 +110,6 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
       context: context,
       builder: (BuildContext context) {
         return DonationDetailsDialog(
-       
           donorName: widget.donorName,
           donationLatitude: widget.donationLatitude,
           donationLongitude: widget.donationLongitude,
@@ -126,14 +126,11 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
           chatId: widget.chatId,
           donorImageUrl: widget.donorImageUrl,
           imageUrl: widget.imageUrl,
-          status: widget.status, receiverEmail: '',
-          );
-          },
-     
+          status: widget.status,
+          receiverEmail: '',
+        );
+      },
     );
-    
-      
-    
   }
 
   // Check if the current user has already requested the item
@@ -272,45 +269,49 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
           ? Center(
               child:
                   CircularProgressIndicator()) // Show loading indicator while checking request status
-          : SingleChildScrollView(
-              // Make the whole body scrollable
-              child: Column(
-                children: [
-                  // Donation image at the top
-                  widget.imageUrl.isNotEmpty
-                      ? Container(
-                          height: 200,
-                          width: double.infinity,
-                          child: Image.network(
-                            widget.imageUrl,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) {
-                                return child; // Image is loaded, show it
-                              } else {
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes !=
-                                            null
-                                        ? loadingProgress
-                                                .cumulativeBytesLoaded /
-                                            (loadingProgress
-                                                    .expectedTotalBytes ??
-                                                1)
-                                        : null,
-                                  ),
-                                ); // Show loading indicator while the image is loading
-                              }
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/placeholder.png', // Placeholder image if error occurs
+          : Stack(
+              children: [
+                SingleChildScrollView(
+                  // Make the whole body scrollable
+                  child: Column(
+                    children: [
+                      // Donation image at the top
+                      widget.imageUrl.isNotEmpty
+                          ? Container(
+                              height: 200,
+                              width: double.infinity,
+                              child: Image.network(
+                                widget.imageUrl,
                                 fit: BoxFit.cover,
-                              );
-                            },
-                          ),
-                        )
-                      : Container(),
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                  if (loadingProgress == null) {
+                                    return child; // Image is loaded, show it
+                                  } else {
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress
+                                                    .expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                    .cumulativeBytesLoaded /
+                                                (loadingProgress
+                                                        .expectedTotalBytes ??
+                                                    1)
+                                            : null,
+                                      ),
+                                    ); // Show loading indicator while the image is loading
+                                  }
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.asset(
+                                    'assets/placeholder.png', // Placeholder image if error occurs
+                                    fit: BoxFit.cover,
+                                  );
+                                },
+                              ),
+                            )
+                          : Container(),
 
                       // Display donor rating if available
                       if (widget.donorRating != null)
@@ -324,220 +325,248 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                             SizedBox(width: 4),
                             Text(
                               widget.donorRating!.toStringAsFixed(1),
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
 
-                  // Donation details section
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Display donor image and name with added time
-                        Row(
+                      // Donation details section
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundImage:
-                                  NetworkImage(widget.donorImageUrl),
-                            ),
-                            SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            // Display donor image and name with added time
+                            Row(
                               children: [
-                                Text(
-                                  widget.donorName,
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundImage:
+                                      NetworkImage(widget.donorImageUrl),
                                 ),
-                                Row(
+                                SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(
-                                      Icons.access_time,
-                                      size: 16,
-                                      color: Colors.grey,
-                                    ),
-                                    SizedBox(width: 4),
                                     Text(
-                                      'Added $timeAgo', // Display time since donation was added
+                                      widget.donorName,
                                       style: TextStyle(
-                                          fontSize: 12, color: Colors.grey),
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.access_time,
+                                          size: 16,
+                                          color: Colors.grey,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Added $timeAgo', // Display time since donation was added
+                                          style: TextStyle(
+                                              fontSize: 12, color: Colors.grey),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ],
                             ),
+                            SizedBox(height: 16),
+                            Text(
+                              widget.productName,
+                              style: TextStyle(
+                                  fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              _getTimeRemaining(), // Display the time remaining
+                              style: TextStyle(fontSize: 18, color: Colors.red),
+                            ),
+                            SizedBox(height: 8),
+                            StatusIconWidget(status: widget.status),
+                            SizedBox(height: 16),
+                            Divider(),
+                            SizedBox(height: 16),
+                            Text(
+                              'Pickup Times:',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              widget.pickupTimes,
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Pickup Instructions:',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              widget.pickupInstructions,
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ChatPage(
+                                          donorName: widget.donorName,
+                                          userId: widget.userId,
+                                          receiverEmail: widget.donorEmail,
+                                          receiverId: widget.donatorId,
+                                          donationId: widget.donationId,
+                                          donationName: widget.productName,
+                                          chatId: '',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green),
+                                  child: Text('Contact Donor',
+                                      style: TextStyle(color: Colors.white)),
+                                ),
+                                // Check if the user has already requested the item and display message accordingly
+                                ElevatedButton(
+                                  onPressed: hasRequested
+                                      ? null // Disable button if request has already been made
+                                      : () =>
+                                          _requestDonation(), // Enable if no request has been made
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: hasRequested
+                                        ? Colors.white
+                                        : Colors.blue,
+                                  ),
+                                  child: Text(
+                                    hasRequested
+                                        ? 'Request Sent'
+                                        : 'Request Donation',
+                                    style: TextStyle(
+                                        color: Colors
+                                            .white), // Set text color to white
+                                  ),
+                                )
+                              ],
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Scroll down to see the location',
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.grey),
+                            ),
                           ],
                         ),
-                        SizedBox(height: 16),
-                        Text(
-                          widget.productName,
-                          style: TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          _getTimeRemaining(), // Display the time remaining
-                          style: TextStyle(fontSize: 18, color: Colors.red),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Status: ${widget.status}',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        SizedBox(height: 16),
-                        Divider(),
-                        SizedBox(height: 16),
-                        Text(
-                          'Pickup Times:',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          widget.pickupTimes,
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Pickup Instructions:',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          widget.pickupInstructions,
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        SizedBox(height: 16),
-                        Row(
+                      ),
+
+                      // Location and distance section
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChatPage(
-                                      donorName: widget.donorName,
-                                      userId: widget.userId,
-                                      receiverEmail: widget.donorEmail,
-                                      receiverId: widget.donatorId,
-                                      donationId: widget.donationId,
-                                      donationName: widget.productName,
-                                      chatId: '',
-                                    ),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green),
-                              child: Text('Contact Donor',
-                                  style: TextStyle(color: Colors.white)),
-                            ),
-                            // Check if the user has already requested the item and display message accordingly
-                            ElevatedButton(
-                              onPressed: hasRequested
-                                ? null // Disable button if request has already been made
-                                : () =>
-                                  _requestDonation(), // Enable if no request has been made
-                              style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                hasRequested ? Colors.white : Colors.blue,
-                              ),
-                              child: Text(
-                              hasRequested ? 'Request Sent' : 'Request Donation',
-                              style: TextStyle(color: Colors.white), // Set text color to white
-                              ),
-                            )
-                            ],
-                          ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Scroll down to see the location',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Location and distance section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'LOCATION', // Only display the simplified location address
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.location_on, color: Colors.grey),
-                            SizedBox(width: 4),
                             Text(
-                              '${distanceInMiles.toStringAsFixed(2)} miles away', // Display distance in miles
-                              style: TextStyle(fontSize: 12),
+                              'LOCATION', // Only display the simplified location address
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            Row(
+                              children: [
+                                Icon(Icons.location_on, color: Colors.grey),
+                                SizedBox(width: 4),
+                                Text(
+                                  '${distanceInMiles.toStringAsFixed(2)} miles away', // Display distance in miles
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ],
                             ),
                           ],
                         ),
+                      ),
+                      SizedBox(height: 10),
+
+                      // Map section with expandable functionality
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            isMapExpanded =
+                                !isMapExpanded; // Toggle map expansion
+                          });
+                        },
+                        child: Container(
+                          height: isMapExpanded
+                              ? MediaQuery.of(context).size.height
+                              : 300, // Expand map to full screen or fixed height
+                          width: double.infinity,
+                          child: GoogleMap(
+                            initialCameraPosition: CameraPosition(
+                              target: donationLocation,
+                              zoom: 14.0,
+                            ),
+                            onMapCreated: (GoogleMapController controller) {
+                              mapController = controller;
+                            },
+                            markers: {
+                              userMarker, // User's location marker
+                            },
+                            circles: {
+                              Circle(
+                                circleId: CircleId('radius'),
+                                center: donationLocation,
+                                radius: 150, // Define radius (500 meters)
+                                strokeColor: Colors.blue.withOpacity(0.5),
+                                strokeWidth: 2,
+                                fillColor: Colors.blue.withOpacity(0.1),
+                              ),
+                            },
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      IconButton(
+                        icon: Icon(isMapExpanded
+                            ? Icons.remove
+                            : Icons
+                                .add), // Change icon based on expansion state
+                        onPressed: () {
+                          setState(() {
+                            isMapExpanded = !isMapExpanded;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                if (widget.status == 'Picked Up')
+                  Positioned.fill(
+                    child: Stack(
+                      children: [
+                        // Greyed-out background, making it non-interactive
+                        GestureDetector(
+                          onTap:
+                              () {}, // This prevents any interaction with the greyed-out background
+                          child: Container(
+                            color: Colors.grey.withOpacity(0.5),
+                          ),
+                        ),
+                        Center(
+                            // Custom PopUpWidget on top of the greyed-out background
+                            child: PickedUpPopup(
+                          onClose: () {},
+                        )),
                       ],
                     ),
                   ),
-                  SizedBox(height: 10),
-
-                  // Map section with expandable functionality
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isMapExpanded = !isMapExpanded; // Toggle map expansion
-                      });
-                    },
-                    child: Container(
-                      height: isMapExpanded
-                          ? MediaQuery.of(context).size.height
-                          : 300, // Expand map to full screen or fixed height
-                      width: double.infinity,
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: donationLocation,
-                          zoom: 14.0,
-                        ),
-                        onMapCreated: (GoogleMapController controller) {
-                          mapController = controller;
-                        },
-                        markers: {
-                          userMarker, // User's location marker
-                        },
-                        circles: {
-                          Circle(
-                            circleId: CircleId('radius'),
-                            center: donationLocation,
-                            radius: 150, // Define radius (500 meters)
-                            strokeColor: Colors.blue.withOpacity(0.5),
-                            strokeWidth: 2,
-                            fillColor: Colors.blue.withOpacity(0.1),
-                          ),
-                        },
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  IconButton(
-                    icon: Icon(isMapExpanded
-                        ? Icons.remove
-                        : Icons.add), // Change icon based on expansion state
-                    onPressed: () {
-                      setState(() {
-                        isMapExpanded = !isMapExpanded;
-                      });
-                    },
-                  ),
-                ],
-              ),
+              ],
             ),
     );
   }

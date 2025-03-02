@@ -13,7 +13,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/unread_messages_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 final isUploadingProvider = StateProvider<bool>((ref) => false);
 
 class CustomDrawer extends ConsumerWidget {
@@ -101,8 +100,10 @@ class CustomDrawer extends ConsumerWidget {
 
               // Get the current location
               try {
-                Position position = await _getCurrentLocation();  // Get dynamic location
-                LatLng currentLocation = LatLng(position.latitude, position.longitude);
+                Position position =
+                    await _getCurrentLocation(); // Get dynamic location
+                LatLng currentLocation =
+                    LatLng(position.latitude, position.longitude);
 
                 // Navigate to WatchedDonationsPage with userId and currentLocation
                 Navigator.push(
@@ -122,39 +123,49 @@ class CustomDrawer extends ConsumerWidget {
           ),
 
           // Drawer List Items - Section 3
-          ListTile(
-            leading: Stack(
-              clipBehavior: Clip.none, // Allows the badge to overflow
-              children: [
-                const Icon(Icons.message), // Message icon
-                Positioned(
-                  top: -3,
-                  right: -3,
-                  child: user != null
-                      ? ref.watch(unreadMessagesCountProvider).when(
-                          data: (unreadCount) => unreadCount > 0
-                              ? custom_badge.Badge(
-                                  badgeContent: Text('$unreadCount'),
-                                  badgeColor: Colors.red,
-                                )
-                              : const SizedBox(),
-                          loading: () => const SizedBox(),
-                          error: (_, __) => const SizedBox(),
-                        )
-                      : const SizedBox(),
+          Consumer(
+            builder: (context, ref, child) {
+              final unreadMessagesCount =
+                  ref.watch(unreadMessagesCountProvider);
+
+              return ListTile(
+                leading: Stack(
+                  clipBehavior: Clip.none, // Allows the badge to overflow
+                  children: [
+                    const Icon(Icons.message), // Message icon
+                    Positioned(
+                      top: -3,
+                      right: -3,
+                      child: unreadMessagesCount.when(
+                        data: (count) => count > 0
+                            ? custom_badge.Badge(
+                                badgeContent: Text('$count'),
+                                badgeColor: Colors.red,
+                              )
+                            : const SizedBox(),
+                        loading: () => const SizedBox(),
+                        error: (_, __) => const SizedBox(),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            title: const Text('Messages'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatListPage(),
-                ),
+                title: const Text('Messages'),
+                onTap: () {
+                  // Navigate to the chat list page
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatListPage(),
+                    ),
+                  ).then((_) {
+                    // When returning to the drawer, refresh the unread count again
+                    ref.invalidate(unreadMessagesCountProvider);
+                  });
+                },
               );
             },
           ),
+
           ListTile(
             leading: const Icon(Icons.food_bank),
             title: const Text('Manage Donations'),
@@ -179,7 +190,9 @@ class CustomDrawer extends ConsumerWidget {
             leading: const Icon(Icons.logout),
             title: const Text('Log off'),
             onTap: () async {
-              await ref.read(authProvider.notifier).signOut();  // Trigger sign out
+              await ref
+                  .read(authProvider.notifier)
+                  .signOut(); // Trigger sign out
               Navigator.pushReplacementNamed(context, '/login');
             },
           ),
