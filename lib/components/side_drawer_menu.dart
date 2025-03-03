@@ -7,11 +7,14 @@ import 'package:shelfaware_app/components/photo_upload.dart';
 import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/groups_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
+import 'package:shelfaware_app/pages/shopping_list.dart';
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/unread_messages_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'product_detail_dialogue.dart';
 
 final isUploadingProvider = StateProvider<bool>((ref) => false);
 
@@ -45,31 +48,34 @@ class CustomDrawer extends ConsumerWidget {
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
-          Padding(
+          // Add a green background to the profile section
+          Container(
+            color: const Color(0xFF4CAF50), // Green background color
             padding: const EdgeInsets.all(16.0),
             child: ProfileSection(
               firstName: firstName,
               lastName: lastName,
             ),
           ),
-          const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
+   
 
           // Drawer List Items - Section 1
-          ListTile(
-            leading: const Icon(Icons.group),
-            title: const Text('My Groups'),
-            onTap: () {
-              if (user != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GroupsPage(userId: user.uid),
-                  ),
-                );
-              }
-            },
-          ),
-          ListTile(
+    
+  ListTile(
+  leading: const Icon(Icons.shopping_cart),
+  title: const Text('Shopping List'),
+  onTap: () {
+    if (user != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ShoppingListScreen(),
+        ),
+      );
+    }
+  },
+),
+ ListTile(
             leading: const Icon(Icons.history),
             title: const Text('History'),
             onTap: () {
@@ -196,7 +202,7 @@ class CustomDrawer extends ConsumerWidget {
               Navigator.pushReplacementNamed(context, '/login');
             },
           ),
-          const Divider(indent: 16.0, endIndent: 16.0, color: Colors.grey),
+       
           // Feedback Survey Link
           ListTile(
             title: ElevatedButton.icon(

@@ -17,7 +17,7 @@ class ProductDetailsDialog extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min, // Ensures the column takes up only as much space as needed
             children: [
               if (product.imageUrl != null && product.imageUrl!.isNotEmpty)
                 ClipRRect(
@@ -30,7 +30,7 @@ class ProductDetailsDialog extends StatelessWidget {
                         const Icon(Icons.broken_image, size: 100, color: Colors.grey),
                   ),
                 ),
-              const SizedBox(height: 16), // Reduced height slightly
+              const SizedBox(height: 16),
               Text(
                 product.productName,
                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
@@ -48,10 +48,9 @@ class ProductDetailsDialog extends StatelessWidget {
                     ),
                 textAlign: TextAlign.center,
               ),
-            // Reduced height slightly
               TextButton(
                 onPressed: () async {
-                   final url = product.productUrl;
+                  final url = product.productUrl;
                   launchUrl(Uri.parse(url)).onError((error, stackTrace) {
                     print('Error launching URL: $error');
                     return false;
@@ -62,7 +61,7 @@ class ProductDetailsDialog extends StatelessWidget {
                   style: TextStyle(color: Colors.blue),
                 ),
               ),
-            // Reduced height slightly
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -78,7 +77,7 @@ class ProductDetailsDialog extends StatelessWidget {
                         'productName': product.productName,
                         'imageUrl': product.imageUrl,
                         'brandName': product.brandName,
-                        'productUrl': product.productUrl, // Include productUrl
+                        'productUrl': product.productUrl,
                       });
                     },
                     child: const Text(

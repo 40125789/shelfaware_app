@@ -51,9 +51,10 @@ class TrendsService {
           foodItemCount[foodItem] = (foodItemCount[foodItem] ?? 0) + 1;
         }
 
-        if (foodCategory != null) {
-          foodCategoryCount[foodCategory] = (foodCategoryCount[foodCategory] ?? 0) + 1;
-        }
+      if (foodCategory != null && foodCategory != "All") {
+  foodCategoryCount[foodCategory] = (foodCategoryCount[foodCategory] ?? 0) + 1;
+}
+
 
         if (reason != null) {
           discardReasonCount[reason] = (discardReasonCount[reason] ?? 0) + 1;

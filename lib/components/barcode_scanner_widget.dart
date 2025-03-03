@@ -6,81 +6,111 @@ import 'package:shelfaware_app/services/open_food_facts_api.dart'; // Adjust the
 
 // Ensure your FoodApiService and ProductDetails are imported
 
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:camera/camera.dart'; // Import camera package for live feed
+ // Your existing API service
+import 'package:shelfaware_app/models/product_details.dart'; // Your product model
+
 class BarcodeScannerWidget extends StatefulWidget {
   final Function(String) onBarcodeScanned;
 
-  const BarcodeScannerWidget({Key? key, required this.onBarcodeScanned})
-      : super(key: key);
+  const BarcodeScannerWidget({Key? key, required this.onBarcodeScanned}) : super(key: key);
 
   @override
   _BarcodeScannerWidgetState createState() => _BarcodeScannerWidgetState();
 }
 
 class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
-  final ImagePicker _picker = ImagePicker();
-  String? scannedBarcode;
-  ProductDetails? foodInfo; // Holds product details after fetching
-  bool isLoading = false;
+  late CameraController _cameraController;
+  bool _isCameraInitialized = false;
+  bool _isProcessing = false;
+  String? _scannedBarcode;
 
-  Future<void> scanBarcode() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-    if (image == null) return;
+  late final BarcodeScanner _barcodeScanner;
 
-    final inputImage = InputImage.fromFilePath(image.path);
-    final barcodeScanner = GoogleMlKit.vision.barcodeScanner();
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+    _barcodeScanner = GoogleMlKit.vision.barcodeScanner();
+  }
 
+  // Initialize the camera
+  Future<void> _initializeCamera() async {
+    final cameras = await availableCameras();
+    final camera = cameras.first;
+
+    _cameraController = CameraController(camera, ResolutionPreset.high);
+    await _cameraController.initialize();
     setState(() {
-      isLoading = true; // Start loading while processing barcode
+      _isCameraInitialized = true;
     });
+  }
 
-    final List<Barcode> barcodes = await barcodeScanner.processImage(inputImage);
-    await barcodeScanner.close();
+  // Process the camera stream for barcode scanning
+  Future<void> _processCameraStream() async {
+    if (_isProcessing) return;
+
+    _isProcessing = true;
+    final image = await _cameraController.takePicture();
+    final inputImage = InputImage.fromFilePath(image.path);
+
+    final List<Barcode> barcodes = await _barcodeScanner.processImage(inputImage);
 
     if (barcodes.isNotEmpty) {
-      setState(() {
-        scannedBarcode = barcodes.first.displayValue;
-      });
-
-      // Fetch food info using the barcode
-      final product = await FoodApiService.fetchProductDetails(scannedBarcode!);
-
-      setState(() {
-        foodInfo = product; // Set the fetched product details
-        isLoading = false; // Stop loading after the product details are fetched
-      });
-
-      if (product == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to fetch product details.')),
-        );
-      } else {
-        widget.onBarcodeScanned(scannedBarcode!); // Pass barcode to parent widget
+      final barcode = barcodes.first.displayValue;
+      if (barcode != null) {
+        setState(() {
+          _scannedBarcode = barcode;
+        });
+        widget.onBarcodeScanned(barcode); // Send the scanned barcode back to the parent widget
+        // Stop scanning after one barcode is detected
       }
-    } else {
-      setState(() {
-        isLoading = false; // Stop loading if no barcode was found
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No barcode found. Please try again.')),
-      );
     }
+
+    _isProcessing = false;
+  }
+
+  @override
+  void dispose() {
+    _cameraController.dispose();
+    _barcodeScanner.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    if (!_isCameraInitialized) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Scan Barcode')),
+      body: Stack(
         children: [
-          ElevatedButton(
-            onPressed: scanBarcode,
-            child: const Text('Scan Barcode'),
+          // Display the live camera feed
+          CameraPreview(_cameraController),
+          Positioned(
+            top: 20,
+            left: 20,
+            child: ElevatedButton(
+              onPressed: () async {
+                await _processCameraStream(); // Start processing the camera feed when the button is pressed
+              },
+              child: Text('Scan Barcode'),
+            ),
           ),
-          if (isLoading)
-            const CircularProgressIndicator(), // Show loading indicator when scanning or fetching
-          if (scannedBarcode != null) Text('Scanned Barcode: $scannedBarcode'),
-          if (foodInfo != null)
-            Text('Last Scanned: ${foodInfo!.productName}'), // Display last scanned product name
+          if (_scannedBarcode != null)
+            Positioned(
+              bottom: 20,
+              left: 20,
+              child: Text(
+                'Scanned Barcode: $_scannedBarcode',
+                style: TextStyle(fontSize: 20, color: Colors.white),
+              ),
+            ),
         ],
       ),
     );

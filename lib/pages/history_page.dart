@@ -4,6 +4,12 @@ import 'package:shelfaware_app/models/food_history.dart';
 import 'package:shelfaware_app/pages/add_food_item.dart';
 import 'package:shelfaware_app/services/history_service.dart';
 
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shelfaware_app/models/food_history.dart';
+import 'package:shelfaware_app/pages/add_food_item.dart';
+import 'package:shelfaware_app/services/history_service.dart';
+
 class HistoryPage extends StatefulWidget {
   final String userId;
 
@@ -17,8 +23,8 @@ class _HistoryPageState extends State<HistoryPage> {
   late Future<List<FoodHistory>> _foodItems;
   List<int> _selectedItems = [];
   bool _isRecreateMode = false;
-  bool _isGrouped = false; // For grouping by consumed and discarded
-  bool _isNewestToOldest = true; // For sorting by newest to oldest
+  bool _isGrouped = false;
+  bool _isNewestToOldest = true;
 
   @override
   void initState() {
@@ -72,10 +78,27 @@ class _HistoryPageState extends State<HistoryPage> {
     } else {
       foodItems.sort((a, b) {
         return _isNewestToOldest
-            ? b.updatedOn.compareTo(a.updatedOn) // Newest to Oldest
-            : a.updatedOn.compareTo(b.updatedOn); // Oldest to Newest
+            ? b.updatedOn.compareTo(a.updatedOn)
+            : a.updatedOn.compareTo(b.updatedOn);
       });
     }
+  }
+
+  // Group food items by month
+  Map<String, List<FoodHistory>> _groupFoodItemsByMonth(
+      List<FoodHistory> foodItems) {
+    Map<String, List<FoodHistory>> groupedItems = {};
+
+    for (var foodItem in foodItems) {
+      final String monthYear =
+          DateFormat('MMM yyyy').format(foodItem.updatedOn.toDate());
+      if (!groupedItems.containsKey(monthYear)) {
+        groupedItems[monthYear] = [];
+      }
+      groupedItems[monthYear]!.add(foodItem);
+    }
+
+    return groupedItems;
   }
 
   @override
@@ -95,7 +118,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     _selectedItems.clear(); // Clear selected items
                   });
                 },
-              ), // No back arrow in recreate mode, or it will exit recreate mode
+              ),
         title: Text(
           _isRecreateMode
               ? '${_selectedItems.length} Items selected'
@@ -189,78 +212,118 @@ class _HistoryPageState extends State<HistoryPage> {
                 // Sort the food items based on the current state
                 _sortFoodItems(foodItems);
 
+                // Group food items by month
+                Map<String, List<FoodHistory>> groupedItems = {};
+                for (var foodItem in foodItems) {
+                  String month = DateFormat('MMMM yyyy')
+                      .format(foodItem.updatedOn.toDate());
+                  if (groupedItems.containsKey(month)) {
+                    groupedItems[month]!.add(foodItem);
+                  } else {
+                    groupedItems[month] = [foodItem];
+                  }
+                }
+
                 return ListView.builder(
-                  itemCount: foodItems.length,
+                  itemCount: groupedItems.keys.length,
                   itemBuilder: (context, index) {
-                    final foodItem = foodItems[index];
-                    final formattedDate = DateFormat('dd MMM yyyy')
-                        .format(foodItem.updatedOn.toDate());
-                    String statusText = foodItem.status == 'consumed'
-                        ? 'Consumed'
-                        : 'Discarded';
-                    Color textColor = foodItem.status == 'consumed'
-                        ? Colors.green
-                        : Colors.red;
-                    Color borderColor = foodItem.status == 'consumed'
-                        ? Colors.green
-                        : Colors.red;
+                    String month = groupedItems.keys.elementAt(index);
+                    List<FoodHistory> items = groupedItems[month]!;
 
-                    IconData statusIcon = foodItem.status == 'consumed'
-                        ? Icons.check
-                        : Icons.delete;
-
-                    return Card(
-                      margin:
-                          EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(color: borderColor, width: 2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.all(15),
-                        title: Text(
-                          '${foodItem.productName} x ${foodItem.quantity}',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Row(
-                          children: [
-                            Text(
-                              statusText, // Only status text is colored
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header for the month extending full width with rounded corners
+                        Container(
+                          width: MediaQuery.of(context).size.width, // Full width
+                          margin: EdgeInsets.symmetric(vertical: 8),
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(8), // Rounded corners
+                          ),
+                          child: Center(
+                            child: Text(
+                              month,
                               style: TextStyle(
-                                color: textColor,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.black,
                               ),
                             ),
-                            Text(
-                              ' on $formattedDate', // Date in grey and not bold
-                              style: TextStyle(
-                                color: Colors.grey, // Grey color for the date
-                                fontWeight: FontWeight.normal, // Not bold
-                              ),
-                            ),
-                            Spacer(),
-                            Icon(
-                              statusIcon,
-                              color: textColor,
-                            ),
-                          ],
+                          ),
                         ),
-                        leading: _isRecreateMode
-                            ? Checkbox(
-                                value: _selectedItems.contains(index),
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    if (value == true) {
-                                      _selectedItems.add(index);
-                                    } else {
-                                      _selectedItems.remove(index);
-                                    }
-                                  });
-                                },
-                              )
-                            : null,
-                      ),
+                        // List of food items for that month
+                        for (var foodItem in items)
+                          Card(
+                            margin: EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 15),
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                  color: foodItem.status == 'consumed'
+                                      ? Colors.green
+                                      : Colors.red,
+                                  width: 2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ListTile(
+                              contentPadding: EdgeInsets.all(15),
+                              title: Text(
+                                '${foodItem.productName} x ${foodItem.quantity}',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Row(
+                                children: [
+                                  Text(
+                                    foodItem.status == 'consumed'
+                                        ? 'Consumed'
+                                        : 'Discarded',
+                                    style: TextStyle(
+                                      color: foodItem.status == 'consumed'
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' on ${DateFormat('dd MMM yyyy').format(foodItem.updatedOn.toDate())}',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  Icon(
+                                    foodItem.status == 'consumed'
+                                        ? Icons.check
+                                        : Icons.delete,
+                                    color: foodItem.status == 'consumed'
+                                        ? Colors.green
+                                        : Colors.red,
+                                  ),
+                                ],
+                              ),
+                              leading: _isRecreateMode
+                                  ? Checkbox(
+                                      value: _selectedItems.contains(
+                                          foodItems.indexOf(foodItem)),
+                                      onChanged: (bool? value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            _selectedItems.add(
+                                                foodItems.indexOf(foodItem));
+                                          } else {
+                                            _selectedItems.remove(
+                                                foodItems.indexOf(foodItem));
+                                          }
+                                        });
+                                      },
+                                    )
+                                  : null,
+                            ),
+                          ),
+                      ],
                     );
                   },
                 );

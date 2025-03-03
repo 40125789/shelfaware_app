@@ -127,6 +127,7 @@ class _HomePageState extends ConsumerState<HomePage>
       drawer: CustomDrawer(
         firstName: firstName,
         lastName: lastName,
+      
         onSignOut: () async {
           await context.read<AuthNotifier>().signOut();
         },

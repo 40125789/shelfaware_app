@@ -232,7 +232,7 @@ class DonationRequestCard extends StatelessWidget {
                         foregroundColor: Colors.white,
                       ),
                     ),
-                    if (status != "Picked Up")
+                    if (status != "Picked Up" && status != "Declined")
                       ElevatedButton.icon(
                         onPressed: onWithdraw,
                         icon: const Icon(Icons.cancel, color: Colors.white),

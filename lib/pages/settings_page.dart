@@ -3,6 +3,10 @@ import 'package:shelfaware_app/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:flutter/material.dart';
+import 'package:shelfaware_app/main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends ConsumerWidget {
   @override
@@ -123,6 +127,50 @@ class SettingsPage extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            // Privacy Policy Section
+            Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              child: ListTile(
+                leading: const Icon(Icons.privacy_tip),
+                title: const Text('Privacy Policy'),
+                trailing: TextButton(
+                  onPressed: () async {
+                    const url = 'https://sites.google.com/view/shelfawareprivacypolicy/home';
+                    launchUrl(Uri.parse(url)).onError((error, stackTrace) {
+                      print('Error launching URL: $error');
+                      return false;
+                    });
+                  },
+                  child: const Text('View'),
+                ),
+              ),
+            ),
+            // Delete Account Section
+            Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              child: ListTile(
+                leading: const Icon(Icons.delete_forever),
+                title: const Text('Delete Account'),
+                trailing: TextButton(
+                  onPressed: () async {
+                    const url = 'https://forms.gle/nvpqjxhzsYJTNpUC7';
+                    launchUrl(Uri.parse(url)).onError((error, stackTrace) {
+                      print('Error launching URL: $error');
+                      return false;
+                    });
+                  },
+                  child: const Text('Delete'),
+                ),
               ),
             ),
             // Other Section

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/donation_request_card.dart';
 import 'package:shelfaware_app/components/my_donation_card.dart';
 import 'package:shelfaware_app/components/my_donation_status_filter.dart';
+import 'package:shelfaware_app/components/withdraw_request_dialog.dart';
 import 'package:shelfaware_app/pages/star_review_page.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:shelfaware_app/providers/donation_provider.dart';
@@ -165,55 +166,67 @@ class _MyDonationsPageState extends ConsumerState<MyDonationsPage> {
                                   return Container();
                                 }
 
-                                return DonationRequestCard(
-                                  request: request,
-                                  onWithdraw: () async {
-                                    try {
-                                      await ref
-                                          .read(donationServiceProvider)
-                                          .withdrawDonationRequest(context, request['requestId']);
-                                    } catch (e) {
-                                      print("Error withdrawing request: $e");
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text("Error: $e")),
-                                      );
-                                    }
-                                  },
-                                  onLeaveReview: () async {
-                                    try {
-                                      final hasReviewed = await ref
-                                          .read(donationServiceProvider)
-                                          .hasUserAlreadyReviewed(request['donationId'], authState.user!.uid);
+                               return DonationRequestCard(
+request: request,
+onWithdraw: () async {
+  // Check if the status is not 'Declined'
+  if (request['status'] != 'Declined') {
+    // Show confirmation dialog
+    bool? shouldWithdraw = await showWithdrawDialog(context);
 
-                                      if (hasReviewed) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('You have already left a review for this donation.')),
-                                        );
-                                      } else {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ReviewPage(
-                                              donorId: request['donatorId'] ?? '',
-                                              donationId: request['donationId'] ?? '',
-                                              donationImage: request['imageUrl'] ?? '',
-                                              donationName: request['productName'] ?? '',
-                                              donorImageUrl: request['donorImageUrl'] ?? '',
-                                              donorName: request['donorName'] ?? '',
-                                              isEditing: false,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    } catch (e) {
-                                      print("Error checking review status: $e");
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text("Error: $e")),
-                                      );
-                                    }
-                                  },
-                                  hasLeftReview: hasLeftReview,
-                                );
+    if (shouldWithdraw == true) {
+      try {
+        await ref
+            .read(donationServiceProvider)
+            .withdrawDonationRequest(context, request['requestId']);
+      } catch (e) {
+        print("Error withdrawing request: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
+      }
+    }
+  }
+},
+
+  onLeaveReview: () async {
+    // Your existing onLeaveReview functionality
+    try {
+      final hasReviewed = await ref
+          .read(donationServiceProvider)
+          .hasUserAlreadyReviewed(request['donationId'], authState.user!.uid);
+
+      if (hasReviewed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You have already left a review for this donation.')),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ReviewPage(
+              donorId: request['donatorId'] ?? '',
+              donationId: request['donationId'] ?? '',
+              donationImage: request['imageUrl'] ?? '',
+              donationName: request['productName'] ?? '',
+              donorImageUrl: request['donorImageUrl'] ?? '',
+              donorName: request['donorName'] ?? '',
+              isEditing: false,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error checking review status: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
+  },
+  hasLeftReview: hasLeftReview,
+);
+
+                              
                               },
                             ),
                           ),
