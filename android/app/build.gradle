@@ -36,8 +36,7 @@ android {
         release {
             
             signingConfig signingConfigs.debug
-             minifyEnabled true 
-            shrinkResources false  // Disable resource shrinking for easier debugging
+            // Disable resource shrinking for easier debugging
         }
     }
 }

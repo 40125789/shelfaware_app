@@ -8,6 +8,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/main.dart';
 import 'package:shelfaware_app/services/auth_services.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
   return FirebaseAuth.instance;
 });
@@ -65,9 +70,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     try {
       User? user = _firebaseAuth.currentUser;
-      if (user != null) {
-        await removeFCMToken(user.uid); // Remove the FCM token when logging out
-      }
+    
 
       await _firebaseAuth.signOut();
       state = AuthState(user: null, isAuthenticated: false);
@@ -96,16 +99,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> removeFCMToken(String userId) async {
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(userId).update(
-        {'fcm_token': FieldValue.delete()},
-      );
-      print("FCM token removed for user: $userId");
-    } catch (e) {
-      print("Error removing FCM token: $e");
-    }
-  }
+
 
   @override
   void dispose() {

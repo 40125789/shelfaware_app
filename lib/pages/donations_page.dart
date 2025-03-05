@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -57,94 +58,93 @@ class _DonationsScreenState extends State<DonationsPage> with SingleTickerProvid
   }
 
  
-  Future<void> _getUserId() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      if (mounted) {
-        setState(() {
-          _userId = user.uid;
-        });
+Future<void> _getUserId() async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user != null && mounted) {
+    setState(() {
+      _userId = user.uid;
+    });
+    _currentLocation = await _getUserLocationFromFirestore(user.uid);
+  } else {
+    print("User is not logged in");
+  }
+}
+
+Future<LatLng?> _getUserLocationFromFirestore(String userId) async {
+  try {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      var userLocationData = userDoc.data() as Map<String, dynamic>?;
+      if (userLocationData?['location'] != null) {
+        GeoPoint location = userLocationData!['location'];
+        return LatLng(location.latitude, location.longitude);
       }
-      await _getUserLocationFromFirestore(user.uid);
-    } else {
-      print("User is not logged in");
     }
+  } catch (e) {
+    print("Error fetching user location from Firestore: $e");
   }
 
-  Future<void> _getUserLocationFromFirestore(String userId) async {
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-      if (userDoc.exists) {
-        var userLocationData = userDoc.data() as Map<String, dynamic>;
-        if (userLocationData['location'] != null) {
-          GeoPoint location = userLocationData['location'];
-          setState(() {
-            _currentLocation = LatLng(location.latitude, location.longitude);
-          });
-          _loadMap();
-        }
-      }
-    } catch (e) {
-      print("Error fetching user location from Firestore: $e");
-    }
+  try {
+    Position position = await Geolocator.getCurrentPosition();
+    return LatLng(position.latitude, position.longitude);
+  } catch (e) {
+    print("Error getting device location: $e");
   }
 
-  Future<void> _requestLocationPermission() async {
-    bool granted = await LocationPermissionUtil.requestLocationPermission(context);
-    if (granted) {
-      _loadMap();
-    }
-  }
+  return null;
+}
 
-  Future<void> _loadMap() async {
-    try {
-      if (_currentLocation == null) {
-        await _getUserLocationFromFirestore(_userId!);
-      }
-      if (_currentLocation == null) {
-        final position = await _locationService.getCurrentLocation();
-        setState(() {
-          _currentLocation = LatLng(position.latitude, position.longitude);
-          _isLoading = false;
-        });
-      }
-      final donationLocations = await fetchDonationLocations();
-      _allDonations = donationLocations;
-      _filteredDonations = List.from(_allDonations);
-      await _updateMarkers(_filteredDonations);
-
-      final foodBanks = await _placesService.getNearbyFoodBanks(_currentLocation!);
-      Set<Marker> foodBankMarkers = await Future.wait(foodBanks.map((place) async {
-        final details = await _placesService.getPlaceDetails(place.placeId);
-        String snippetText = details != null && details.openingHours != null && details.openingHours!.isNotEmpty
-            ? details.openingHours!.first
-            : "No opening hours available";
-        return Marker(
-          markerId: MarkerId(place.name),
-          position: place.location,
-          infoWindow: InfoWindow(
-            title: place.name,
-            snippet: snippetText,
-            onTap: () => _showPlaceDetails(context, place, details),
-          ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        );
-      }).toList()).then((markers) => markers.toSet());
-      if (mounted) {
-        setState(() {
-          _markers = {
-            ..._markers,
-            ...foodBankMarkers,
-         
-            
-            
-          };
-        });
-      }
-    } catch (e) {
-      print("Error loading map: $e");
-    }
+Future<void> _requestLocationPermission() async {
+  if (await LocationPermissionUtil.requestLocationPermission(context)) {
+    _loadMap();
   }
+}
+
+Future<void> _loadMap() async {
+  try {
+    if (_currentLocation == null) {
+      _currentLocation = await _getUserLocationFromFirestore(_userId!);
+    }
+
+    if (_currentLocation == null) {
+      print("Failed to get location, skipping map load.");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final donationLocations = await fetchDonationLocations();
+    _allDonations = donationLocations;
+    _filteredDonations = List.from(donationLocations);
+    await _updateMarkers(_filteredDonations);
+
+    final foodBanks = await _placesService.getNearbyFoodBanks(_currentLocation!);
+    Set<Marker> foodBankMarkers = await Future.wait(foodBanks.map((place) async {
+      final details = await _placesService.getPlaceDetails(place.placeId);
+      return Marker(
+        markerId: MarkerId(place.name),
+        position: place.location,
+        infoWindow: InfoWindow(
+          title: place.name,
+          snippet: details?.openingHours?.first ?? "No opening hours available",
+          onTap: () => _showPlaceDetails(context, place, details),
+        ),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      );
+    })).then((markers) => markers.toSet());
+
+    if (mounted) {
+      setState(() {
+        _markers.addAll(foodBankMarkers);
+        _isLoading = false;
+      });
+    }
+  } catch (e) {
+    print("Error loading map: $e");
+  }
+}
+
+  
 
   Future<void> _updateMarkers(List<DonationLocation> donations) async {
     try {
