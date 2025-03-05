@@ -146,10 +146,10 @@ class _LoginPageState extends State<LoginPage> {
                     child: const Text(
                       'Forgot password?',
                       style: TextStyle(
-                          color: Colors.blue, fontWeight: FontWeight.bold),
+                        color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                     ),
                   ),
-                ),
                 const SizedBox(height: 15),
 
                 // Sign-in button
@@ -166,17 +166,27 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Not a member?',
-                        style: TextStyle(color: Colors.grey[700])),
-                    const SizedBox(width: 4),
+                  Text(
+                    'Not a member?',
+                    style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                     GestureDetector(
                       onTap: widget.onTap,
                       child: const Text(
-                        'Register Now',
-                        style: TextStyle(
-                            color: Colors.blue, fontWeight: FontWeight.bold),
+                      'Register Now',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                       ),
                     ),
+                      
+                    
                   ],
                 ),
               ],
