@@ -101,7 +101,7 @@ class _LoginPageState extends State<LoginPage> {
                       controller: emailController,
                       hintText: 'Email',
                       obscureText: false,
-                      suffixIcon: null,
+                      suffixIcon: null, onChanged: (value) {  },
                     ),
                     const SizedBox(height: 0),
 
@@ -121,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
                             _obscurePassword = !_obscurePassword;
                           });
                         },
-                      ),
+                      ), onChanged: (value) {  },
                     ),
                     if (_errorMessage != null)
                       Padding(

@@ -146,11 +146,18 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final String senderId = _auth.currentUser!.uid;
-    final String chatId = getChatId(widget.donationId, senderId, widget.receiverId);
-
-    return Scaffold(
+@override
+Widget build(BuildContext context) {
+  final String senderId = _auth.currentUser!.uid;
+  final String chatId = getChatId(widget.donationId, senderId, widget.receiverId);
+  return WillPopScope(
+    onWillPop: () async {
+      final String senderId = _auth.currentUser!.uid;
+      final String chatId = getChatId(widget.donationId, senderId, widget.receiverId);
+      await _chatRepository.markMessagesAsRead(chatId, senderId); // Mark messages as read
+      return true; // Allow back navigation
+    },
+    child: Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
@@ -180,10 +187,7 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           DonationDetailsHeader(
             donationName: widget.donationName,
-           
-          
             donationId: widget.donationId,
-        
           ),
           Expanded(child: _buildMessageList(chatId)),
           UserInput(
@@ -192,8 +196,10 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildMessageList(String chatId) {
     return StreamBuilder(

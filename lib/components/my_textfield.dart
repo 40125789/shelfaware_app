@@ -13,7 +13,7 @@ class MyTextField extends StatelessWidget {
     required this.hintText,
     this.obscureText = false,
     this.suffixIcon,
-    this.errorText,
+    this.errorText, required Null Function(dynamic value) onChanged,
   });
 
   @override
