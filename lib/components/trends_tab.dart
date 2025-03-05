@@ -140,7 +140,6 @@ class _TrendsTabState extends State<TrendsTab> {
 
   Widget _buildCard(String title, String value, String emoji) {
     return Card(
-      color: Colors.white,
       elevation: 4,
       margin: EdgeInsets.symmetric(vertical: 8),
       child: Padding(

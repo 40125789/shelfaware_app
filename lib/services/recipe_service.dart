@@ -22,9 +22,10 @@ class RecipeService {
     }
 
     String url =
-        'https://api.spoonacular.com/recipes/findByIngredients?ingredients=$query'
-        '&sort=min-missing-ingredients&number=4&ranking=1&ignorePantry=true'
-        '&apiKey=$apiKey';
+    'https://api.spoonacular.com/recipes/findByIngredients?ingredients=$query'
+    '&sort=max-ingredients&number=4&ranking=2&ignorePantry=true'
+    '&apiKey=$apiKey';
+
 
     print('Fetching recipes from: $url');
 

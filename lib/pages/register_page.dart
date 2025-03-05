@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
 import 'package:shelfaware_app/components/square_tile.dart';
-import 'package:shelfaware_app/pages/login_page.dart';
+import 'package:shelfaware_app/pages/home_page.dart';
 import 'package:shelfaware_app/pages/registration_success_page.dart';
 import 'package:shelfaware_app/services/auth_services.dart';
-
 
 class RegisterPage extends StatefulWidget {
   final Function()? onTap;
@@ -23,7 +22,14 @@ class _RegisterPageState extends State<RegisterPage> {
   final confirmPasswordController = TextEditingController();
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  String? _emailError;
   String? _passwordError;
+  String? _confirmPasswordError;
+  String? _firstNameError;
+  String? _lastNameError;
 
   @override
   void dispose() {
@@ -56,26 +62,48 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void signUserUp() async {
-    // Display loading dialog
-    showDialog(
-      context: context,
-      builder: (context) {
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+      _confirmPasswordError = null;
+      _firstNameError = null;
+      _lastNameError = null;
+    });
 
-    // Validate passwords
-    if (passwordController.text != confirmPasswordController.text) {
-      Navigator.pop(context);
-      showErrorMessage('Passwords do not match');
+    // Validate inputs
+    if (firstNameController.text.isEmpty) {
+      setState(() {
+        _firstNameError = 'First name is required';
+      });
       return;
     }
 
-    // Validate password policy
+    if (lastNameController.text.isEmpty) {
+      setState(() {
+        _lastNameError = 'Last name is required';
+      });
+      return;
+    }
+
+    if (emailController.text.isEmpty || !RegExp(r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(emailController.text)) {
+      setState(() {
+        _emailError = 'Please enter a valid email';
+      });
+      return;
+    }
+
+    if (passwordController.text != confirmPasswordController.text) {
+      setState(() {
+        _confirmPasswordError = 'Passwords do not match';
+      });
+      return;
+    }
+
     String? passwordError = validatePassword(passwordController.text);
     if (passwordError != null) {
-      Navigator.pop(context);
-      showErrorMessage(passwordError);
+      setState(() {
+        _passwordError = passwordError;
+      });
       return;
     }
 
@@ -87,11 +115,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       User? user = userCredential.user;
-
       if (user != null) {
-        // Send email verification
-        await user.sendEmailVerification();
-
         // Add user details to Firestore
         await addUserDetails(
           firstNameController.text.trim(),
@@ -99,27 +123,16 @@ class _RegisterPageState extends State<RegisterPage> {
           emailController.text.trim(),
         );
 
-        // Sign out the user
-        await FirebaseAuth.instance.signOut();
-
-        // Close loading dialog
-        Navigator.pop(context);
-
-        // Navigate to the Registration Success Page
+        // Navigate to the Home Page
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => RegistrationSuccessPage(
-              firstName: firstNameController.text.trim(),
-              email: emailController.text.trim(),
-            ),
+            builder: (context) => HomePage(), // Replace this with your actual HomePage widget
           ),
         );
       }
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context); // Close loading dialog
       showErrorMessage(e.message ?? 'An error occurred');
-    // Navigate to the login page
     }
   }
 
@@ -167,84 +180,71 @@ class _RegisterPageState extends State<RegisterPage> {
                   size: 80,
                   color: Colors.green,
                 ),
+                SizedBox(height: 20), // Add more spacing here
                 Text(
                   'Let\'s make an account!',
                   style: TextStyle(
                     color: Colors.grey[700],
-                    fontSize: 16,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                SizedBox(height: 20),
                 MyTextField(
                   controller: firstNameController,
                   hintText: 'First Name',
-                  obscureText: false,
+                  errorText: _firstNameError,
                 ),
                 MyTextField(
                   controller: lastNameController,
                   hintText: 'Last Name',
-                  obscureText: false,
+                  errorText: _lastNameError,
                 ),
                 MyTextField(
                   controller: emailController,
                   hintText: 'Email',
-                  obscureText: false,
+                  errorText: _emailError,
                 ),
                 MyTextField(
                   controller: passwordController,
                   hintText: 'Password',
-                  obscureText: true,
+                  obscureText: _obscurePassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                   errorText: _passwordError,
                 ),
                 MyTextField(
                   controller: confirmPasswordController,
                   hintText: 'Confirm Password',
-                  obscureText: true,
-                ),
-                MyButton(
-                  text: "Sign up",
-                  onTap: signUserUp,
+                  obscureText: _obscureConfirmPassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
+                  errorText: _confirmPasswordError,
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          thickness: 0.5,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        child: Text(
-                          'or continue with',
-                          style: TextStyle(color: Colors.grey[700]),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(
-                          thickness: 0.5,
-                          color: Colors.grey[400]),
-                      ),
-                    ],
+                  padding: const EdgeInsets.symmetric(vertical: 15.0),
+                  child: MyButton(
+                    text: "Sign up",
+                    onTap: signUserUp,
                   ),
                 ),
-                const SizedBox(height: 10.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SquareTile(
-                      onTap: () => AuthService().signInWithGoogle(),
-                      imagePath: 'lib/images/google.png',
-                    ),
-                    const SizedBox(width: 20),
-                    SquareTile(
-                      onTap: () {},
-                      imagePath: 'lib/images/facebook.png',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10.0),
+                const SizedBox(height: 20.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

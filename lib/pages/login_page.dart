@@ -22,42 +22,38 @@ class _LoginPageState extends State<LoginPage> {
   final passwordController = TextEditingController();
   bool _obscurePassword = true;
   String? _errorMessage;
+  bool _isLoading = false; // To track the loading state
 
   @override
   void initState() {
     super.initState();
-    // Set the email field to the pre-filled email passed from Registration
     emailController.text = widget.email;
   }
 
   void signUserIn() async {
-    // Show loading dialog while the login is in progress
-    showDialog(
-      context: context,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
+    setState(() {
+      _isLoading = true; // Show loading indicator
+    });
 
     try {
-      // Sign in with email and password
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      // Only pop the loading dialog if the widget is still mounted
       if (mounted) {
-        Navigator.pop(context); // Pop the loading dialog
+        setState(() {
+          _isLoading = false; // Hide loading indicator after login
+        });
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
         );
       }
     } on FirebaseAuthException catch (e) {
-      // Only update the UI if the widget is still mounted
       if (mounted) {
-        Navigator.pop(context); // Pop the loading dialog
-
         setState(() {
+          _isLoading = false; // Hide loading indicator after error
           if (e.code == 'wrong-password') {
             _errorMessage = 'Incorrect password';
           } else {
@@ -80,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 // Logo
                 Image.asset(
-                  'assets/login.png', // Path to your image
+                  'assets/login.png',
                   width: 150,
                   height: 150,
                 ),
@@ -90,9 +86,9 @@ class _LoginPageState extends State<LoginPage> {
                 Text(
                   'Welcome back!',
                   style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 16,
-                  ),
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20),
                 ),
                 const SizedBox(height: 15),
 
@@ -107,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                       obscureText: false,
                       suffixIcon: null,
                     ),
-                    const SizedBox(height: 0), // Reduced spacing
+                    const SizedBox(height: 0),
 
                     // Password text field with visibility toggle
                     MyTextField(
@@ -154,55 +150,16 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 15), // Reduced spacing
+                const SizedBox(height: 15),
 
                 // Sign-in button
-                MyButton(
-                  text: "Sign in",
-                  onTap: signUserIn,
-                ),
+                _isLoading
+                    ? CircularProgressIndicator() // Show loading indicator
+                    : MyButton(
+                        text: "Sign in",
+                        onTap: signUserIn,
+                      ),
 
-                // Divider with text
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        thickness: 0.5,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Text(
-                        'or continue with',
-                        style: TextStyle(color: Colors.grey[700]),
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        thickness: 0.5,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Social login buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SquareTile(
-                      onTap: () => AuthService().signInWithGoogle(),
-                      imagePath: 'lib/images/google.png',
-                    ),
-                    const SizedBox(width: 20),
-                    SquareTile(
-                      onTap: () {},
-                      imagePath: 'lib/images/facebook.png',
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 20),
 
                 // Register link

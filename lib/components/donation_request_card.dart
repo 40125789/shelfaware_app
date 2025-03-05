@@ -124,24 +124,24 @@ class DonationRequestCard extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: productName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Colors.grey[700],
                       fontSize: 16,
                     ),
                   ),
-                  const TextSpan(
+                 TextSpan(
                     text: ' from ',
                     style: TextStyle(
-                      color: Colors.black,
+                      color: Colors.grey[700],
                       fontSize: 16,
                     ),
                   ),
                   TextSpan(
                     text: donorName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Colors.grey[700],
                       fontSize: 16,
                     ),
                   ),

@@ -4,17 +4,19 @@ import 'package:shelfaware_app/pages/add_food_item.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 class BottomNavigationBarComponent extends ConsumerStatefulWidget {
   final PageController pageController;
 
-  const BottomNavigationBarComponent({Key? key, required this.pageController}) : super(key: key);
+  const BottomNavigationBarComponent({Key? key, required this.pageController})
+      : super(key: key);
 
   @override
-  _BottomNavigationBarComponentState createState() => _BottomNavigationBarComponentState();
+  _BottomNavigationBarComponentState createState() =>
+      _BottomNavigationBarComponentState();
 }
 
-class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationBarComponent> {
+class _BottomNavigationBarComponentState
+    extends ConsumerState<BottomNavigationBarComponent> {
   bool _isPressed = false;
 
   void _onFabTap() {
@@ -29,24 +31,24 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
     });
 
     Navigator.push(
-      context,
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 300),
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return FadeTransition(
-            opacity: animation,
-            child: AddFoodItem(foodItems: []), // Pass the required 'foodItems' argument
-          );
-        },
-      )
-    );
+        context,
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 300),
+          pageBuilder: (context, animation, secondaryAnimation) {
+            return FadeTransition(
+              opacity: animation,
+              child: AddFoodItem(
+                  foodItems: []), // Pass the required 'foodItems' argument
+            );
+          },
+        ));
   }
 
   void _onItemTapped(int index) {
     ref.read(bottomNavControllerProvider.notifier).navigateTo(index);
     widget.pageController.jumpToPage(index);
-    
   }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -54,6 +56,7 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
       setState(() {});
     });
   }
+
   @override
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(bottomNavControllerProvider);
@@ -74,8 +77,10 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Recipes'),
-            BottomNavigationBarItem(icon: Icon(Icons.food_bank), label: 'Donations'),
-            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Statistics'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.food_bank), label: 'Donations'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.bar_chart), label: 'Statistics'),
           ],
         ),
         Positioned(
@@ -95,7 +100,8 @@ class _BottomNavigationBarComponentState extends ConsumerState<BottomNavigationB
                 backgroundColor: Colors.transparent,
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 150),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
                     return FadeTransition(opacity: animation, child: child);
                   },
                   child: Icon(

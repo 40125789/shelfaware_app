@@ -84,7 +84,7 @@ class MyDonationCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           "Date Added: $formattedDate",
-                          style: const TextStyle(color: Colors.black),
+                         
                         ),
                         const SizedBox(height: 4),
                         if (status != 'Picked Up' && assignedToName.isNotEmpty)

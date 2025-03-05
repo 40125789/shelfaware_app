@@ -1,8 +1,11 @@
 
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/main.dart';
 import 'package:shelfaware_app/services/auth_services.dart';
 
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
@@ -31,8 +34,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(AuthState(isAuthenticated: false)) {
     _authSubscription = _firebaseAuth.authStateChanges().listen((user) {
       state = AuthState(user: user, isAuthenticated: user != null);
-
-      
+      if (user != null) {
+        // Call listenForTokenRefresh when user is authenticated
+        listenForTokenRefresh();
+      }
     });
   }
 
@@ -42,7 +47,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
         email: email,
         password: password,
       );
-      state = AuthState(user: userCredential.user, isAuthenticated: true);
+
+      final user = userCredential.user;
+      if (user != null) {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          await storeFCMToken(user.uid, fcmToken); // Store FCM token
+        }
+      }
+
+      state = AuthState(user: user, isAuthenticated: true);
     } catch (e) {
       throw Exception('Failed to sign in: ${e.toString()}');
     }
@@ -50,10 +64,46 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> signOut() async {
     try {
+      User? user = _firebaseAuth.currentUser;
+      if (user != null) {
+        await removeFCMToken(user.uid); // Remove the FCM token when logging out
+      }
+
       await _firebaseAuth.signOut();
       state = AuthState(user: null, isAuthenticated: false);
     } catch (e) {
       print("Error during sign-out: $e");
+    }
+  }
+
+  void listenForTokenRefresh() {
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await storeFCMToken(user.uid, newToken);
+        print("FCM Token refreshed and updated: $newToken");
+      }
+    });
+  }
+
+  Future<void> storeFCMToken(String userId, String token) async {
+    try {
+      final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+      await userRef.set({'fcm_token': token}, SetOptions(merge: true));
+      print("FCM token stored: $token for user: $userId");
+    } catch (e) {
+      print("Error storing FCM token: $e");
+    }
+  }
+
+  Future<void> removeFCMToken(String userId) async {
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(userId).update(
+        {'fcm_token': FieldValue.delete()},
+      );
+      print("FCM token removed for user: $userId");
+    } catch (e) {
+      print("Error removing FCM token: $e");
     }
   }
 

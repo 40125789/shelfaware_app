@@ -48,7 +48,7 @@ class _FilterDialogState extends State<FilterDialog> {
           height: MediaQuery.of(context).size.height * 0.6,
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
-            color: Colors.white,
+         
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(16.0),
               topRight: Radius.circular(16.0),

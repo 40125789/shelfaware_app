@@ -294,8 +294,6 @@ class _FoodItemFormState extends State<FoodItemForm> {
                   decoration: InputDecoration(
                     labelText: 'Product Name',
                     hintText: 'Enter product name',
-                    filled: true,
-                    fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.0),
                     ),
@@ -319,7 +317,6 @@ class _FoodItemFormState extends State<FoodItemForm> {
           if (_foodSuggestions.isNotEmpty)
             Container(
               height: 100,
-              color: Colors.white,
               child: ListView.builder(
                 itemCount: _foodSuggestions.length,
                 itemBuilder: (context, index) {
@@ -335,7 +332,7 @@ class _FoodItemFormState extends State<FoodItemForm> {
                 },
               ),
             ),
-          const SizedBox(height: 20),
+       
           Row(
             children: [
               Expanded(
@@ -365,8 +362,6 @@ class _FoodItemFormState extends State<FoodItemForm> {
                       decoration: InputDecoration(
                         labelText: 'Expiry Date',
                         hintText: 'Select expiry date',
-                        filled: true,
-                        fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.0),
                         ),
@@ -409,8 +404,6 @@ class _FoodItemFormState extends State<FoodItemForm> {
             },
             decoration: InputDecoration(
               labelText: 'Category',
-              filled: true,
-              fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
               ),
@@ -424,8 +417,6 @@ class _FoodItemFormState extends State<FoodItemForm> {
                   controller: _quantityController,
                   decoration: InputDecoration(
                     labelText: 'Quantity',
-                    filled: true,
-                    fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.0),
                     ),
@@ -450,8 +441,6 @@ class _FoodItemFormState extends State<FoodItemForm> {
             decoration: InputDecoration(
               labelText: 'Storage Location',
               hintText: 'Enter storage location',
-              filled: true,
-              fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
               ),
@@ -462,9 +451,7 @@ class _FoodItemFormState extends State<FoodItemForm> {
             controller: _notesController,
             decoration: InputDecoration(
               labelText: 'Notes (Optional)',
-              hintText: 'Enter any notes',
-              filled: true,
-              fillColor: Colors.white,
+              hintText: 'Enter any notes',  
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
               ),

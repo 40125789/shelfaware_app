@@ -28,7 +28,6 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-
   // Initialize Firebase App Check
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
@@ -40,15 +39,11 @@ void main() async {
     print("Error fetching App Check token: $e");
   });
 
-  // Initialize Firebase Messaging
-  FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-
   // Initialize Firebase Auth
   FirebaseAuth auth = FirebaseAuth.instance;
 
-  // Initialize notifications
-  FirebaseApi firebaseApi = FirebaseApi();
-  await firebaseApi.initNotifications();
+  // Initialize Firebase Messaging
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
 
   // Load environment variables
   try {
@@ -59,20 +54,26 @@ void main() async {
     return;
   }
 
-  // Get FCM token
-  _firebaseMessaging.getToken().then((token) async {
-    print("FCM Token: $token");
-    if (token != null) {
-      User? user = auth.currentUser;
-      if (user != null) {
+  // Listen for authentication state changes
+  FirebaseAuth.instance.authStateChanges().listen((User? user) async {
+    if (user != null) {
+      print("User logged in: ${user.uid}");
+
+      String? token = await messaging.getToken();
+      if (token != null) {
+        print("Retrieved FCM Token: $token");
         await storeFCMToken(user.uid, token);
       }
+    } else {
+      print("User is not logged in.");
     }
   });
 
   // Handle token refresh
-  _firebaseMessaging.onTokenRefresh.listen((newToken) async {
-    User? user = auth.currentUser;
+  messaging.onTokenRefresh.listen((newToken) async {
+    print("FCM Token refreshed: $newToken");
+
+    User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       await storeFCMToken(user.uid, newToken);
     }
@@ -98,15 +99,14 @@ Future<void> storeFCMToken(String userId, String token) async {
   try {
     final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
 
-    await userRef.update({
-      'fcm_token': token,
-    }).catchError((e) {
-      print("Error storing FCM token: $e");
-    });
+    await userRef.set({'fcm_token': token}, SetOptions(merge: true));
+
+    print("FCM token stored successfully for user: $userId");
   } catch (e) {
     print("Error updating Firestore: $e");
   }
 }
+
 
 final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsState>((ref) {
   return SettingsNotifier();

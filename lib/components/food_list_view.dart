@@ -123,19 +123,18 @@ class FoodListView extends StatelessWidget {
                 final expiryTimestamp = data['expiryDate'] as Timestamp;
                 String documentId = document.id;
 
-                return InkWell(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (BuildContext context) {
-                        return Container(
-                          height: MediaQuery.of(context).size.height * 0.7,
-                          child: MarkFoodDialog(documentId: documentId),
-                        );
-                      },
-                    );
-                  },
+             return InkWell(
+  onTap: () {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return MarkFoodDialog(documentId: documentId);
+      },
+    );
+  },
+
+
                   child: Card(
                     elevation: 3,
                     margin: const EdgeInsets.symmetric(vertical: 8.0),

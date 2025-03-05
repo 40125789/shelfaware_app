@@ -12,8 +12,10 @@ class SearchBarWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: TextField(
         controller: searchController,
+        style: TextStyle(color: Colors.grey), // Set text color to grey
         decoration: InputDecoration(
           hintText: 'What are you looking for?',
+          hintStyle: TextStyle(color: Colors.grey), // Set hint text color to grey
           prefixIcon: Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30.0),

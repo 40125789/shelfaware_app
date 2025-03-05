@@ -4,7 +4,7 @@ class MarkFood {
   final String id;
   final String? productName;
   final String? productImage;
-  final int quantity;
+  int quantity;
   final DateTime? expiryDate;
   final String? notes;
   final String? storageLocation;

@@ -53,7 +53,10 @@ class _MyStatsTabState extends State<MyStatsTab> with TickerProviderStateMixin {
               padding: const EdgeInsets.symmetric(
                   horizontal: 12.0, vertical: 8.0), // Smaller padding
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.green,
+                
+                
+             
                 borderRadius:
                     BorderRadius.circular(20), // Smaller border radius
                 boxShadow: [

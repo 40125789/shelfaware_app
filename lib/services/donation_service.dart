@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -142,15 +143,18 @@ class DonationService {
       foodItemDoc['pickupTimes'] = formData['pickupTimes'] ?? '';
       foodItemDoc['pickupInstructions'] = formData['pickupInstructions'] ?? '';
 
-      // If location exists in the user's document, use that, otherwise use GeoLocator location
+     // If location exists in the user's document, use that, otherwise use GeoLocator location
+      GeoPoint userLocation;
       if (userDoc['location'] != null) {
-        GeoPoint userLocation = userDoc['location'];
-        foodItemDoc['location'] =
-            GeoPoint(userLocation.latitude, userLocation.longitude);
+        userLocation = userDoc['location'];
       } else {
-        foodItemDoc['location'] =
-            GeoPoint(location.latitude, location.longitude);
+        userLocation = GeoPoint(location.latitude, location.longitude);
       }
+
+      // Obscure the location
+      GeoPoint obscuredLocation = _obscureLocation(userLocation);
+
+      foodItemDoc['location'] = obscuredLocation;
 
       if (formData['imageUrl'] != null) {
         foodItemDoc['imageUrl'] = formData['imageUrl'];
@@ -180,6 +184,15 @@ class DonationService {
         SnackBar(content: Text("Failed to donate item: $e")),
       );
     }
+  }
+
+  static GeoPoint _obscureLocation(GeoPoint location) {
+    // Obscure the location by adding a small random offset
+    final random = Random();
+    final double offset = 0.001; // Adjust the offset value as needed
+    final double latOffset = (random.nextDouble() - 0.5) * offset;
+    final double lngOffset = (random.nextDouble() - 0.5) * offset;
+    return GeoPoint(location.latitude + latOffset, location.longitude + lngOffset);
   }
 
   Future<String?> getAssigneeProfileImage(String donationId) async {

@@ -199,29 +199,44 @@ class _LocationPageState extends State<LocationPage> {
                   markers: _markers,
                 ),
           if (_addressSuggestions.isNotEmpty)
-            Positioned(
-              top: 70,
-              left: 10,
-              right: 10,
-              child: Container(
-                color: Colors.white,
-                height: 250,
-                child: ListView.builder(
-                  itemCount: _addressSuggestions.length,
-                  itemBuilder: (context, index) {
-                    var suggestion = _addressSuggestions[index];
-                    String address = suggestion['place_name'];
-                    double lat = suggestion['geometry']['coordinates'][1];
-                    double lon = suggestion['geometry']['coordinates'][0];
+  Positioned(
+    top: 70,
+    left: 10,
+    right: 10,
+    child: Container(
+      height: 250,
+      decoration: BoxDecoration(
+        color: Colors.white, // Ensure background is white
+        borderRadius: BorderRadius.circular(8.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 5.0,
+            spreadRadius: 1.0,
+          ),
+        ],
+      ),
+      child: ListView.builder(
+        itemCount: _addressSuggestions.length,
+        itemBuilder: (context, index) {
+          var suggestion = _addressSuggestions[index];
+          String address = suggestion['place_name'];
+          double lat = suggestion['geometry']['coordinates'][1];
+          double lon = suggestion['geometry']['coordinates'][0];
 
-                    return ListTile(
-                      title: Text(address),
-                      onTap: () => _onSuggestionSelected(address, lat, lon),
-                    );
-                  },
-                ),
-              ),
+          return ListTile(
+            title: Text(
+              address,
+              style: TextStyle(color: Colors.black), // Ensure text is black
             ),
+            tileColor: Colors.white, // Keep each item white
+            onTap: () => _onSuggestionSelected(address, lat, lon),
+          );
+        },
+      ),
+    ),
+  ),
+
           Positioned(
             top: 8,
             left: 10,
@@ -230,14 +245,23 @@ class _LocationPageState extends State<LocationPage> {
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 controller: _addressController,
-                decoration: InputDecoration(
-                  filled: true,
-                  labelText: 'Search Address',
-                  suffixIcon: Icon(Icons.search),
+  decoration: InputDecoration(
+    filled: true,
+    fillColor: Colors.white, // Make background white
+    labelText: 'Search Address',
+    labelStyle: TextStyle(color: Colors.black), // Ensure label is black
+    suffixIcon: Icon(Icons.search, color: Colors.black), // Ensure icon is visible
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8.0),
+      borderSide: BorderSide(color: Colors.grey),
+    ),
+  ),
+  style: TextStyle(color: Colors.black), // Ensure text input is black
+),
                 ),
               ),
-            ),
-          ),
+            
+          
           Positioned(
             bottom: 0,
             left: 10,
