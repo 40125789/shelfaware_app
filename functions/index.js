@@ -1,6 +1,20 @@
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
+const { Storage } = require('@google-cloud/storage');
+const vision = require('@google-cloud/vision');
+const storage = new Storage();
+const { ImageAnnotatorClient } = require('@google-cloud/vision');
+const client = new ImageAnnotatorClient();
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const sharp = require('sharp');
+
+
+
 admin.initializeApp();
+
+
 
 
 exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").onRun(async () => {
@@ -518,3 +532,69 @@ exports.sendRequestAcceptedNotification = functions.firestore
         
        
     });
+
+ 
+
+exports.moderateImages = functions.storage.object().onFinalize(async (object) => {
+    const filePath = object.name; // Path of uploaded image
+    const contentType = object.contentType;
+    const bucketName = object.bucket;
+
+    // Only process images in specific folders
+    if (!filePath.startsWith("donation_images/") && !filePath.startsWith("user_profile_images/")) {
+        console.log("File is not in a monitored folder, ignoring.");
+        return null;
+    }
+
+    if (!contentType || !contentType.startsWith("image/")) {
+        console.log("Not an image, skipping moderation.");
+        return null;
+    }
+
+    console.log(`Analyzing ${filePath} for inappropriate content...`);
+
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file(filePath);
+    const [result] = await client.safeSearchDetection(`gs://${bucketName}/${filePath}`);
+    const detections = result.safeSearchAnnotation;
+
+    console.log("Detected labels:", detections);
+
+    // Check if image contains inappropriate content
+    const isInappropriate = (
+        detections.adult === "LIKELY" || detections.adult === "VERY_LIKELY" ||
+        detections.violence === "LIKELY" || detections.violence === "VERY_LIKELY" ||
+        detections.racy === "LIKELY" || detections.racy === "VERY_LIKELY"
+    );
+
+    if (isInappropriate) {
+        console.log(`Inappropriate content found in ${filePath}`);
+
+        // OPTION 1: BLUR IMAGE
+        const tempFilePath = path.join(os.tmpdir(), path.basename(filePath));
+        await file.download({ destination: tempFilePath });
+
+        await sharp(tempFilePath)
+            .blur(10) // Adjust blur level if needed
+            .toFile(tempFilePath + "_blurred");
+
+        await bucket.upload(tempFilePath + "_blurred", {
+            destination: filePath, // Overwrite original
+            metadata: { contentType: contentType },
+        });
+
+        fs.unlinkSync(tempFilePath);
+        fs.unlinkSync(tempFilePath + "_blurred");
+
+        console.log(`Blurred and replaced ${filePath}`);
+
+        // OPTION 2: DELETE IMAGE (Uncomment if you want deletion instead)
+        // await file.delete();
+        // console.log(`Deleted ${filePath} due to inappropriate content.`);
+    } else {
+        console.log(`No inappropriate content found in ${filePath}.`);
+    }
+
+    return null;
+});
+
