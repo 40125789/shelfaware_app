@@ -263,7 +263,7 @@ packages:
     source: hosted
     version: "5.6.2"
   cloud_firestore_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: cloud_firestore_platform_interface
       sha256: c3a2987addea08273c582a91f5fb173ca81916ef6d7f8e1a6760c3a8a3a53fc7
@@ -439,7 +439,7 @@ packages:
     source: hosted
     version: "0.3.1"
   equatable:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: equatable
       sha256: "567c64b3cb4cf82397aac55f4f0cbd3ca20d77c6c03bedbc4ceaddc08904aef7"
@@ -1850,7 +1850,7 @@ packages:
     source: hosted
     version: "3.2.2"
   riverpod:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: riverpod
       sha256: "59062512288d3056b2321804332a13ffdd1bf16df70dcc8e506e411280a72959"

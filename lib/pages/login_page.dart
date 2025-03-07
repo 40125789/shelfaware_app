@@ -1,11 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
-import 'package:shelfaware_app/components/square_tile.dart';
 import 'package:shelfaware_app/pages/home_page.dart';
-import 'package:shelfaware_app/services/auth_services.dart';
 import 'reset_password_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -98,6 +95,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     // Email text field
                     MyTextField(
+                      key: Key('email-field'),
                       controller: emailController,
                       hintText: 'Email',
                       obscureText: false,
@@ -107,6 +105,7 @@ class _LoginPageState extends State<LoginPage> {
 
                     // Password text field with visibility toggle
                     MyTextField(
+                      key: Key('password-field'),
                       controller: passwordController,
                       hintText: 'Password',
                       obscureText: _obscurePassword,
@@ -156,6 +155,7 @@ class _LoginPageState extends State<LoginPage> {
                 _isLoading
                     ? CircularProgressIndicator() // Show loading indicator
                     : MyButton(
+                       key: Key('login-button'),
                         text: "Sign in",
                         onTap: signUserIn,
                       ),
@@ -175,6 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(width: 4),
                     GestureDetector(
+                       key: Key('register-now-link'), 
                       onTap: widget.onTap,
                       child: const Text(
                       'Register Now',

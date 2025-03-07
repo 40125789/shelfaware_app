@@ -1,4 +1,3 @@
-import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -8,7 +7,7 @@ void setupFirebaseCoreMocks() {
   const MethodChannel channel =
       MethodChannel('plugins.flutter.io/firebase_core');
 
-  TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
     switch (methodCall.method) {
       case 'Firebase#initializeCore':

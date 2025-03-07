@@ -35,7 +35,7 @@ class ProductDetailsDialog extends StatelessWidget {
                 product.productName,
                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                     
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -44,7 +44,7 @@ class ProductDetailsDialog extends StatelessWidget {
                 'Brand: ${product.brandName}',
                 style: Theme.of(context).textTheme.titleMedium!.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: Colors.black54,
+                  
                     ),
                 textAlign: TextAlign.center,
               ),

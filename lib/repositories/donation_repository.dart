@@ -235,21 +235,23 @@ Future<String?> getAssigneeProfileImage(String donationId) async {
 
       await requestDoc.reference.delete();
 
-      await _firestore.collection('donations').doc(donationId).update({
-        'status': 'available',
-        'assignedTo': FieldValue.delete(),
-        'assignedToName': FieldValue.delete(),
-      }).then((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Donation request withdrawn and donation status updated to available')),
-        );
-      }).catchError((e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating donation: $e')),
-        );
-      });
+      var donationDoc = await _firestore.collection('donations').doc(donationId).get();
+      if (donationDoc.exists) {
+        var donationData = donationDoc.data() as Map<String, dynamic>;
+        if (donationData['assignedTo'] == requestDoc['requesterId']) {
+          await _firestore.collection('donations').doc(donationId).update({
+            'status': 'available',
+            'assignedTo': FieldValue.delete(),
+            'assignedToName': FieldValue.delete(),
+          });
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'Donation request withdrawn and donation status updated to available')),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error withdrawing request: $e')),

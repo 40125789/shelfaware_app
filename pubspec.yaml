@@ -100,6 +100,8 @@ dependencies:
 
 
 
+  riverpod: any
+  equatable: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -130,6 +132,7 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+  cloud_firestore_platform_interface: any
 flutter:
 
   # The following line ensures that the Material Icons font is
