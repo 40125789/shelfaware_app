@@ -6,8 +6,6 @@ import 'package:shelfaware_app/services/watched_donations_service.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 
 
-
-
 final watchedDonationsRepositoryProvider = Provider<WatchedDonationsRepository>((ref) {
   final firebaseFirestore = FirebaseFirestore.instance;
   final firebaseAuth = FirebaseAuth.instance;

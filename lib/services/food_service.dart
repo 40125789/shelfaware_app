@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/repositories/food_repository.dart';
 
 class FoodService implements FoodRepository {

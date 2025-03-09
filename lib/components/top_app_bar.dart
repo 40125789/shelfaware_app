@@ -4,7 +4,6 @@ import 'package:shelfaware_app/pages/location_page.dart';
 import 'package:shelfaware_app/providers/notification_count_provider.dart';
 
 
-
 class TopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback onNotificationPressed;

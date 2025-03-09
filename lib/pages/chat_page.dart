@@ -104,26 +104,6 @@ class _ChatPageState extends State<ChatPage> {
     return ids.join('_');
   }
 
-  Future<void> _updateDonationStatus(BuildContext context, String newStatus) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('donations')
-          .doc(widget.donationId)
-          .update({'status': newStatus});
-
-      setState(() {
-        _currentStatus = newStatus;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Status updated to $newStatus')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update status: $e')),
-      );
-    }
-  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -2,8 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/components/donation_list_widget.dart';
 import 'package:shelfaware_app/components/donation_search_bar.dart';

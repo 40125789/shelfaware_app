@@ -5,7 +5,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shelfaware_app/components/photo_upload.dart';
 import 'package:shelfaware_app/pages/chat_list_page.dart';
-import 'package:shelfaware_app/pages/groups_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/shopping_list.dart';
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
@@ -13,8 +12,6 @@ import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/unread_messages_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import 'product_detail_dialogue.dart';
 
 final isUploadingProvider = StateProvider<bool>((ref) => false);
 

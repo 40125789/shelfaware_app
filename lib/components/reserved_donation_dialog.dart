@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter/material.dart';
-
 class ReservedDonationDialog extends StatelessWidget {
   final String assignedToName;
   final Future<String?> profileImageFuture;

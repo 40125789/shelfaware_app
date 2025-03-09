@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter/material.dart';
-
 class FilterDialog extends StatefulWidget {
   final bool filterExpiringSoon;
   final bool filterNewlyAdded;

@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shelfaware_app/providers/donation_provider.dart';
-
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/models/food_category.dart';
 import 'package:shelfaware_app/models/food_category_icons.dart';

@@ -1,13 +1,9 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fuzzy/fuzzy.dart';
-import 'package:shelfaware_app/components/recipe_card.dart';
 import 'package:shelfaware_app/models/recipe_model.dart'; // Ensure this is the correct path to RecipeModel
 import 'package:shelfaware_app/pages/recipe_details_page.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 // Ensure this is imported correctly
 
 class FavouritesPage extends StatefulWidget {

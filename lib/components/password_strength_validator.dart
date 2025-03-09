@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shelfaware_app/components/my_textfield.dart';
 
-// password_validation_widget.dart
-import 'package:flutter/material.dart';
 
 class PasswordValidationWidget extends StatefulWidget {
   final TextEditingController passwordController;

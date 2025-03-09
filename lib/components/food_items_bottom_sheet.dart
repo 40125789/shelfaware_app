@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:shelfaware_app/components/food_item_card.dart';
 import 'package:shelfaware_app/components/food_item_form.dart';
 import 'package:shelfaware_app/notifiers/food_item_notifier.dart';

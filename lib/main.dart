@@ -6,7 +6,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shelfaware_app/api/firebase_api.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
 import 'package:shelfaware_app/pages/settings_page.dart';

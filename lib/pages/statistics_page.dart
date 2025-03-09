@@ -3,8 +3,6 @@ import 'package:shelfaware_app/components/trends_tab.dart';
 import 'package:shelfaware_app/components/my_stats_tab.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
-
 class StatisticsPage extends StatefulWidget {
   @override
   _StatisticsPageState createState() => _StatisticsPageState();

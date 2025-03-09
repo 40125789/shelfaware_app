@@ -3,10 +3,6 @@ import 'package:shelfaware_app/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:flutter/material.dart';
-import 'package:shelfaware_app/main.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends ConsumerWidget {
   @override

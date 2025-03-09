@@ -4,11 +4,6 @@ import 'package:shelfaware_app/models/food_history.dart';
 import 'package:shelfaware_app/pages/add_food_item.dart';
 import 'package:shelfaware_app/services/history_service.dart';
 
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:shelfaware_app/models/food_history.dart';
-import 'package:shelfaware_app/pages/add_food_item.dart';
-import 'package:shelfaware_app/services/history_service.dart';
 
 class HistoryPage extends StatefulWidget {
   final String userId;

@@ -1,21 +1,11 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/models/mark_food.dart';
-import 'package:shelfaware_app/repositories/mark_food_respository.dart';
 import 'package:shelfaware_app/services/mark_food_service.dart';
 import 'package:shelfaware_app/components/consumed_dialog.dart';
 import 'package:shelfaware_app/components/discarded_dialog.dart';
 import 'package:shelfaware_app/utils/date_formatter.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shelfaware_app/models/mark_food.dart';
-import 'package:shelfaware_app/repositories/mark_food_respository.dart';
-import 'package:shelfaware_app/services/mark_food_service.dart';
-import 'package:shelfaware_app/components/consumed_dialog.dart';
-import 'package:shelfaware_app/components/discarded_dialog.dart';
-import 'package:shelfaware_app/utils/date_formatter.dart';
+
 
 class MarkFoodDialog extends StatefulWidget {
   final String documentId;

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shelfaware_app/models/user_stats.dart';
 import 'package:shelfaware_app/repositories/trends_repository.dart';
 import 'package:shelfaware_app/services/trends_service.dart';
 

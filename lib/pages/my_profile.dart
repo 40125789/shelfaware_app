@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/components/editable_bio.dart';
 import 'package:shelfaware_app/components/review_section.dart';
-
+import 'package:shelfaware_app/models/user_model.dart';
 
 class ProfilePage extends StatefulWidget {
   final String userId;
@@ -14,11 +14,13 @@ class ProfilePage extends StatefulWidget {
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
+
 class _ProfilePageState extends State<ProfilePage> {
   TextEditingController _bioController = TextEditingController();
   bool _isEditingBio = false;
   String? loggedInUserId;
-  Map<String, dynamic>? userData;
+  UserData? userData;
+  bool isImageLoading = true; // Track image loading state
 
   @override
   void initState() {
@@ -37,9 +39,15 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _fetchUserData() async {
-    DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
+    DocumentSnapshot snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .get();
     setState(() {
-      userData = snapshot.data() as Map<String, dynamic>?;
+      userData =
+          UserData.fromFirestore(snapshot.data() as Map<String, dynamic>);
+      isImageLoading =
+          false; // After loading user data, set image loading state to false
     });
   }
 
@@ -51,11 +59,6 @@ class _ProfilePageState extends State<ProfilePage> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
-    DateTime joinDate = (userData!['joinDate'] as Timestamp).toDate();
-    String profileImageUrl = userData!['profileImageUrl'] ?? '';
-    double? rating = userData!['averageRating'];
-    int reviewCount = userData!['reviewCount'] ?? 0;
 
     return Scaffold(
       appBar: AppBar(title: Text('My Profile')),
@@ -72,30 +75,43 @@ class _ProfilePageState extends State<ProfilePage> {
                 alignment: Alignment.center,
                 children: [
                   GestureDetector(
-                    onTap: _updateProfileImage,
                     child: Container(
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         image: DecorationImage(
-                          image: profileImageUrl.isNotEmpty
-                              ? NetworkImage(profileImageUrl)
-                              : AssetImage('assets/default_avatar.png') as ImageProvider,
+                          image: userData!.profileImageUrl.isNotEmpty
+                              ? Image.network(
+                                  userData!.profileImageUrl,
+                                  errorBuilder: (BuildContext context,
+                                      Object error, StackTrace? stackTrace) {
+                                    return Image.asset(
+                                        'assets/default_avatar.png');
+                                  },
+                                ).image
+                              : AssetImage('assets/default_avatar.png')
+                                  as ImageProvider,
                           fit: BoxFit.cover,
                         ),
                         border: Border.all(color: Colors.white, width: 4),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, spreadRadius: 2),
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              spreadRadius: 2),
                         ],
                       ),
                     ),
                   ),
-                  if (rating != null)
+                  if (isImageLoading)
+                    Positioned(child: CircularProgressIndicator()),
+                  if (userData!.averageRating != null)
                     Positioned(
                       bottom: 1,
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.6),
                           borderRadius: BorderRadius.circular(12),
@@ -105,8 +121,12 @@ class _ProfilePageState extends State<ProfilePage> {
                             Icon(Icons.star, color: Colors.yellow, size: 18),
                             SizedBox(width: 4),
                             Text(
-                              rating.toStringAsFixed(1),
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              userData!.averageRating?.toStringAsFixed(1) ??
+                                  '0.0',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -118,15 +138,20 @@ class _ProfilePageState extends State<ProfilePage> {
 
               // Review Count
               Text(
-                reviewCount > 0 ? '$reviewCount Reviews' : 'No reviews',
+                userData!.reviewCount > 0
+                    ? '${userData!.reviewCount} Reviews'
+                    : 'No reviews',
                 style: TextStyle(fontSize: 12, color: Colors.grey[800]),
               ),
               SizedBox(height: 20),
 
               // Full Name
               Text(
-                '${userData!['firstName']} ${userData!['lastName']}',
-                style: TextStyle(fontSize: 26, color: Colors.grey[700], fontWeight: FontWeight.bold),
+                '${userData!.firstName} ${userData!.lastName}',
+                style: TextStyle(
+                    fontSize: 26,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10),
 
@@ -137,7 +162,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   Icon(Icons.calendar_today, color: Colors.grey[700], size: 16),
                   SizedBox(width: 8),
                   Text(
-                    'Joined ${_formatJoinDate(userData!['joinDate'])}',
+                    'Joined ${_formatJoinDate(userData!.joinDate)}',
                     style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                   ),
                 ],
@@ -149,24 +174,30 @@ class _ProfilePageState extends State<ProfilePage> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'About Me',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[700]),
                 ),
               ),
               SizedBox(height: 10),
 
               // Editable Bio Container with fixed height
               EditableBio(
-                initialBio: userData!['bio'] ?? '',
+                initialBio: userData!.bio,
                 onBioChanged: (newBio) {
                   setState(() {
-                    userData!['bio'] = newBio;
-                    FirebaseFirestore.instance.collection('users').doc(widget.userId).update({'bio': newBio});
+                    userData!.bio = newBio;
+                    FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(widget.userId)
+                        .update({'bio': newBio});
                   });
                 },
               ),
               SizedBox(height: 20),
 
-              // Reviews Section (Only rebuilds if review data changes)
+              // Reviews Section
               if (loggedInUserId != null)
                 ReviewSection(loggedInUserId: loggedInUserId!),
             ],
@@ -176,13 +207,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  String _formatJoinDate(Timestamp timestamp) {
-    DateTime date = timestamp.toDate();
+  String _formatJoinDate(DateTime date) {
     return DateFormat('d MMM yyyy').format(date);
-  }
-
-  Future<void> _updateProfileImage() async {
-    // Implement image picker here
-    // Upload new image to Firebase Storage and update Firestore
   }
 }

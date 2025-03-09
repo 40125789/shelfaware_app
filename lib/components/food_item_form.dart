@@ -1,24 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/expiry_date_scanner.dart';
-import 'package:shelfaware_app/components/filter_dropdown.dart';
-import 'package:shelfaware_app/models/food_history.dart';
-
-
-import 'package:shelfaware_app/services/food_item_service.dart';
-import 'package:shelfaware_app/models/product_details.dart';
-import 'package:shelfaware_app/components/product_detail_dialogue.dart';
-import 'package:shelfaware_app/services/camera_service.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shelfaware_app/services/food_suggestions_service.dart';
-
-import 'dart:async';
-
-import 'package:shelfaware_app/services/open_food_facts_api.dart';
-
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:shelfaware_app/components/expiry_date_scanner.dart';
 import 'package:shelfaware_app/models/food_history.dart';
 import 'package:shelfaware_app/services/food_item_service.dart';
 import 'package:shelfaware_app/models/product_details.dart';
@@ -28,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shelfaware_app/services/food_suggestions_service.dart';
 import 'dart:async';
 import 'package:shelfaware_app/services/open_food_facts_api.dart';
+
 
 class FoodItemForm extends StatefulWidget {
   final List<dynamic> foodItems; // Accept a list of food items

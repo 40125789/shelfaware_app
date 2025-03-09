@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shelfaware_app/models/food_category.dart';
-import 'package:shelfaware_app/models/food_category_icons.dart'; // Assuming you're using Firestore
-
-
-import 'package:flutter/material.dart';
+// Assuming you're using Firestore
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final foodItemsProvider = StreamProvider.autoDispose((ref) {
