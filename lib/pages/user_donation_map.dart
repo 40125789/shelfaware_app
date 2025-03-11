@@ -9,8 +9,14 @@ import 'package:shelfaware_app/components/pickedUp_dialog.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/donation_request_form.dart';
+import 'package:shelfaware_app/providers/watched_donations_provider.dart'; // Ensure this import is correct
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shelfaware_app/repositories/donation_request_repository.dart';
+import 'package:shelfaware_app/utils/donation_time_calc_util.dart';
+import 'package:shelfaware_app/utils/time_remaining_expiry_date.dart';
+import 'package:shelfaware_app/utils/watchlist_helper.dart';
 
-class DonationMapScreen extends StatefulWidget {
+class DonationMapScreen extends ConsumerStatefulWidget {
   final double donationLatitude;
   final double donationLongitude;
   final double userLatitude;
@@ -29,6 +35,8 @@ class DonationMapScreen extends StatefulWidget {
   final String pickupTimes;
   final String pickupInstructions;
   final double? donorRating;
+ 
+
   String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   DonationMapScreen({
@@ -51,6 +59,8 @@ class DonationMapScreen extends StatefulWidget {
     required receiverEmail,
     required this.pickupTimes,
     required this.pickupInstructions,
+  
+    
     this.donorRating,
   });
 
@@ -58,7 +68,8 @@ class DonationMapScreen extends StatefulWidget {
   _DonationMapScreenState createState() => _DonationMapScreenState();
 }
 
-class _DonationMapScreenState extends State<DonationMapScreen> {
+class _DonationMapScreenState extends ConsumerState<DonationMapScreen> {
+  _DonationMapScreenState();
   late GoogleMapController mapController;
   late Circle donationMarker;
   late Marker userMarker;
@@ -66,7 +77,10 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
   bool isMapExpanded = false; // Manage the expanded state of the map
   bool hasRequested = false;
   bool isLoading = true; // Add a loading state
+  late DonationRequestRepository _donationRequestRepository;
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  Map<String, bool> watchlistStatus = {};
 
   @override
   void initState() {
@@ -74,6 +88,26 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     _initializeMarkers();
     _getAddress();
     _checkIfAlreadyRequested();
+    _checkWatchlistStatus();
+  }
+
+  void _checkWatchlistStatus() {
+    print(
+        "Checking watchlist status for user: ${widget.userId}, donation: ${widget.donationId}");
+
+    ref
+        .read(watchedDonationsServiceProvider)
+        .isDonationInWatchlist(widget.userId, widget.donationId)
+        .then((value) {
+      print("Watchlist status for ${widget.donationId}: $value");
+
+      // If the status is not already set in watchlistStatus, update it
+      if (watchlistStatus[widget.donationId] != value) {
+        setState(() {
+          watchlistStatus[widget.donationId] = value;
+        });
+      }
+    });
   }
 
   void _initializeMarkers() {
@@ -128,12 +162,15 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
           imageUrl: widget.imageUrl,
           status: widget.status,
           receiverEmail: '',
+    
+
+      
+
         );
       },
     );
   }
 
-  // Check if the current user has already requested the item
   Future<void> _checkIfAlreadyRequested() async {
     String userId = _auth.currentUser?.uid ?? '';
     try {
@@ -162,52 +199,10 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
     }
   }
 
+
+
   String _getTimeRemaining() {
-    DateTime? expiryDate;
-
-    try {
-      // Manually convert the "dd/MM/yyyy" format to "yyyy-MM-dd"
-      String formattedDate = widget.expiryDate;
-      List<String> dateParts = formattedDate.split('/');
-
-      if (dateParts.length == 3) {
-        // Reformat to "yyyy-MM-dd" format
-        formattedDate =
-            '${dateParts[2]}-${dateParts[1]}-${dateParts[0]}'; // yyyy-MM-dd
-      }
-
-      // Now, use DateTime.parse() with the reformatted date
-      expiryDate = DateTime.parse(formattedDate);
-
-      // Check if expiryDate is null or invalid
-      if (expiryDate == null) {
-        return 'Invalid expiry date';
-      }
-    } catch (e) {
-      return 'Invalid expiry date'; // Return an error message if parsing fails
-    }
-
-    // Calculate the difference in hours between the expiry date and the current time
-    final int expiryDiffInHours = expiryDate.difference(DateTime.now()).inHours;
-
-    // If the item is expired
-    if (expiryDiffInHours < 0) {
-      return 'Expired';
-    }
-
-    // If the item expires in less than 24 hours
-    if (expiryDiffInHours < 24) {
-      return 'This item expires in less than a day';
-    }
-
-    // If the item expires tomorrow
-    final int expiryDiffInDays = expiryDate.difference(DateTime.now()).inDays;
-    if (expiryDiffInDays == 1) {
-      return 'This item expires tomorrow';
-    }
-
-    // If the item expires in more than 1 day
-    return 'This item expires in: $expiryDiffInDays days';
+    return getTimeRemaining(widget.expiryDate);
   }
 
   void _requestDonation() {
@@ -246,20 +241,11 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
       widget.donationLatitude,
       widget.donationLongitude,
     );
+
+
     double distanceInMiles = distanceInMeters / 1609.34; // Convert to miles
 
-    // Calculate time difference
-    final timeDiff = DateTime.now().difference(widget.donationTime);
-
-    // Check if the time difference is less than 24 hours
-    String timeAgo;
-    if (timeDiff.inHours < 24) {
-      timeAgo = '${timeDiff.inHours} hours ago';
-    } else {
-      // Calculate days if more than 24 hours have passed
-      int daysAgo = timeDiff.inDays;
-      timeAgo = '$daysAgo days ago';
-    }
+    String timeAgo = calculateTimeAgo(widget.donationTime);
 
     return Scaffold(
       appBar: AppBar(
@@ -267,12 +253,11 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
       ),
       body: isLoading
           ? Center(
-              child:
-                  CircularProgressIndicator()) // Show loading indicator while checking request status
+              child: CircularProgressIndicator(), // Show loading indicator
+            )
           : Stack(
               children: [
                 SingleChildScrollView(
-                  // Make the whole body scrollable
                   child: Column(
                     children: [
                       // Donation image at the top
@@ -286,7 +271,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                                 loadingBuilder:
                                     (context, child, loadingProgress) {
                                   if (loadingProgress == null) {
-                                    return child; // Image is loaded, show it
+                                    return child; // Image loaded, show it
                                   } else {
                                     return Center(
                                       child: CircularProgressIndicator(
@@ -305,7 +290,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                                 },
                                 errorBuilder: (context, error, stackTrace) {
                                   return Image.asset(
-                                    'assets/placeholder.png', // Placeholder image if error occurs
+                                    'assets/placeholder.png', // Placeholder if error occurs
                                     fit: BoxFit.cover,
                                   );
                                 },
@@ -313,64 +298,121 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                             )
                           : Container(),
 
-                      // Display donor rating if available
-                      if (widget.donorRating != null)
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              color: Colors.yellow,
-                              size: 20,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              widget.donorRating!.toStringAsFixed(1),
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-
                       // Donation details section
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Display donor image and name with added time
                             Row(
+                              mainAxisAlignment: MainAxisAlignment
+                                  .spaceBetween, // Align items on both sides
                               children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundImage:
-                                      NetworkImage(widget.donorImageUrl),
-                                ),
-                                SizedBox(width: 10),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                // Left side: Profile Image and Donor Name/Rating
+                                Row(
                                   children: [
-                                    Text(
-                                      widget.donorName,
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold),
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundImage:
+                                          NetworkImage(widget.donorImageUrl),
                                     ),
-                                    Row(
+                                    SizedBox(width: 10),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Icon(
-                                          Icons.access_time,
-                                          size: 16,
-                                          color: Colors.grey,
+                                        Row(
+                                          children: [
+                                            Text(
+                                              widget.donorName,
+                                              style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            if (widget.donorRating != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    left: 8.0),
+                                                child: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black
+                                                        .withOpacity(0.6),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.star,
+                                                        color: Colors.yellow,
+                                                        size: 16,
+                                                      ),
+                                                      SizedBox(width: 4),
+                                                      Text(
+                                                        widget.donorRating!
+                                                            .toStringAsFixed(1),
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
                                         ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Added $timeAgo', // Display time since donation was added
-                                          style: TextStyle(
-                                              fontSize: 12, color: Colors.grey),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.access_time,
+                                              size: 16,
+                                              color: Colors.grey,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Added $timeAgo',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
                                   ],
+                                ),
+
+                                // Right side: Watchlist Star Icon
+                                IconButton(
+                                  icon: Icon(
+                                    watchlistStatus[widget.donationId] ?? false
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: watchlistStatus[widget.donationId] ??
+                                            false
+                                        ? Colors.green
+                                        : Colors.green,
+                                  ),
+                                  onPressed: () {
+                                    toggleWatchlistStatus(
+                                      context,
+                                      widget.userId,
+                                      widget.donationId,
+                                      watchlistStatus,
+                                      setState,
+                                      ref,
+                                      mounted,
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -437,12 +479,10 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                                   child: Text('Contact Donor',
                                       style: TextStyle(color: Colors.white)),
                                 ),
-                                // Check if the user has already requested the item and display message accordingly
                                 ElevatedButton(
                                   onPressed: hasRequested
-                                      ? null // Disable button if request has already been made
-                                      : () =>
-                                          _requestDonation(), // Enable if no request has been made
+                                      ? null
+                                      : () => _requestDonation(),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: hasRequested
                                         ? Colors.white
@@ -452,9 +492,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                                     hasRequested
                                         ? 'Request Sent'
                                         : 'Request Donation',
-                                    style: TextStyle(
-                                        color: Colors
-                                            .white), // Set text color to white
+                                    style: TextStyle(color: Colors.white),
                                   ),
                                 )
                               ],
@@ -476,7 +514,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'LOCATION', // Only display the simplified location address
+                              'LOCATION',
                               style: TextStyle(fontSize: 14),
                             ),
                             Row(
@@ -484,7 +522,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                                 Icon(Icons.location_on, color: Colors.grey),
                                 SizedBox(width: 4),
                                 Text(
-                                  '${distanceInMiles.toStringAsFixed(2)} miles away', // Display distance in miles
+                                  '${distanceInMiles.toStringAsFixed(2)} miles away',
                                   style: TextStyle(fontSize: 12),
                                 ),
                               ],
@@ -498,14 +536,13 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                       GestureDetector(
                         onTap: () {
                           setState(() {
-                            isMapExpanded =
-                                !isMapExpanded; // Toggle map expansion
+                            isMapExpanded = !isMapExpanded;
                           });
                         },
                         child: Container(
                           height: isMapExpanded
                               ? MediaQuery.of(context).size.height
-                              : 300, // Expand map to full screen or fixed height
+                              : 300,
                           width: double.infinity,
                           child: GoogleMap(
                             initialCameraPosition: CameraPosition(
@@ -515,14 +552,12 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                             onMapCreated: (GoogleMapController controller) {
                               mapController = controller;
                             },
-                            markers: {
-                              userMarker, // User's location marker
-                            },
+                            markers: {userMarker},
                             circles: {
                               Circle(
                                 circleId: CircleId('radius'),
                                 center: donationLocation,
-                                radius: 150, // Define radius (500 meters)
+                                radius: 150,
                                 strokeColor: Colors.blue.withOpacity(0.5),
                                 strokeWidth: 2,
                                 fillColor: Colors.blue.withOpacity(0.1),
@@ -533,10 +568,7 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                       ),
                       SizedBox(height: 10),
                       IconButton(
-                        icon: Icon(isMapExpanded
-                            ? Icons.remove
-                            : Icons
-                                .add), // Change icon based on expansion state
+                        icon: Icon(isMapExpanded ? Icons.remove : Icons.add),
                         onPressed: () {
                           setState(() {
                             isMapExpanded = !isMapExpanded;
@@ -550,19 +582,21 @@ class _DonationMapScreenState extends State<DonationMapScreen> {
                   Positioned.fill(
                     child: Stack(
                       children: [
-                        // Greyed-out background, making it non-interactive
                         GestureDetector(
-                          onTap:
-                              () {}, // This prevents any interaction with the greyed-out background
+                          onTap: () {},
                           child: Container(
                             color: Colors.grey.withOpacity(0.5),
                           ),
                         ),
                         Center(
-                            // Custom PopUpWidget on top of the greyed-out background
-                            child: PickedUpPopup(
-                          onClose: () {},
-                        )),
+                          child: PickedUpPopup(
+                            onClose: () {
+                              setState(() {
+                                // Add your logic here if needed
+                              });
+                            },
+                          ),
+                        ),
                       ],
                     ),
                   ),

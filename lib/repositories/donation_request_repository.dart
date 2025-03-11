@@ -6,12 +6,13 @@ class DonationRequestRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
-
-  DonationRequestRepository({required FirebaseFirestore firebaseFirestore, required FirebaseAuth firebaseAuth})
+  DonationRequestRepository(
+      {required FirebaseFirestore firebaseFirestore,
+      required FirebaseAuth firebaseAuth})
       : _firestore = firebaseFirestore,
         _auth = firebaseAuth;
 
-    Future<DocumentSnapshot> getDonationById(String donationId) async {
+  Future<DocumentSnapshot> getDonationById(String donationId) async {
     try {
       return await _firestore.collection('donations').doc(donationId).get();
     } catch (e) {
@@ -22,7 +23,8 @@ class DonationRequestRepository {
 
   Future<void> addDonationRequest(DonationRequest request) async {
     try {
-      DocumentReference docRef = await _firestore.collection('donationRequests').add(request.toMap());
+      DocumentReference docRef =
+          await _firestore.collection('donationRequests').add(request.toMap());
       await docRef.update({'requestId': docRef.id});
     } catch (e) {
       throw Exception('Error adding donation request: $e');
@@ -31,10 +33,22 @@ class DonationRequestRepository {
 
   Future<String?> getUserProfileImageUrl(String userId) async {
     try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(userId).get();
       return userDoc['profileImageUrl'] ?? '';
     } catch (e) {
       throw Exception('Error fetching user profile image URL: $e');
     }
+  }
+
+  Future<bool> checkIfAlreadyRequested(
+      String donationId, String requesterId) async {
+    final donationRequestDoc = await _firestore
+        .collection('donationRequests')
+        .where('donationId', isEqualTo: donationId)
+        .where('requesterId', isEqualTo: requesterId)
+        .get();
+
+    return donationRequestDoc.docs.isNotEmpty;
   }
 }

@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http/src/mock_client.dart';
 
 class AddressSuggestionUtil {
+ 
+
   static Future<List<dynamic>> fetchAddressSuggestions(String query) async {
     if (query.isEmpty) {
       return [];

@@ -9,10 +9,11 @@ import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
-
+import 'package:shelfaware_app/services/user_service.dart';
 
 class WatchedDonationsPage extends ConsumerStatefulWidget {
   final LatLng currentLocation;
+  final UserService _userService = UserService();
 
   WatchedDonationsPage({
     required this.currentLocation,
@@ -24,11 +25,21 @@ class WatchedDonationsPage extends ConsumerStatefulWidget {
 
 class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
   LatLng? _userLocation;
+  double? donorRating;
 
   @override
   void initState() {
     super.initState();
     _fetchUserLocation();
+  }
+
+  Future<void> fetchDonorRating(String donorId) async {
+    double? rating = await widget._userService.fetchDonorRating(donorId);
+    if (rating != null) {
+     
+        donorRating = rating;
+      
+    }
   }
 
   Future<void> _fetchUserLocation() async {
@@ -85,7 +96,7 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                     return Center(child: CircularProgressIndicator());
                   }
 
-                  var donationData = snapshot.data?.data() as Map<String, dynamic>?; 
+                  var donationData = snapshot.data?.data() as Map<String, dynamic>?;
                   if (donationData == null) {
                     return Center(child: Text(''));
                   }
@@ -141,6 +152,7 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                         return Center(child: CircularProgressIndicator());
                       }
                       bool isInWatchlist = snapshot.data!;
+                      fetchDonorRating(donorId);
                       return Stack(
                         children: [
                           Card(
@@ -179,6 +191,7 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                                       receiverEmail: 'receiverEmail', // Replace with actual receiverEmail if available
                                       pickupTimes: pickupTimes,
                                       pickupInstructions: pickupInstructions,
+                                      donorRating: donorRating ?? 0.0,
                                     ),
                                   ),
                                 );

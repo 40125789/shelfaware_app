@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:intl/intl.dart';
-
-class DonationDetailsDialog extends StatelessWidget {
+import 'package:shelfaware_app/services/user_service.dart';
+class DonationDetailsDialog extends StatefulWidget {
   final double donationLatitude;
   final double donationLongitude;
   final double userLatitude;
@@ -22,7 +22,6 @@ class DonationDetailsDialog extends StatelessWidget {
   final DateTime donationTime;
   final String pickupTimes;
   final String pickupInstructions;
-  final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   DonationDetailsDialog({
     Key? key,
@@ -41,17 +40,36 @@ class DonationDetailsDialog extends StatelessWidget {
     required this.donationTime,
     required this.imageUrl,
     required this.donationId,
-    required receiverEmail,
     required this.pickupTimes,
-    required this.pickupInstructions,
+    required this.pickupInstructions, required String receiverEmail,
   }) : super(key: key);
+
+  @override
+  _DonationDetailsDialogState createState() => _DonationDetailsDialogState();
+}
+
+class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
+  double? donorRating;
+  final UserService _userService = UserService();
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDonorRating();
+  }
+
+  Future<void> fetchDonorRating() async {
+    double? rating = await _userService.fetchDonorRating(widget.donatorId);
+        donorRating = rating;
+      
+  }
 
   String formatDate(String date) {
     try {
       DateTime parsedDate = DateTime.parse(date);
       return DateFormat('dd/MM/yy').format(parsedDate);
     } catch (e) {
-      return date; // Fallback if parsing fails
+      return date;
     }
   }
 
@@ -72,19 +90,16 @@ class DonationDetailsDialog extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (imageUrl.isNotEmpty)
+                if (widget.imageUrl.isNotEmpty)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
-                      imageUrl,
+                      widget.imageUrl,
                       height: 120,
                       width: 120,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.broken_image,
-                        size: 50,
-                        color: Colors.grey,
-                      ),
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.broken_image, size: 50, color: Colors.grey),
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Center(child: CircularProgressIndicator());
@@ -97,7 +112,7 @@ class DonationDetailsDialog extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        productName,
+                        widget.productName,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -107,42 +122,29 @@ class DonationDetailsDialog extends StatelessWidget {
                       SizedBox(height: 10),
                       Row(
                         children: [
-                          SizedBox(width: 10),
-                          Text('Donor:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Donor:', style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 5),
-                          Flexible(
-                              child: Text(donorName,
-                                  overflow: TextOverflow.ellipsis)),
+                          Text(widget.donorName, overflow: TextOverflow.ellipsis),
                         ],
                       ),
+                  
                       SizedBox(height: 10),
                       Row(
                         children: [
-                          SizedBox(width: 10),
-                          Text('Expiry:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Expiry:', style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 5),
-                          Flexible(
-                            child: Text(
-                              formatDate(expiryDate),
-                              style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          Text(
+                            formatDate(widget.expiryDate),
+                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                       SizedBox(height: 10),
                       Row(
                         children: [
-                          SizedBox(width: 10),
-                          Text('Status:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Status:', style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 5),
-                          StatusIconWidget(status: status),
-                          SizedBox(width: 5),
+                          StatusIconWidget(status: widget.status),
                         ],
                       ),
                     ],
@@ -155,35 +157,36 @@ class DonationDetailsDialog extends StatelessWidget {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30), // Rounded button
+                    borderRadius: BorderRadius.circular(30),
                   ),
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  backgroundColor: Colors.blue, // Adjust color if needed
+                  backgroundColor: Colors.blue,
                 ),
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => DonationMapScreen(
-                        donationLatitude: donationLatitude,
-                        donationLongitude: donationLongitude,
-                        userLatitude: userLatitude,
-                        userLongitude: userLongitude,
-                        productName: productName,
-                        expiryDate: expiryDate,
-                        status: status,
-                        donorName: donorName,
-                        chatId: chatId,
-                        donorEmail: donorEmail,
-                        donatorId: donatorId,
-                        donationId: donationId,
-                        imageUrl: imageUrl,
-                        donorImageUrl: donorImageUrl,
-                        donationTime: donationTime,
-                        pickupTimes: pickupTimes,
-                        pickupInstructions: pickupInstructions,
+                        donationLatitude: widget.donationLatitude,
+                        donationLongitude: widget.donationLongitude,
+                        userLatitude: widget.userLatitude,
+                        userLongitude: widget.userLongitude,
+                        productName: widget.productName,
+                        expiryDate: widget.expiryDate,
+                        status: widget.status,
+                        donorName: widget.donorName,
+                        chatId: widget.chatId,
+                        donorEmail: widget.donorEmail,
+                        donatorId: widget.donatorId,
+                        donationId: widget.donationId,
+                        imageUrl: widget.imageUrl,
+                        donorImageUrl: widget.donorImageUrl,
+                        donationTime: widget.donationTime,
+                        pickupTimes: widget.pickupTimes,
+                        pickupInstructions: widget.pickupInstructions,
                         receiverEmail: '',
                         userId: '',
+                        donorRating: donorRating ?? 0.0,
                       ),
                     ),
                   );
@@ -193,10 +196,7 @@ class DonationDetailsDialog extends StatelessWidget {
                   children: [
                     Icon(Icons.info, color: Colors.white),
                     SizedBox(width: 5),
-                    Text(
-                      'View Details',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    Text('View Details', style: TextStyle(color: Colors.white)),
                   ],
                 ),
               ),

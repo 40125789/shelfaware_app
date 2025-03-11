@@ -115,10 +115,10 @@ class DonationService {
         return;
       }
 
-// Process the form data once it's returned
+      // Process the form data once it's returned
       print("Form Data received: $formData");
 
-// Proceed with any additional processing after modal closes
+      // Proceed with any additional processing after modal closes
 
       // Prepare donation data
       final String donorId = FirebaseAuth.instance.currentUser!.uid;
@@ -143,12 +143,18 @@ class DonationService {
       foodItemDoc['pickupTimes'] = formData['pickupTimes'] ?? '';
       foodItemDoc['pickupInstructions'] = formData['pickupInstructions'] ?? '';
 
-     // If location exists in the user's document, use that, otherwise use GeoLocator location
+      // If location exists in the user's document, use that, otherwise use GeoLocator location
       GeoPoint userLocation;
-      if (userDoc['location'] != null) {
-        userLocation = userDoc['location'];
+   final userData = userDoc.data() as Map<String, dynamic>?;
+   bool hasLocation = userData != null && userData.containsKey('location') && userData['location'] != null;
+   if (hasLocation) {
+        userLocation = userData['location'];
+
       } else {
-        userLocation = GeoPoint(location.latitude, location.longitude);
+        // Use GeoLocator to get the current location
+        Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+        userLocation = GeoPoint(position.latitude, position.longitude);
       }
 
       // Obscure the location
@@ -178,13 +184,13 @@ class DonationService {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Donation added successfully.")),
       );
-    } catch (e) {
+        } catch (e) {
       print('Error donating food item: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to donate item: $e")),
       );
-    }
-  }
+        }
+      }
 
   static GeoPoint _obscureLocation(GeoPoint location) {
     // Obscure the location by adding a small random offset

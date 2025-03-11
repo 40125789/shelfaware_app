@@ -1,12 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shelfaware_app/services/profile_image_service.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
 
-class DonationCard extends StatefulWidget {
+class DonationCard extends ConsumerWidget {
   final String productName;
   final String status;
   final String donorName;
@@ -44,24 +45,20 @@ class DonationCard extends StatefulWidget {
   });
 
   @override
-  _DonationCardState createState() => _DonationCardState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+   
+    late double distanceInMiles;
+    late String distanceText;
+    late String expiredTimeText;
+    late bool isExpired;
 
-class _DonationCardState extends State<DonationCard> {
-  late double distanceInMiles;
-  late String distanceText;
-  late String expiredTimeText;
-  late bool isExpired;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.location != null) {
+    // Calculate distance
+    if (location != null) {
       double distanceInMeters = Geolocator.distanceBetween(
-        widget.currentLocation.latitude,
-        widget.currentLocation.longitude,
-        widget.location.latitude,
-        widget.location.longitude,
+        currentLocation.latitude,
+        currentLocation.longitude,
+        location.latitude,
+        location.longitude,
       );
       distanceInMiles = distanceInMeters / 1609.34;
       distanceText = "${distanceInMiles.toStringAsFixed(2)} miles away";
@@ -69,11 +66,11 @@ class _DonationCardState extends State<DonationCard> {
       distanceText = "Unknown distance";
     }
 
-    // Calculate expired time and check if expired
+    // Calculate expiry time
     expiredTimeText = '';
     isExpired = false;
-    if (widget.expiryDate != null) {
-      var expiryDateTime = widget.expiryDate!.toDate();
+    if (expiryDate != null) {
+      var expiryDateTime = expiryDate!.toDate();
       var difference = DateTime.now().difference(expiryDateTime);
       if (difference.isNegative) {
         expiredTimeText = 'Expires in ${-difference.inDays} days ${-difference.inHours % 24} hours';
@@ -82,10 +79,7 @@ class _DonationCardState extends State<DonationCard> {
         isExpired = true;
       }
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textColor = isExpired ? Colors.grey : theme.textTheme.bodyLarge?.color ?? Colors.black;
 
@@ -97,23 +91,19 @@ class _DonationCardState extends State<DonationCard> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          color: isExpired ? Colors.grey[300]
-          : theme.cardColor,
-         // Change card color if expired and handle dark mode
+          color: isExpired ? Colors.grey[300] : theme.cardColor,
           child: InkWell(
-            onTap: isExpired ? null : () => widget.onTap(widget.donationId),
-            // Handle onTap event
+            onTap: isExpired ? null : () => onTap(donationId),
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Donation Image (left side)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty
+                    child: imageUrl != null && imageUrl!.isNotEmpty
                         ? CachedNetworkImage(
-                            imageUrl: widget.imageUrl!,
+                            imageUrl: imageUrl!,
                             width: 120,
                             height: 120,
                             fit: BoxFit.cover,
@@ -132,16 +122,13 @@ class _DonationCardState extends State<DonationCard> {
                             fit: BoxFit.cover,
                           ),
                   ),
-                  SizedBox(width: 12), // Space between image and text
-
-                  // Text area (right side)
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Product Name (top of the text area)
                         Text(
-                          widget.productName,
+                          productName,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -150,14 +137,12 @@ class _DonationCardState extends State<DonationCard> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 8),
-
-                        // Donor's name and profile image (below product name)
                         Row(
                           children: [
-                            ProfileImage(donorId: widget.donorId, userId: ''),
+                            ProfileImage(donorId: donorId, userId: ''),
                             SizedBox(width: 8),
                             Text(
-                              widget.donorName,
+                              donorName,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -165,32 +150,21 @@ class _DonationCardState extends State<DonationCard> {
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-
-                            // Add some space between donor name and rating
                             SizedBox(width: 6),
-
-                            // Display the average rating as gold stars
-                            if (widget.donorRating != null && widget.donorRating! > 0)
+                            if (donorRating != null && donorRating! > 0)
                               Row(
                                 children: [
-                                  Icon(
-                                    Icons.star,
-                                    color: Colors.amber, // Gold star
-                                    size: 16,
-                                  ),
+                                  Icon(Icons.star, color: Colors.amber, size: 16),
                                   Text(
-                                    widget.donorRating!.toStringAsFixed(1),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: textColor,
-                                    ),
+                                    donorRating!.toStringAsFixed(1),
+                                    style: TextStyle(fontSize: 14, color: textColor),
                                   ),
                                 ],
                               ),
                           ],
                         ),
                         SizedBox(height: 8),
-                        StatusIconWidget(status: widget.status),
+                        StatusIconWidget(status: status),
                         SizedBox(height: 8),
                         Row(
                           children: [
@@ -202,11 +176,11 @@ class _DonationCardState extends State<DonationCard> {
                             ),
                           ],
                         ),
-                        if (!isExpired && (widget.isNewlyAdded || widget.isExpiringSoon)) ...[
+                        if (!isExpired && (isNewlyAdded || isExpiringSoon)) ...[
                           SizedBox(height: 8),
                           Row(
                             children: [
-                              if (widget.isNewlyAdded) ...[
+                              if (isNewlyAdded) ...[
                                 Container(
                                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
@@ -224,7 +198,7 @@ class _DonationCardState extends State<DonationCard> {
                                 ),
                                 SizedBox(width: 8),
                               ],
-                              if (widget.isExpiringSoon) ...[
+                              if (isExpiringSoon) ...[
                                 Container(
                                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
@@ -282,11 +256,13 @@ class _DonationCardState extends State<DonationCard> {
             radius: 18,
             child: IconButton(
               icon: Icon(
-                widget.isInWatchlist ? Icons.star : Icons.star_border,
-                color: Colors.lightGreen,
+                isInWatchlist ? Icons.star : Icons.star_border,
+                color: isInWatchlist ? Colors.green : Colors.grey,
                 size: 24,
               ),
-              onPressed: () => widget.onWatchlistToggle(widget.donationId),
+              onPressed: () {
+                onWatchlistToggle(donationId);
+              },
             ),
           ),
         ),

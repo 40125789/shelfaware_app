@@ -19,6 +19,7 @@ class DonationLocation {
   final String imageUrl;
   final String pickupTimes;
   final String pickupInstructions;
+ 
   // Name of the donor
   // ID of the donor (must be a string)
 
@@ -36,6 +37,7 @@ class DonationLocation {
     required this.imageUrl,
     required this.pickupTimes,
     required this.pickupInstructions,
+
   });
 
   // Factory constructor to map Firestore data to DonationLocation model
@@ -61,7 +63,7 @@ class DonationLocation {
         addedOn: (doc['addedOn'] as Timestamp).toDate().toLocal().toString(),
         imageUrl: doc['imageUrl'] ?? '',
         pickupTimes: doc['pickupTimes'] ?? '',
-        pickupInstructions: doc['pickupInstructions'] ?? '');
+        pickupInstructions: doc['pickupInstructions'] ?? '',);
   }
 
   // This method calculates the distance between two GeoPoints

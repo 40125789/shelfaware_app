@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
-import 'package:shelfaware_app/models/product_details.dart';
-import 'package:shelfaware_app/services/open_food_facts_api.dart'; // Adjust the import path as necessary
+// Adjust the import path as necessary
 
 // Ensure your FoodApiService and ProductDetails are imported
 
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:camera/camera.dart'; // Import camera package for live feed
  // Your existing API service
-import 'package:shelfaware_app/models/product_details.dart'; // Your product model
+
 
 class BarcodeScannerWidget extends StatefulWidget {
   final Function(String) onBarcodeScanned;

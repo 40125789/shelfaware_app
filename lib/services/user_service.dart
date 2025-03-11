@@ -41,7 +41,22 @@ class UserService {
     }
     return null;
   }
+
+
+Future<String> fetchDonorProfileImageUrl(String userId) async {
+    try {
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists && userDoc.data() != null) {
+        var data = userDoc.data() as Map<String, dynamic>;
+        return data['profileImageUrl'] ?? '';
+      }
+    } catch (e) {
+      print('Error fetching profile image URL: $e');
+    }
+    return ''; // Return empty string if no image found
+  }
 }
+
 
 
 

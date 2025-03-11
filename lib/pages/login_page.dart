@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
+import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
 import 'package:shelfaware_app/pages/home_page.dart';
 import 'reset_password_page.dart';
 
@@ -42,11 +44,17 @@ class _LoginPageState extends State<LoginPage> {
         setState(() {
           _isLoading = false; // Hide loading indicator after login
         });
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
-        );
-      }
+        // Ensure BottomNavController updates before navigating
+        Provider.of<BottomNavController>(context, listen: false).navigateTo(0);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return HomePage();  
+        }),
+      );
+    }
+  
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() {

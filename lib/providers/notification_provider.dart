@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/repositories/notification_repository.dart';
 import 'package:shelfaware_app/services/notification_service.dart';
@@ -6,7 +8,9 @@ import 'package:shelfaware_app/providers/auth_provider.dart';
 
 // 1. NotificationRepository Provider
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
-  return NotificationRepository();
+  final firestore = FirebaseFirestore.instance;
+  final auth = FirebaseAuth.instance;
+  return NotificationRepository(firestore: firestore, auth: auth);
 });
 
 // 2. NotificationService Provider (Depends on NotificationRepository)

@@ -27,9 +27,11 @@ void main() {
     expect(find.text('Donation Requests'), findsOneWidget);
     expect(find.text('Expiry Alerts'), findsOneWidget);
 
-    // Verify the Other section
-    expect(find.text('App powered by:'), findsOneWidget);
-    expect(find.byIcon(Icons.info), findsOneWidget);
+    // verify other sections
+    expect(find.text('Privacy Policy'), findsOneWidget);
+    expect(find.text('Delete Account'), findsOneWidget);
+
+   
   });
 
   testWidgets('Toggle Dark Mode switch', (WidgetTester tester) async {

@@ -1,14 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+   final FirebaseFirestore firestore;
+  final FirebaseAuth auth;
+
+  NotificationRepository({required this.firestore, required this.auth});
 
   List<Map<String, dynamic>> notifications = [];
 
   Future<List<Map<String, dynamic>>> fetchNotifications(String userId) async {
     try {
       // Fetch notifications from Firestore
-      QuerySnapshot snapshot = await _firestore
+      QuerySnapshot snapshot = await firestore
           .collection('notifications')
           .where('userId', isEqualTo: userId)
           .orderBy('timestamp', descending: true)
@@ -46,12 +50,12 @@ class NotificationRepository {
 
   Future<void> clearAllNotifications(String userId) async {
     try {
-      QuerySnapshot snapshot = await _firestore
+      QuerySnapshot snapshot = await firestore
           .collection('notifications')
           .where('userId', isEqualTo: userId)
           .get();
 
-      WriteBatch batch = _firestore.batch();
+      WriteBatch batch = firestore.batch();
 
       for (var doc in snapshot.docs) {
         batch.delete(doc.reference);
@@ -65,7 +69,7 @@ class NotificationRepository {
 
   Future<void> markAsRead(String notificationId) async {
     try {
-      await _firestore
+      await firestore
           .collection('notifications')
           .doc(notificationId)
           .update({'read': true});
@@ -76,7 +80,7 @@ class NotificationRepository {
 
   Future<DocumentSnapshot> fetchChat(String chatId) async {
     try {
-      return await _firestore.collection('chats').doc(chatId).get();
+      return await firestore.collection('chats').doc(chatId).get();
     } catch (e) {
       print('Error fetching chat: $e');
       rethrow;
@@ -85,7 +89,7 @@ class NotificationRepository {
 
   Future<QuerySnapshot> fetchMessages(String chatId) async {
     try {
-      return await _firestore
+      return await firestore
           .collection('chats')
           .doc(chatId)
           .collection('messages')
@@ -101,7 +105,7 @@ class NotificationRepository {
   Future<String> fetchReceiverName(String receiverId) async {
     try {
       DocumentSnapshot userDoc =
-          await _firestore.collection('users').doc(receiverId).get();
+          await firestore.collection('users').doc(receiverId).get();
       if (userDoc.exists) {
         var userData = userDoc.data();
         return (userData as Map<String, dynamic>)['firstName'] ?? 'Unknown';
@@ -115,7 +119,7 @@ class NotificationRepository {
   }
 
   Stream<int> getUnreadNotificationCount(String userId) {
-    return _firestore
+    return firestore
         .collection('notifications')
         .where('userId', isEqualTo: userId)
         .where('read', isEqualTo: false)

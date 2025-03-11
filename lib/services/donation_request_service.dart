@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/models/donation_request.dart';
 import 'package:shelfaware_app/repositories/donation_request_repository.dart';
 
+
 class DonationRequestService {
   final DonationRequestRepository _repository;
 
@@ -13,7 +14,17 @@ class DonationRequestService {
       throw Exception('You need to be logged in to make a request');
     }
 
+ 
     String requesterId = user.uid;
+
+    // Check if the user has already requested this donation
+    bool alreadyRequested = await _repository.checkIfAlreadyRequested(request.donationId, requesterId);
+    if (alreadyRequested) {
+      throw Exception('You have already requested this donation.');
+    }
+
+
+
     String? profileImageUrl = await _repository.getUserProfileImageUrl(requesterId);
 
     DonationRequest updatedRequest = DonationRequest(

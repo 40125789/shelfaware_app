@@ -12,9 +12,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart';
 import 'package:shelfaware_app/services/user_service.dart';
 
-
-
-
 class DonationListView extends ConsumerStatefulWidget {
   final LatLng? currentLocation;
   final bool filterExpiringSoon;
@@ -51,22 +48,17 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
     filterDistance = widget.filterDistance;
   }
 
-  Future<void> fetchDonorRating(String donorId) async {
-    if (donorRatings.containsKey(donorId)) return; // Avoid fetching if already fetched
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(donorId).get();
-      if (userDoc.exists && userDoc.data() != null) {
-        var data = userDoc.data() as Map<String, dynamic>;
-        var rating = data['averageRating'];
-        if (rating != null) {
-          setState(() {
-            donorRatings[donorId] = rating.toDouble();
-          });
-        }
-      }
-    } catch (e) {
-      print('Error fetching donor rating: $e');
-    }
+void getDonorRating(String donorId) async {
+  double? rating = await UserService().fetchDonorRating(donorId);
+  if (rating != null) {
+    setState(() {
+      donorRatings[donorId] = rating;
+    });
+  }
+}
+
+  Future<void> _refreshDonations() async {
+    setState(() {}); // Trigger a rebuild to refresh the donations
   }
 
   @override
@@ -188,220 +180,232 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
           );
         }
 
-        return ListView.builder(
-          itemCount: donations.length,
-          itemBuilder: (context, index) {
-            var donation = donations[index].data() as Map<String, dynamic>;
-            String status = donation['status'] ?? 'Unknown';
+        return RefreshIndicator(
+          onRefresh: _refreshDonations,
+          child: ListView.builder(
+            itemCount: donations.length,
+            itemBuilder: (context, index) {
+              var donation = donations[index].data() as Map<String, dynamic>;
+              String status = donation['status'] ?? 'Unknown';
 
-            // Skip the donation if the status is "Picked up"
-            if (status == 'Picked Up') {
-              return Container(); // Return an empty container to skip this item
-            }
+              // Skip the donation if the status is "Picked up"
+              if (status == 'Picked Up') {
+                return Container(); // Return an empty container to skip this item
+              }
 
-            String productName = donation['productName'] ?? 'No product name';
-            String donorName = donation['donorName'] ?? 'Anonymous';
-            String? imageUrl = donation['imageUrl'];
-            Timestamp? expiryDate = donation['expiryDate'];
-            Timestamp? addedOn = donation['addedOn'];
-            GeoPoint? location = donation['location'];
-            String donorId = donation['donorId'];
-            String donationId = donations[index].id;
+              String productName = donation['productName'] ?? 'No product name';
+              String donorName = donation['donorName'] ?? 'Anonymous';
+              String? imageUrl = donation['imageUrl'];
+              Timestamp? expiryDate = donation['expiryDate'];
+              Timestamp? addedOn = donation['addedOn'];
+              GeoPoint? location = donation['location'];
+              String donorId = donation['donorId'];
+              String donationId = donations[index].id;
 
-            // Fetch the donor rating
-            fetchDonorRating(donorId);
+              // Fetch the donor rating
+              getDonorRating(donorId);
 
-            // Fetch the average rating for the donor
-            double? rating = donorRatings[donorId];
+              // Fetch the average rating for the donor
+              double? rating = donorRatings[donorId];
 
-            double latitude = location?.latitude ?? 0.0;
-            double longitude = location?.longitude ?? 0.0;
+              double latitude = location?.latitude ?? 0.0;
+              double longitude = location?.longitude ?? 0.0;
 
-            String expiryText = expiryDate != null
-                ? "Expires on: ${DateFormat('dd/MM/yyyy').format(expiryDate.toDate())}"
-                : "Expiry date not available";
+              String expiryText = expiryDate != null
+                  ? "Expires on: ${DateFormat('dd/MM/yyyy').format(expiryDate.toDate())}"
+                  : "Expiry date not available";
 
-            double distanceInMeters = Geolocator.distanceBetween(
-              widget.currentLocation!.latitude,
-              widget.currentLocation!.longitude,
-              latitude,
-              longitude,
-            );
+              double distanceInMeters = Geolocator.distanceBetween(
+                widget.currentLocation!.latitude,
+                widget.currentLocation!.longitude,
+                latitude,
+                longitude,
+              );
 
-            double distanceInMiles = distanceInMeters / 1609.34;
-            String distanceText =
-                "${(distanceInMiles).toStringAsFixed(2)} miles";
+              double distanceInMiles = distanceInMeters / 1609.34;
+              String distanceText =
+                  "${(distanceInMiles).toStringAsFixed(2)} miles";
 
-            Icon donationStatusIcon;
-            Color statusColor;
+              Icon donationStatusIcon;
+              Color statusColor;
 
-            switch (status) {
-              case 'available':
-                donationStatusIcon =
-                    Icon(Icons.check_circle, color: Colors.green);
-                statusColor = Colors.green;
-                break;
-              case 'donated':
-                donationStatusIcon =
-                    Icon(Icons.card_giftcard, color: Colors.blue);
-                statusColor = Colors.blue;
-                break;
-              case 'expired':
-                donationStatusIcon = Icon(Icons.cancel, color: Colors.red);
-                statusColor = Colors.red;
-                break;
-              default:
-                donationStatusIcon = Icon(Icons.help, color: Colors.grey);
-                statusColor = Colors.grey;
-            }
+              switch (status) {
+                case 'available':
+                  donationStatusIcon =
+                      Icon(Icons.check_circle, color: Colors.green);
+                  statusColor = Colors.green;
+                  break;
+                case 'donated':
+                  donationStatusIcon =
+                      Icon(Icons.card_giftcard, color: Colors.blue);
+                  statusColor = Colors.blue;
+                  break;
+                case 'expired':
+                  donationStatusIcon = Icon(Icons.cancel, color: Colors.red);
+                  statusColor = Colors.red;
+                  break;
+                default:
+                  donationStatusIcon = Icon(Icons.help, color: Colors.grey);
+                  statusColor = Colors.grey;
+              }
 
-            // Watchlist logic
-            ref
-                .read(watchedDonationsServiceProvider)
-                .isDonationInWatchlist(userId!, donationId)
-                .then((value) {
-                if (watchlistStatus[donationId] != value) {
-                  setState(() {
-                    watchlistStatus[donationId] = value;
-                  });
-                }
-            }); 
+              // Watchlist logic
+              ref
+                  .read(watchedDonationsServiceProvider)
+                  .isDonationInWatchlist(userId!, donationId)
+                  .then((value) {
+                  if (watchlistStatus[donationId] != value) {
+                    setState(() {
+                      watchlistStatus[donationId] = value;
+                    });
+                  }
+              }); 
 
-            // Calculate if the donation is "Newly Added" (within 24 hours)
-            bool isNewlyAdded = false;
-            if (addedOn != null) {
-              var addedDate = addedOn.toDate();
-              isNewlyAdded = DateTime.now().difference(addedDate).inHours < 24;
-            }
+              // Calculate if the donation is "Newly Added" (within 24 hours)
+              bool isNewlyAdded = false;
+              if (addedOn != null) {
+                var addedDate = addedOn.toDate();
+                isNewlyAdded = DateTime.now().difference(addedDate).inHours < 24;
+              }
 
-            // Calculate if the donation is "Expiring Soon" (within 3 days)
-            bool isExpiringSoon = false;
-            if (expiryDate != null) {
-              var expiryDateTime = expiryDate.toDate();
-              int daysUntilExpiry =
-                  expiryDateTime.difference(DateTime.now()).inDays;
-              isExpiringSoon = daysUntilExpiry >= 0 && daysUntilExpiry <= 3;
-            }
+              // Calculate if the donation is "Expiring Soon" (within 3 days)
+              bool isExpiringSoon = false;
+              if (expiryDate != null) {
+                var expiryDateTime = expiryDate.toDate();
+                int daysUntilExpiry =
+                    expiryDateTime.difference(DateTime.now()).inDays;
+                isExpiringSoon = daysUntilExpiry >= 0 && daysUntilExpiry <= 3;
+              }
 
-            return DonationCard(
-              productName: productName,
-              status: status,
-              donorName: donorName,
-              donorId: donorId,
-              donationId: donationId,
-              imageUrl: imageUrl,
-              expiryDate: expiryDate,
-              location: LatLng(latitude, longitude),
-              donorRating: rating,
-              isNewlyAdded: isNewlyAdded,
-              isExpiringSoon: isExpiringSoon,
-              currentLocation: widget.currentLocation!,
-              onTap: (String donationId) async {
-                // Fetch the profile image URL
-                var userData = await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(donation['donorId'])
-                    .get();
-                String donorImageUrl = userData.exists
-                    ? userData['profileImageUrl'] ?? ''
-                    : '';
+              return DonationCard(
+                productName: productName,
+                status: status,
+                donorName: donorName,
+                donorId: donorId,
+                donationId: donationId,
+                imageUrl: imageUrl,
+                expiryDate: expiryDate,
+                location: LatLng(latitude, longitude),
+                donorRating: rating,
+                isNewlyAdded: isNewlyAdded,
+                isExpiringSoon: isExpiringSoon,
+                currentLocation: widget.currentLocation!,
+               
+             
+                onTap: (String donationId) async {
+                  // Fetch the profile image URL
+             String donorImageUrl = await UserService().fetchDonorProfileImageUrl(donorId);
+            
 
-                try {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DonationMapScreen(
-                        donationLatitude: latitude,
-                        donationLongitude: longitude,
-                        userLatitude: widget.currentLocation!.latitude,
-                        userLongitude: widget.currentLocation!.longitude,
-                        productName: productName,
-                        expiryDate: expiryDate != null
-                            ? DateFormat('dd/MM/yyyy')
-                                .format(expiryDate.toDate())
-                            : 'Unknown',
-                        status: status,
-                        donorName: donorName,
-                        chatId: '',
-                        userId: '',
-                        receiverEmail: donation['donorEmail'],
-                        donatorId: donation['donorId'],
-                        donationId: donationId,
-                        donorEmail: donation['donorEmail'],
-                        imageUrl: donation['imageUrl']?.isNotEmpty ?? false
-                            ? donation['imageUrl']
-                            : 'assets/placeholder.png',
-                        donorImageUrl: donorImageUrl ?? '',
-                        donationTime: donation['addedOn'].toDate(),
-                        pickupTimes: donation['pickupTimes'] ?? '',
-                        pickupInstructions: donation['pickupInstructions'] ?? '',
-                      ),
-                    ),
-                  );
-                } catch (e) {
-                  print('Error getting location: $e');
-                  // Optionally show a message to the user
-                }
-              },
-                isInWatchlist: watchlistStatus[donationId] ?? false,
-                onWatchlistToggle: (String donationId) {
-                setState(() {
-                  if (watchlistStatus[donationId] == true) {
-                  ref
-                    .read(watchedDonationsServiceProvider)
-                    .removeFromWatchlist(userId, donationId);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                    content: Row(
-                      children: [
-                      Icon(
-                        Icons.star_border,
-                        color: Colors.green,
-                      ),
-                            SizedBox(width: 8),
-                            Text("Removed from watchlist"),
-                          ],
+                  try {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DonationMapScreen(
+                          donationLatitude: latitude,
+                          donationLongitude: longitude,
+                          userLatitude: widget.currentLocation!.latitude,
+                          userLongitude: widget.currentLocation!.longitude,
+                          productName: productName,
+                          expiryDate: expiryDate != null
+                              ? DateFormat('dd/MM/yyyy')
+                                  .format(expiryDate.toDate())
+                              : 'Unknown',
+                          status: status,
+                          donorName: donorName,
+                          chatId: '',
+                          userId: userId!,
+                          receiverEmail: donation['donorEmail'],
+                          donatorId: donation['donorId'],
+                          donationId: donationId,
+                          donorEmail: donation['donorEmail'],
+                          imageUrl: donation['imageUrl']?.isNotEmpty ?? false
+                              ? donation['imageUrl']
+                              : 'assets/placeholder.png',
+                          donorImageUrl: donorImageUrl ?? '',
+                          donationTime: donation['donatedAt'].toDate(),
+                          pickupTimes: donation['pickupTimes'] ?? '',
+                          pickupInstructions: donation['pickupInstructions'] ?? '',
+                          donorRating: rating ?? 0.0, 
+                      
+                          
+                         
+                        
+                          
+                         
+
+                        
                         ),
-                        duration: Duration(seconds: 2),
                       ),
-                    );
-                  } else {
+                    ).then((_) {
+                      // Refresh the donations when coming back from the DonationMapScreen
+                      _refreshDonations();
+                    });
+                  } catch (e) {
+                    print('Error getting location: $e');
+                    // Optionally show a message to the user
+                  }
+                },
+                  isInWatchlist: watchlistStatus[donationId] ?? false,
+                  onWatchlistToggle: (String donationId) {
+                  setState(() {
+                    if (watchlistStatus[donationId] == true) {
                     ref
-                        .read(watchedDonationsServiceProvider)
-                        .addToWatchlist(userId, donationId, donation);
-                    ScaffoldMessenger.of(context)
-                      ..hideCurrentSnackBar() // Hides any active Snackbar
-                      ..showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              Icon(
-                                Icons.star,
-                                color: Colors.green,
-                              ),
+                      .read(watchedDonationsServiceProvider)
+                      .removeFromWatchlist(userId, donationId);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                      content: Row(
+                        children: [
+                        Icon(
+                          Icons.star_border,
+                          color: Colors.green,
+                        ),
                               SizedBox(width: 8),
-                              Text("Added to watchlist"),
-                              IconButton(
-                                icon: Icon(Icons.arrow_forward, color: Colors.green),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => WatchedDonationsPage(currentLocation: widget.currentLocation!),
-                                    ),
-                                  );
-                                },
-                              ),
+                              Text("Removed from watchlist"),
                             ],
                           ),
-                          duration: Duration(seconds: 2), // Ensures auto-dismiss
+                          duration: Duration(seconds: 2),
                         ),
                       );
-                  }
-                });
-              },
-            );
-          },
+                    } else {
+                      ref
+                          .read(watchedDonationsServiceProvider)
+                          .addToWatchlist(userId, donationId, donation);
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar() // Hides any active Snackbar
+                        ..showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  color: Colors.green,
+                                ),
+                                SizedBox(width: 8),
+                                Text("Added to watchlist"),
+                                IconButton(
+                                  icon: Icon(Icons.arrow_forward, color: Colors.green),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => WatchedDonationsPage(currentLocation: widget.currentLocation!),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                            duration: Duration(seconds: 2), // Ensures auto-dismiss
+                          ),
+                        );
+                    }
+                  });
+                },
+              );
+            },
+          ),
         );
       },
     );
