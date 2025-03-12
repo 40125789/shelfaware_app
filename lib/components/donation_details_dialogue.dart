@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:intl/intl.dart';
+import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:shelfaware_app/services/user_service.dart';
 class DonationDetailsDialog extends StatefulWidget {
   final double donationLatitude;
@@ -50,7 +52,7 @@ class DonationDetailsDialog extends StatefulWidget {
 
 class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
   double? donorRating;
-  final UserService _userService = UserService();
+  final UserService _userService = UserService(UserRepository(auth: FirebaseAuth.instance, firestore: FirebaseFirestore.instance));
 
   @override
   void initState() {

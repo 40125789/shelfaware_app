@@ -23,7 +23,8 @@ class DonationCard extends ConsumerWidget {
   final LatLng currentLocation;
   final Function(String donationId) onTap; // Callback for onTap event
   final bool isInWatchlist; // Add this line to include watchlist status
-  final Function(String donationId) onWatchlistToggle; // Callback for watchlist toggle
+  final Function(String donationId)
+      onWatchlistToggle; // Callback for watchlist toggle
 
   DonationCard({
     required this.productName,
@@ -46,7 +47,6 @@ class DonationCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-   
     late double distanceInMiles;
     late String distanceText;
     late String expiredTimeText;
@@ -73,15 +73,19 @@ class DonationCard extends ConsumerWidget {
       var expiryDateTime = expiryDate!.toDate();
       var difference = DateTime.now().difference(expiryDateTime);
       if (difference.isNegative) {
-        expiredTimeText = 'Expires in ${-difference.inDays} days ${-difference.inHours % 24} hours';
+        expiredTimeText =
+            'Expires in ${-difference.inDays} days ${-difference.inHours % 24} hours';
       } else {
-        expiredTimeText = 'Expired ${difference.inDays} days ${difference.inHours % 24} hours ago';
+        expiredTimeText =
+            'Expired ${difference.inDays} days ${difference.inHours % 24} hours ago';
         isExpired = true;
       }
     }
 
     final theme = Theme.of(context);
-    final textColor = isExpired ? Colors.grey : theme.textTheme.bodyLarge?.color ?? Colors.black;
+    final textColor = isExpired
+        ? Colors.grey
+        : theme.textTheme.bodyLarge?.color ?? Colors.black;
 
     return Stack(
       children: [
@@ -107,7 +111,8 @@ class DonationCard extends ConsumerWidget {
                             width: 120,
                             height: 120,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => CircularProgressIndicator(),
+                            placeholder: (context, url) =>
+                                CircularProgressIndicator(),
                             errorWidget: (context, url, error) => Image.asset(
                               'assets/placeholder.png',
                               width: 120,
@@ -154,10 +159,12 @@ class DonationCard extends ConsumerWidget {
                             if (donorRating != null && donorRating! > 0)
                               Row(
                                 children: [
-                                  Icon(Icons.star, color: Colors.amber, size: 16),
+                                  Icon(Icons.star,
+                                      color: Colors.amber, size: 16),
                                   Text(
                                     donorRating!.toStringAsFixed(1),
-                                    style: TextStyle(fontSize: 14, color: textColor),
+                                    style: TextStyle(
+                                        fontSize: 14, color: textColor),
                                   ),
                                 ],
                               ),
@@ -168,11 +175,13 @@ class DonationCard extends ConsumerWidget {
                         SizedBox(height: 8),
                         Row(
                           children: [
-                            Icon(Icons.location_on, color: Colors.grey, size: 16),
+                            Icon(Icons.location_on,
+                                color: Colors.grey, size: 16),
                             SizedBox(width: 4),
                             Text(
                               distanceText,
-                              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey[500]),
                             ),
                           ],
                         ),
@@ -182,7 +191,8 @@ class DonationCard extends ConsumerWidget {
                             children: [
                               if (isNewlyAdded) ...[
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: Colors.green,
                                     borderRadius: BorderRadius.circular(12),
@@ -200,7 +210,8 @@ class DonationCard extends ConsumerWidget {
                               ],
                               if (isExpiringSoon) ...[
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: Colors.red,
                                     borderRadius: BorderRadius.circular(12),

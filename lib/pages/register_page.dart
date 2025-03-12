@@ -159,6 +159,18 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  void _checkPasswordMatch() {
+    if (passwordController.text != confirmPasswordController.text) {
+      setState(() {
+        _confirmPasswordError = 'Passwords do not match';
+      });
+    } else {
+      setState(() {
+        _confirmPasswordError = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -198,24 +210,28 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   SizedBox(height: 20),
                   MyTextField(
+                    key: Key('firstNameField'),
                     controller: firstNameController,
                     hintText: 'First Name',
                     errorText: _firstNameError,
                     onChanged: (value) {},
                   ),
                   MyTextField(
+                    key: Key('lastNameField'),
                     controller: lastNameController,
                     hintText: 'Last Name',
                     errorText: _lastNameError,
                     onChanged: (value) {},
                   ),
                   MyTextField(
+                    key: Key('emailField'),
                     controller: emailController,
                     hintText: 'Email',
                     errorText: _emailError,
                     onChanged: (value) {},
                   ),
                   MyTextField(
+                    key: Key('passwordField'),
                     controller: passwordController,
                     hintText: 'Password',
                     obscureText: !_isPasswordVisible,
@@ -235,6 +251,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     onChanged: (value) {},
                   ),
                   MyTextField(
+                    key: Key('confirmPasswordField'),
                     controller: confirmPasswordController,
                     hintText: 'Confirm Password',
                     obscureText: !_isConfirmPasswordVisible,
@@ -252,7 +269,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         });
                       },
                     ),
-                    onChanged: (value) {},
+                    onChanged: (value) {
+                      _checkPasswordMatch(); // Check password match immediately
+                    },
                   ),
                   PasswordValidationWidget(
                       passwordController: passwordController),
@@ -261,6 +280,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: _isLoading
                         ? CircularProgressIndicator()
                         : MyButton(
+                            key: Key('signupButton'),
                             text: "Sign up",
                             onTap: signUserUp,
                           ),

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,11 +10,12 @@ import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
+import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:shelfaware_app/services/user_service.dart';
 
 class WatchedDonationsPage extends ConsumerStatefulWidget {
   final LatLng currentLocation;
-  final UserService _userService = UserService();
+  final UserService _userService = UserService(UserRepository(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance));
 
   WatchedDonationsPage({
     required this.currentLocation,

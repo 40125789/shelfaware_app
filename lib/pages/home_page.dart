@@ -18,6 +18,7 @@ import 'package:shelfaware_app/pages/donations_page.dart';
 import 'package:shelfaware_app/pages/statistics_page.dart';
 import 'package:shelfaware_app/controllers/auth_controller.dart'; // Ensure this import is correct
 import 'package:geolocator/geolocator.dart';
+import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:wiredash/wiredash.dart';
 import 'package:shelfaware_app/services/user_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
@@ -73,7 +74,9 @@ class _HomePageState extends ConsumerState<HomePage>
 
   Future<void> getUserData() async {
     try {
-      final userData = await UserService.getUserData(user.uid);
+      final userRepository = UserRepository(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance);
+      final userService = UserService(userRepository);
+      final userData = await userService.getUserData(user.uid);
       if (mounted) {
         setState(() {
           firstName = userData['firstName'];

@@ -24,7 +24,7 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   void initState() {
     super.initState();
-    _foodItems = HistoryService().getHistoryItems(widget.userId);
+    _foodItems = HistoryService().getFoodHistory(widget.userId);
   }
 
   void _onRecreateSelected(List<FoodHistory> selectedFoodItems) {
@@ -184,7 +184,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   }
 
                   // Reload the food items after applying sorting/filtering
-                  _foodItems = HistoryService().getHistoryItems(widget.userId);
+                  _foodItems = HistoryService().getFoodHistory(widget.userId);
                 });
               },
             ),

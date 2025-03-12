@@ -1,63 +1,27 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/repositories/user_repository.dart';
+
+
 
 class UserService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final auth = FirebaseFirestore.instance;
+  final UserRepository _userRepository;
 
-  static Future<Map<String, dynamic>> getUserData(String userId) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
-    return userDoc.data() as Map<String, dynamic>;
+  UserService(this._userRepository);
+
+
+  Future<Map<String, dynamic>> getUserData(String userId) async {
+    return await _userRepository.getUserData(userId);
   }
 
-   Future<double?> fetchDonorRating(String donorId) async {
-    try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(donorId).get();
-      if (userDoc.exists && userDoc.data() != null) {
-        var data = userDoc.data() as Map<String, dynamic>;
-        var rating = data['averageRating'];
-        if (rating != null) {
-          return rating.toDouble();
-        }
-      }
-    } catch (e) {
-      print('Error fetching donor rating: $e');
-    }
-    return null;
+  Future<double?> fetchDonorRating(String donorId) async {
+    return await _userRepository.fetchDonorRating(donorId);
   }
 
   Future<String?> fetchProfileImageUrl(String userId) async {
-    try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-      if (userDoc.exists && userDoc.data() != null) {
-        var data = userDoc.data() as Map<String, dynamic>;
-        return data['profileImageUrl'] ?? '';
-      }
-    } catch (e) {
-      print('Error fetching profile image URL: $e');
-    }
-    return null;
+    return await _userRepository.fetchProfileImageUrl(userId);
   }
 
-
-Future<String> fetchDonorProfileImageUrl(String userId) async {
-    try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-      if (userDoc.exists && userDoc.data() != null) {
-        var data = userDoc.data() as Map<String, dynamic>;
-        return data['profileImageUrl'] ?? '';
-      }
-    } catch (e) {
-      print('Error fetching profile image URL: $e');
-    }
-    return ''; // Return empty string if no image found
+  Future<String> fetchDonorProfileImageUrl(String userId) async {
+    return await _userRepository.fetchDonorProfileImageUrl(userId);
   }
 }
-
-
-
-
-

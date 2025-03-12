@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/pages/watched_donations_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart';
+import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:shelfaware_app/services/user_service.dart';
 
 class DonationListView extends ConsumerStatefulWidget {
@@ -30,7 +31,10 @@ class DonationListView extends ConsumerStatefulWidget {
 }
 
 class _DonationListViewState extends ConsumerState<DonationListView> {
-  final UserService _userService = UserService();
+  final UserService _userService = UserService(UserRepository(
+    firestore: FirebaseFirestore.instance, 
+    auth: FirebaseAuth.instance
+  ));
   Map<String, bool> watchlistStatus = {};
   Map<String, double> donorRatings = {};
   double averageRating = 0.0;
@@ -49,7 +53,7 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
   }
 
 void getDonorRating(String donorId) async {
-  double? rating = await UserService().fetchDonorRating(donorId);
+  double? rating = await _userService.fetchDonorRating(donorId);
   if (rating != null) {
     setState(() {
       donorRatings[donorId] = rating;
@@ -226,29 +230,6 @@ void getDonorRating(String donorId) async {
               String distanceText =
                   "${(distanceInMiles).toStringAsFixed(2)} miles";
 
-              Icon donationStatusIcon;
-              Color statusColor;
-
-              switch (status) {
-                case 'available':
-                  donationStatusIcon =
-                      Icon(Icons.check_circle, color: Colors.green);
-                  statusColor = Colors.green;
-                  break;
-                case 'donated':
-                  donationStatusIcon =
-                      Icon(Icons.card_giftcard, color: Colors.blue);
-                  statusColor = Colors.blue;
-                  break;
-                case 'expired':
-                  donationStatusIcon = Icon(Icons.cancel, color: Colors.red);
-                  statusColor = Colors.red;
-                  break;
-                default:
-                  donationStatusIcon = Icon(Icons.help, color: Colors.grey);
-                  statusColor = Colors.grey;
-              }
-
               // Watchlist logic
               ref
                   .read(watchedDonationsServiceProvider)
@@ -294,7 +275,7 @@ void getDonorRating(String donorId) async {
              
                 onTap: (String donationId) async {
                   // Fetch the profile image URL
-             String donorImageUrl = await UserService().fetchDonorProfileImageUrl(donorId);
+             String donorImageUrl = await UserService(UserRepository(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance)).fetchDonorProfileImageUrl(donorId);
             
 
                   try {
@@ -327,13 +308,6 @@ void getDonorRating(String donorId) async {
                           pickupTimes: donation['pickupTimes'] ?? '',
                           pickupInstructions: donation['pickupInstructions'] ?? '',
                           donorRating: rating ?? 0.0, 
-                      
-                          
-                         
-                        
-                          
-                         
-
                         
                         ),
                       ),

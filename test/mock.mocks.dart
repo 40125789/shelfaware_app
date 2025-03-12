@@ -14,7 +14,8 @@ import 'package:mockito/src/dummies.dart' as _i11;
 import 'package:shelfaware_app/components/review_card.dart' as _i10;
 import 'package:shelfaware_app/repositories/favourites_repository.dart' as _i8;
 import 'package:shelfaware_app/services/auth_services.dart' as _i9;
-import 'package:shelfaware_app/services/food_item_service.dart' as _i6;
+import 'package:shelfaware_app/services/food_service.dart';
+
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -96,73 +97,6 @@ class _FakeDiagnosticsNode_4 extends _i1.SmartFake
     _i4.DiagnosticLevel? minLevel = _i4.DiagnosticLevel.info,
   }) =>
       super.toString();
-}
-
-/// A class which mocks [FoodItemService].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockFoodItemService extends _i1.Mock implements _i6.FoodItemService {
-  MockFoodItemService() {
-    _i1.throwOnMissingStub(this);
-  }
-
-  @override
-  _i7.Future<void> saveFoodItem({
-    required String? productName,
-    required DateTime? expiryDate,
-    required int? quantity,
-    required String? storageLocation,
-    required String? notes,
-    required String? category,
-    required String? productImage,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #saveFoodItem,
-          [],
-          {
-            #productName: productName,
-            #expiryDate: expiryDate,
-            #quantity: quantity,
-            #storageLocation: storageLocation,
-            #notes: notes,
-            #category: category,
-            #productImage: productImage,
-          },
-        ),
-        returnValue: _i7.Future<void>.value(),
-        returnValueForMissingStub: _i7.Future<void>.value(),
-      ) as _i7.Future<void>);
-
-  @override
-  _i7.Stream<List<_i2.DocumentSnapshot<Object?>>> getUserFoodItems(
-          String? userId) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getUserFoodItems,
-          [userId],
-        ),
-        returnValue: _i7.Stream<List<_i2.DocumentSnapshot<Object?>>>.empty(),
-      ) as _i7.Stream<List<_i2.DocumentSnapshot<Object?>>>);
-
-  @override
-  _i7.Future<Map<String, dynamic>?> fetchFoodItemById(String? id) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #fetchFoodItemById,
-          [id],
-        ),
-        returnValue: _i7.Future<Map<String, dynamic>?>.value(),
-      ) as _i7.Future<Map<String, dynamic>?>);
-
-  @override
-  _i7.Future<List<String>> fetchFoodCategories() => (super.noSuchMethod(
-        Invocation.method(
-          #fetchFoodCategories,
-          [],
-        ),
-        returnValue: _i7.Future<List<String>>.value(<String>[]),
-      ) as _i7.Future<List<String>>);
 }
 
 /// A class which mocks [FavouritesRepository].

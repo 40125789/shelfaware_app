@@ -6,17 +6,17 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shelfaware_app/models/donation.dart';
-import 'package:shelfaware_app/repositories/donation_repository.dart';
-import 'package:shelfaware_app/services/food_item_service.dart';
+import 'package:shelfaware_app/repositories/donation_repository.dart';// Ensure this path is correct
 import 'package:shelfaware_app/components/donation_photo_form.dart'; // Adjust the path as necessary
 import 'package:shelfaware_app/services/dialog_service.dart';
+import 'package:shelfaware_app/services/food_service.dart';
 
 class DonationService {
   final DonationRepository _donationRepository = DonationRepository(
     auth: FirebaseAuth.instance,
     firestore: FirebaseFirestore.instance,
   );
-  static final FoodItemService _fooditemService = FoodItemService();
+  static final FoodService _fooditemService = FoodService();
 
   Future<List<DonationLocation>> fetchDonationLocations(
       String userId,

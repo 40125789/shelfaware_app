@@ -1,79 +1,107 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:shelfaware_app/pages/register_page.dart';
-import 'package:shelfaware_app/main.dart' as app;
-import 'package:shelfaware_app/pages/login_page.dart'; 
-
-
-// Import your HomePage hereimport 'package:firebase_core/firebase_core.dart';
-
-
+import 'package:shelfaware_app/pages/home_page.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    WidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp();
   });
 
-  group('Login and Registration Flow', () {
-    testWidgets('Login to RegisterPage and complete registration', (WidgetTester tester) async {
+  group('RegisterPage Integration Test', () {
+    testWidgets('User can register successfully', (WidgetTester tester) async {
+      final mockAuth = MockFirebaseAuth();
+      final fakeFirestore = FakeFirebaseFirestore();
+
       await tester.pumpWidget(
-        ProviderScope(
-          child: app.MyApp(),
+        MaterialApp(
+          home: RegisterPage(
+            onTap: () {},
+          ),
         ),
       );
+
+      // Enter first name
+      await tester.enterText(find.byKey(Key('firstNameField')), 'John');
+      // Enter last name
+      await tester.enterText(find.byKey(Key('lastNameField')), 'Doe');
+      // Enter email
+      await tester.enterText(
+          find.byKey(Key('emailField')), 'john.doe@example.com');
+      // Enter password
+      await tester.enterText(find.byKey(Key('passwordField')), 'Password@123');
+      // Enter confirm password
+      await tester.enterText(
+          find.byKey(Key('confirmPasswordField')), 'Password@123');
+
+      // Tap the sign-up button
+      await tester.tap(find.byKey(Key('signupButton')));
       await tester.pumpAndSettle();
 
-     
-
-      // Verify LoginPage is displayed
-      expect(find.byType(LoginPage), findsOneWidget);
-
-      // Navigate to Register Page
-      final registerButton = find.byKey(Key('register-now-link'));
-      await tester.tap(registerButton);
-      await tester.pumpAndSettle();
-
-      // Verify RegisterPage is displayed
-      expect(find.byType(RegisterPage), findsOneWidget);
-
-      // Enter valid user details
-      await tester.enterText(find.byKey(Key('first-name-field')), 'John');
-      await tester.enterText(find.byKey(Key('last-name-field')), 'Doe');
-      await tester.enterText(find.byKey(Key('email-field')), 'johndoe12@example.com');
-      await tester.enterText(find.byKey(Key('password-field')), 'Test@123');
-      await tester.enterText(find.byKey(Key('confirm-password-field')), 'Test@123');
-
-      // Tap Sign Up
-      await tester.tap(find.byKey(Key('sign-up-button')));
-      await tester.pumpAndSettle();
-
-      // Verify navigation to HomePage
+      // Verify navigation by checking for a widget unique to HomePage
       expect(find.byType(HomePage), findsOneWidget);
     });
 
-    testWidgets('Show validation errors on empty fields', (tester) async {
-      await tester.pumpWidget(app.MyApp());
+    testWidgets('User sees error message for invalid email',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RegisterPage(
+            onTap: () {},
+          ),
+        ),
+      );
 
-      // Navigate to Register Page
-      await tester.tap(find.text('Register Now!'));
+      // Enter first name
+      await tester.enterText(find.byKey(Key('firstNameField')), 'John');
+      // Enter last name
+      await tester.enterText(find.byKey(Key('lastNameField')), 'Doe');
+      // Enter invalid email
+      await tester.enterText(find.byKey(Key('emailField')), 'invalid-email');
+      // Enter password
+      await tester.enterText(find.byKey(Key('passwordField')), 'password123');
+      // Enter confirm password
+      await tester.enterText(
+          find.byKey(Key('confirmPasswordField')), 'password123');
+
+      // Tap the sign-up button
+      await tester.tap(find.byKey(Key('signupButton')));
       await tester.pumpAndSettle();
 
-      // Tap Sign Up without entering anything
-      await tester.tap(find.byKey(Key('sign-up-button')));
-      await tester.pumpAndSettle();
-
-      // Verify validation messages
-      expect(find.text('First name is required'), findsOneWidget);
-      expect(find.text('Last name is required'), findsOneWidget);
+      // Verify that the error message is shown
       expect(find.text('Please enter a valid email'), findsOneWidget);
-      expect(find.text('Password is required'), findsOneWidget);
     });
+testWidgets('User sees error message for password mismatch',
+    (WidgetTester tester) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: RegisterPage(
+        onTap: () {},
+      ),
+    ),
+  );
+
+  // Enter details
+  await tester.enterText(find.byKey(Key('firstNameField')), 'John');
+  await tester.enterText(find.byKey(Key('lastNameField')), 'Doe');
+  await tester.enterText(
+      find.byKey(Key('emailField')), 'john.doe@example.com');
+  await tester.enterText(find.byKey(Key('passwordField')), 'Password@123');
+  await tester.enterText(
+      find.byKey(Key('confirmPasswordField')), 'Password@456');
+
+  // Tap the sign-up button
+  await tester.tap(find.byKey(Key('signupButton')));
+  await tester.pumpAndSettle(); // Ensure the widget rebuilds
+
+  // Verify that the correct error message is shown
+  expect(find.text('Passwords do not match'), findsOneWidget);
+});
   });
 }

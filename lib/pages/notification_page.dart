@@ -1,12 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:shelfaware_app/components/food_list_view.dart';
 import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/home_page.dart';
 import 'package:shelfaware_app/pages/my_donations_page.dart';
-// Add this line
 import 'package:shelfaware_app/utils/notification_date_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/models/recipe_model.dart'; // Ensure this is the correct path to RecipeModel
 import 'package:shelfaware_app/pages/recipe_details_page.dart';
-
-// Ensure this is imported correctly
+import 'package:shelfaware_app/repositories/favourites_repository.dart';
 
 class FavouritesPage extends StatefulWidget {
   @override
@@ -13,6 +10,7 @@ class FavouritesPage extends StatefulWidget {
 
 class _FavoritesPageState extends State<FavouritesPage> {
   late Future<List<Recipe>> favoritesFuture;
+  final FavouritesRepository _favouritesRepository = FavouritesRepository();
 
   @override
   void initState() {
@@ -21,33 +19,7 @@ class _FavoritesPageState extends State<FavouritesPage> {
   }
 
   Future<List<Recipe>> _fetchFavorites() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('favourites')
-          .where('userId', isEqualTo: user.uid)
-          .get();
-
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return Recipe(
-          id: int.parse(doc.id),
-          title: data['title'] ?? 'Unknown Recipe',
-          imageUrl: data['imageUrl'] ?? '',
-          summary: data['summary'] ?? 'No summary available.',
-          sourceUrl: data['sourceUrl'] ?? '',
-          ingredients: (data['ingredients'] as List<dynamic>? ?? [])
-              .map((ingredient) => Ingredient(
-                name: ingredient['name'] ?? 'Unknown',
-                amount: ingredient['amount'] ?? 0.0,
-                unit: ingredient['unit'] ?? ''
-              ))
-              .toList(),
-          instructions: data['instructions'] ?? '',
-        );
-      }).toList();
-    }
-    return [];
+    return await _favouritesRepository.fetchFavorites();
   }
 
   void _refreshFavorites() {
@@ -89,9 +61,6 @@ class _FavoritesPageState extends State<FavouritesPage> {
                             recipe: recipe,
                             onFavoritesChanged: _refreshFavorites,
                             matchedIngredients: [],
-
-                            
-                           
                           ),
                         ),
                       );
@@ -148,10 +117,7 @@ class _FavoritesPageState extends State<FavouritesPage> {
                                     IconButton(
                                       icon: Icon(Icons.favorite, color: Colors.red),
                                       onPressed: () async {
-                                        await FirebaseFirestore.instance
-                                            .collection('favourites')
-                                            .doc(recipe.id.toString())
-                                            .delete();
+                                        await _favouritesRepository.deleteFavorite(recipe.id);
                                         _refreshFavorites();
                                       },
                                     ),
@@ -175,4 +141,3 @@ class _FavoritesPageState extends State<FavouritesPage> {
     );
   }
 }
-

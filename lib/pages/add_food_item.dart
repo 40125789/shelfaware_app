@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/models/food_history.dart';
-import 'package:shelfaware_app/services/food_item_service.dart';
 import 'package:shelfaware_app/components/food_item_form.dart';
+import 'package:shelfaware_app/services/food_service.dart';
 
 class AddFoodItem extends StatefulWidget {
    final List<dynamic> foodItems;
@@ -23,7 +23,7 @@ class AddFoodItem extends StatefulWidget {
 }
 
 class _AddFoodItemState extends State<AddFoodItem> {
-  final FoodItemService _foodItemService = FoodItemService();
+  final FoodService _foodItemService = FoodService();
 
   Future<void> _saveFoodItem(
     String productName,
