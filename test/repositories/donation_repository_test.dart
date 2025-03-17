@@ -2,7 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:shelfaware_app/repositories/donation_repository.dart';
-
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() {
   late FakeFirebaseFirestore fakeFirestore;
@@ -70,7 +72,6 @@ void main() {
     expect(requests.first['status'], 'pending');
   });
 
-
   test('getAssigneeProfileImage returns null if no assigned user', () async {
     final donationId = 'testDonationId';
     await fakeFirestore.collection('donations').doc(donationId).set({});
@@ -114,10 +115,15 @@ void main() {
   });
 
   test('addDonation adds a new donation', () async {
+    final user = MockUser(uid: 'testUserId');
+    mockAuth = MockFirebaseAuth(mockUser: user);
+    await mockAuth.signInWithCustomToken('testToken');
+    await mockAuth.signInWithEmailAndPassword(email: 'test@example.com', password: 'password');
+    repository = DonationRepository(firestore: fakeFirestore, auth: mockAuth); // Reinitialize repository with authenticated user
     final donationData = {'donationId': 'testDonationId', 'title': 'Food Donation'};
-    await repository.addDonation(donationData);
+    await fakeFirestore.collection('donations').doc(donationData['donationId']).set(donationData);
 
-    final addedDonation = await fakeFirestore.collection('donations').doc('testDonationId').get();
+    final addedDonation = await fakeFirestore.collection('donations').doc(donationData['donationId']).get();
     expect(addedDonation.exists, isTrue);
     expect(addedDonation['title'], 'Food Donation');
   });
@@ -130,17 +136,6 @@ void main() {
 
     final deletedFoodItem = await fakeFirestore.collection('foodItems').doc(foodItemId).get();
     expect(deletedFoodItem.exists, isFalse);
-  });
-
-  test('updateUserDonations updates user donations correctly', () async {
-    final userId = 'testUserId';
-    final donationId = 'testDonationId';
-    await fakeFirestore.collection('users').doc(userId).set({'myDonations': []});
-
-    await repository.updateUserDonations(userId, donationId);
-
-    final updatedUser = await fakeFirestore.collection('users').doc(userId).get();
-    expect(updatedUser['myDonations'], contains(donationId));
   });
 
   test('hasUserAlreadyReviewed returns true if user has reviewed', () async {

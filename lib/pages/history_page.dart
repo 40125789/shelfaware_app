@@ -4,7 +4,6 @@ import 'package:shelfaware_app/models/food_history.dart';
 import 'package:shelfaware_app/pages/add_food_item.dart';
 import 'package:shelfaware_app/services/history_service.dart';
 
-
 class HistoryPage extends StatefulWidget {
   final String userId;
 
@@ -18,8 +17,8 @@ class _HistoryPageState extends State<HistoryPage> {
   late Future<List<FoodHistory>> _foodItems;
   List<int> _selectedItems = [];
   bool _isRecreateMode = false;
-  bool _isGrouped = false;
   bool _isNewestToOldest = true;
+  String _filterOption = 'Sort by Newest'; // Default option
 
   @override
   void initState() {
@@ -63,30 +62,30 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   void _sortFoodItems(List<FoodHistory> foodItems) {
-    if (_isGrouped) {
-      foodItems.sort((a, b) {
-        if (a.status == b.status) {
-          return a.updatedOn.compareTo(b.updatedOn);
-        }
-        return a.status == 'consumed' ? -1 : 1;
-      });
+    foodItems.sort((a, b) {
+      return _isNewestToOldest
+          ? b.updatedOn.compareTo(a.updatedOn)
+          : a.updatedOn.compareTo(b.updatedOn);
+    });
+  }
+
+  // Filter food items by status
+  List<FoodHistory> _filterFoodItems(List<FoodHistory> foodItems) {
+    if (_filterOption == 'Show Consumed') {
+      return foodItems.where((item) => item.status == 'consumed').toList();
+    } else if (_filterOption == 'Show Discarded') {
+      return foodItems.where((item) => item.status == 'discarded').toList();
     } else {
-      foodItems.sort((a, b) {
-        return _isNewestToOldest
-            ? b.updatedOn.compareTo(a.updatedOn)
-            : a.updatedOn.compareTo(b.updatedOn);
-      });
+      return foodItems; // Show all items if no specific filter is applied
     }
   }
 
   // Group food items by month
-  Map<String, List<FoodHistory>> _groupFoodItemsByMonth(
-      List<FoodHistory> foodItems) {
+  Map<String, List<FoodHistory>> _groupFoodItemsByMonth(List<FoodHistory> foodItems) {
     Map<String, List<FoodHistory>> groupedItems = {};
 
     for (var foodItem in foodItems) {
-      final String monthYear =
-          DateFormat('MMM yyyy').format(foodItem.updatedOn.toDate());
+      String monthYear = DateFormat('MMMM yyyy').format(foodItem.updatedOn.toDate());
       if (!groupedItems.containsKey(monthYear)) {
         groupedItems[monthYear] = [];
       }
@@ -109,8 +108,8 @@ class _HistoryPageState extends State<HistoryPage> {
                 icon: Icon(Icons.arrow_back),
                 onPressed: () {
                   setState(() {
-                    _isRecreateMode = false; // Exit recreate mode
-                    _selectedItems.clear(); // Clear selected items
+                    _isRecreateMode = false;
+                    _selectedItems.clear();
                   });
                 },
               ),
@@ -145,48 +144,69 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
       body: Column(
         children: [
-          // Dropdown for sorting options below the app bar
+          // Dropdown for sorting and filtering options below the app bar
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: _isGrouped
-                  ? 'Group by Status'
-                  : _isNewestToOldest
-                      ? 'Newest First'
-                      : 'Oldest First',
-              items: [
-                DropdownMenuItem<String>(
-                  value: 'Group by Status',
-                  child: Text('Group by Status'),
-                ),
-                DropdownMenuItem<String>(
-                  value: 'Newest First',
-                  child: Text('Sort by Newest'),
-                ),
-                DropdownMenuItem<String>(
-                  value: 'Oldest First',
-                  child: Text('Sort by Oldest'),
+            child: Column(
+              children: [
+                // Combined dropdown for sorting and filtering options
+                DropdownButton<String>(
+                  isExpanded: true,
+                  value: _filterOption,
+                  items: [
+                    DropdownMenuItem<String>(
+                      value: 'Sort by Newest',
+                      child: Row(
+                        children: [
+                          Icon(Icons.arrow_downward),
+                          SizedBox(width: 8),
+                          Text('Sort by Newest'),
+                        ],
+                      ),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'Sort by Oldest',
+                      child: Row(
+                        children: [
+                          Icon(Icons.arrow_upward),
+                          SizedBox(width: 8),
+                          Text('Sort by Oldest'),
+                        ],
+                      ),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'Show Consumed',
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle_outline),
+                          SizedBox(width: 8),
+                          Text('Show Consumed'),
+                        ],
+                      ),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'Show Discarded',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline),
+                          SizedBox(width: 8),
+                          Text('Show Discarded'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _filterOption = newValue!;
+                      if (_filterOption == 'Sort by Newest') {
+                        _isNewestToOldest = true;
+                      } else if (_filterOption == 'Sort by Oldest') {
+                        _isNewestToOldest = false;
+                      }
+                    });
+                  },
                 ),
               ],
-              onChanged: (String? newValue) {
-                setState(() {
-                  if (newValue == 'Group by Status') {
-                    _isGrouped = true;
-                    _isNewestToOldest =
-                        false; // Reset to disable "Newest First"
-                  } else if (newValue == 'Newest First') {
-                    _isNewestToOldest = true;
-                    _isGrouped = false; // Reset to disable "Group by Status"
-                  } else if (newValue == 'Oldest First') {
-                    _isNewestToOldest = false;
-                    _isGrouped = false; // Reset to disable "Group by Status"
-                  }
-
-                  // Reload the food items after applying sorting/filtering
-                  _foodItems = HistoryService().getFoodHistory(widget.userId);
-                });
-              },
             ),
           ),
           // Food list
@@ -207,59 +227,45 @@ class _HistoryPageState extends State<HistoryPage> {
                 // Sort the food items based on the current state
                 _sortFoodItems(foodItems);
 
+                // Filter food items based on status
+                foodItems = _filterFoodItems(foodItems);
+
                 // Group food items by month
-                Map<String, List<FoodHistory>> groupedItems = {};
-                for (var foodItem in foodItems) {
-                  String month = DateFormat('MMMM yyyy')
-                      .format(foodItem.updatedOn.toDate());
-                  if (groupedItems.containsKey(month)) {
-                    groupedItems[month]!.add(foodItem);
-                  } else {
-                    groupedItems[month] = [foodItem];
-                  }
-                }
+                Map<String, List<FoodHistory>> groupedFoodItems =
+                    _groupFoodItemsByMonth(foodItems);
 
-                return ListView.builder(
-                  itemCount: groupedItems.keys.length,
-                  itemBuilder: (context, index) {
-                    String month = groupedItems.keys.elementAt(index);
-                    List<FoodHistory> items = groupedItems[month]!;
-
+                return ListView(
+                  children: groupedFoodItems.keys.map((month) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header for the month extending full width with rounded corners
+                        // Month Header with Grey Background and Centered Text
                         Container(
-                          width: MediaQuery.of(context).size.width, // Full width
-                          margin: EdgeInsets.symmetric(vertical: 8),
-                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(8), // Rounded corners
-                          ),
+                          width: double.infinity,
+                          color: Colors.grey[200],
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
                           child: Center(
                             child: Text(
                               month,
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
                             ),
                           ),
                         ),
-                        // List of food items for that month
-                        for (var foodItem in items)
-                          Card(
-                            margin: EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 15),
+                        ...groupedFoodItems[month]!.map((foodItem) {
+                          return Card(
+                            margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                             elevation: 3,
                             shape: RoundedRectangleBorder(
                               side: BorderSide(
-                                  color: foodItem.status == 'consumed'
-                                      ? Colors.green
-                                      : Colors.red,
-                                  width: 2),
+                                color: foodItem.status == 'consumed'
+                                    ? Colors.green
+                                    : Colors.red,
+                                width: 2,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: ListTile(
@@ -302,25 +308,29 @@ class _HistoryPageState extends State<HistoryPage> {
                               leading: _isRecreateMode
                                   ? Checkbox(
                                       value: _selectedItems.contains(
-                                          foodItems.indexOf(foodItem)),
+                                          groupedFoodItems[month]!
+                                              .indexOf(foodItem)),
                                       onChanged: (bool? value) {
                                         setState(() {
                                           if (value == true) {
                                             _selectedItems.add(
-                                                foodItems.indexOf(foodItem));
+                                                groupedFoodItems[month]!
+                                                    .indexOf(foodItem));
                                           } else {
                                             _selectedItems.remove(
-                                                foodItems.indexOf(foodItem));
+                                                groupedFoodItems[month]!
+                                                    .indexOf(foodItem));
                                           }
                                         });
                                       },
                                     )
                                   : null,
                             ),
-                          ),
+                          );
+                        }).toList(),
                       ],
                     );
-                  },
+                  }).toList(),
                 );
               },
             ),

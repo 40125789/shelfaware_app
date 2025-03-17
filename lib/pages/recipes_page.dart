@@ -4,7 +4,6 @@ import 'package:shelfaware_app/components/recipe_card.dart';
 import 'package:shelfaware_app/models/recipe_model.dart';
 import 'package:shelfaware_app/repositories/favourites_repository.dart';
 import 'package:shelfaware_app/services/food_service.dart';
-import 'package:shelfaware_app/services/open_food_facts_api.dart';
 import 'package:shelfaware_app/services/recipe_service.dart';
 
 

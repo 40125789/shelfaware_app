@@ -11,7 +11,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/services/location_service.dart';
 
-
 class AddPhotoAndDetailsForm extends ConsumerStatefulWidget {
   final Function(String) onPhotoAdded;
   final Function(String, String) onDetailsAdded;
@@ -27,7 +26,8 @@ class AddPhotoAndDetailsForm extends ConsumerStatefulWidget {
   _AddPhotoAndDetailsFormState createState() => _AddPhotoAndDetailsFormState();
 }
 
-class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm> {
+class _AddPhotoAndDetailsFormState
+    extends ConsumerState<AddPhotoAndDetailsForm> {
   final _formKey = GlobalKey<FormState>();
   final _pickupTimesController = TextEditingController();
   final _pickupInstructionsController = TextEditingController();
@@ -51,7 +51,8 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
     });
 
     String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
     LatLng? newLocation;
 
@@ -108,7 +109,8 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
         _isUploadingPhoto = true; // Set loading state to true
       });
 
-      String? url = await DonationService().uploadDonationImage(File(image.path));
+      String? url =
+          await DonationService().uploadDonationImage(File(image.path));
 
       setState(() {
         _imageUrl = url;
@@ -177,7 +179,8 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
                                 width: 120,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.grey, width: 1),
+                                  border:
+                                      Border.all(color: Colors.grey, width: 1),
                                 ),
                                 child: ClipOval(
                                   child: Image.asset(
@@ -191,7 +194,8 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
                                 width: 120,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.grey, width: 1),
+                                  border:
+                                      Border.all(color: Colors.grey, width: 1),
                                 ),
                                 child: ClipOval(
                                   child: Image.network(
@@ -223,7 +227,8 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
                   labelText: 'Pickup Times',
                   hintText: 'Enter pickup times here',
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -239,7 +244,8 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
                   labelText: 'Pickup Instructions',
                   hintText: 'Enter pickup instructions here',
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -259,7 +265,8 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
                       children: [
                         Text(
                           'Pickup Location',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         IconButton(
                           icon: Icon(Icons.arrow_forward),
@@ -277,9 +284,11 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
                         onMapCreated: (GoogleMapController controller) {
                           mapController = controller;
                           // Ensure the map is updated when the location changes
-                          ref.listen<LatLng?>(locationProvider, (previous, next) {
+                          ref.listen<LatLng?>(locationProvider,
+                              (previous, next) {
                             if (next != null) {
-                              mapController?.animateCamera(CameraUpdate.newLatLng(next));
+                              mapController
+                                  ?.animateCamera(CameraUpdate.newLatLng(next));
                             }
                           });
                         },
@@ -298,10 +307,12 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
                       Map<String, String> formData = {
                         'imageUrl': _imageUrl!,
                         'pickupTimes': _pickupTimesController.text,
-                        'pickupInstructions': _pickupInstructionsController.text,
+                        'pickupInstructions':
+                            _pickupInstructionsController.text,
                       };
                       widget.onFormSubmitted(formData);
-                      Navigator.of(context).pop(formData); // Ensure modal closes only once
+                      Navigator.of(context)
+                          .pop(formData); // Ensure modal closes only once
                     } else {
                       setState(() {
                         _isPhotoMissing = true;
@@ -309,6 +320,10 @@ class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm>
                     }
                   }
                 },
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.green, // Text color
+                ),
                 child: Text('Submit'),
               ),
             ],

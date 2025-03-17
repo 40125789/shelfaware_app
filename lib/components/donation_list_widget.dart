@@ -13,6 +13,23 @@ import 'package:shelfaware_app/providers/watched_donations_provider.dart';
 import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:shelfaware_app/services/user_service.dart';
 
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:lottie/lottie.dart';
+import 'package:shelfaware_app/components/donation_card.dart';
+import 'package:shelfaware_app/pages/user_donation_map.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shelfaware_app/pages/watched_donations_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shelfaware_app/providers/watched_donations_provider.dart';
+import 'package:shelfaware_app/repositories/user_repository.dart';
+import 'package:shelfaware_app/services/user_service.dart';
+import 'package:shelfaware_app/utils/donation_filter_calc_util.dart';
+
+
 class DonationListView extends ConsumerStatefulWidget {
   final LatLng? currentLocation;
   final bool filterExpiringSoon;
@@ -52,14 +69,14 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
     filterDistance = widget.filterDistance;
   }
 
-void getDonorRating(String donorId) async {
-  double? rating = await _userService.fetchDonorRating(donorId);
-  if (rating != null) {
-    setState(() {
-      donorRatings[donorId] = rating;
-    });
+  void getDonorRating(String donorId) async {
+    double? rating = await _userService.fetchDonorRating(donorId);
+    if (rating != null) {
+      setState(() {
+        donorRatings[donorId] = rating;
+      });
+    }
   }
-}
 
   Future<void> _refreshDonations() async {
     setState(() {}); // Trigger a rebuild to refresh the donations
@@ -75,7 +92,7 @@ void getDonorRating(String donorId) async {
     return StreamBuilder(
       stream: FirebaseFirestore.instance
         .collection('donations')
-        .orderBy('addedOn', descending: true)
+        .orderBy('donatedAt', descending: true)
         .snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) {
@@ -128,25 +145,15 @@ void getDonorRating(String donorId) async {
 
             // Apply 'Expiring Soon' filter
             if (filterExpiringSoon) {
-              Timestamp? expiryDate = donation['expiryDate'];
-              if (expiryDate != null) {
-                var expiryDateTime = expiryDate.toDate();
-                int daysUntilExpiry =
-                    expiryDateTime.difference(DateTime.now()).inDays;
-                if (daysUntilExpiry < 0 || daysUntilExpiry > 3) {
-                  return false; // Filter out donations that are not expiring soon
-                }
+              if (!isExpiringSoon(donation['expiryDate'])) {
+                return false; // Filter out donations that are not expiring soon
               }
             }
 
             // Apply 'Newly Added' filter
             if (filterNewlyAdded) {
-              Timestamp? addedOn = donation['addedOn'];
-              if (addedOn != null) {
-                var addedDate = addedOn.toDate();
-                if (DateTime.now().difference(addedDate).inHours >= 24) {
-                  return false; // Filter out donations not added recently
-                }
+              if (!isNewlyAdded(donation['donatedAt'])) {
+                return false; // Filter out donations not added recently
               }
             }
 
@@ -201,7 +208,7 @@ void getDonorRating(String donorId) async {
               String donorName = donation['donorName'] ?? 'Anonymous';
               String? imageUrl = donation['imageUrl'];
               Timestamp? expiryDate = donation['expiryDate'];
-              Timestamp? addedOn = donation['addedOn'];
+              Timestamp? addedOn = donation['donatedAt'];
               GeoPoint? location = donation['location'];
               String donorId = donation['donorId'];
               String donationId = donations[index].id;
@@ -242,22 +249,6 @@ void getDonorRating(String donorId) async {
                   }
               }); 
 
-              // Calculate if the donation is "Newly Added" (within 24 hours)
-              bool isNewlyAdded = false;
-              if (addedOn != null) {
-                var addedDate = addedOn.toDate();
-                isNewlyAdded = DateTime.now().difference(addedDate).inHours < 24;
-              }
-
-              // Calculate if the donation is "Expiring Soon" (within 3 days)
-              bool isExpiringSoon = false;
-              if (expiryDate != null) {
-                var expiryDateTime = expiryDate.toDate();
-                int daysUntilExpiry =
-                    expiryDateTime.difference(DateTime.now()).inDays;
-                isExpiringSoon = daysUntilExpiry >= 0 && daysUntilExpiry <= 3;
-              }
-
               return DonationCard(
                 productName: productName,
                 status: status,
@@ -268,15 +259,12 @@ void getDonorRating(String donorId) async {
                 expiryDate: expiryDate,
                 location: LatLng(latitude, longitude),
                 donorRating: rating,
-                isNewlyAdded: isNewlyAdded,
-                isExpiringSoon: isExpiringSoon,
+                isNewlyAdded: isNewlyAdded(addedOn),
+                isExpiringSoon: isExpiringSoon(expiryDate),
                 currentLocation: widget.currentLocation!,
-               
-             
                 onTap: (String donationId) async {
                   // Fetch the profile image URL
-             String donorImageUrl = await UserService(UserRepository(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance)).fetchDonorProfileImageUrl(donorId);
-            
+                  String donorImageUrl = await UserService(UserRepository(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance)).fetchDonorProfileImageUrl(donorId);
 
                   try {
                     Navigator.push(
@@ -308,7 +296,6 @@ void getDonorRating(String donorId) async {
                           pickupTimes: donation['pickupTimes'] ?? '',
                           pickupInstructions: donation['pickupInstructions'] ?? '',
                           donorRating: rating ?? 0.0, 
-                        
                         ),
                       ),
                     ).then((_) {
@@ -320,21 +307,21 @@ void getDonorRating(String donorId) async {
                     // Optionally show a message to the user
                   }
                 },
-                  isInWatchlist: watchlistStatus[donationId] ?? false,
-                  onWatchlistToggle: (String donationId) {
+                isInWatchlist: watchlistStatus[donationId] ?? false,
+                onWatchlistToggle: (String donationId) {
                   setState(() {
                     if (watchlistStatus[donationId] == true) {
-                    ref
-                      .read(watchedDonationsServiceProvider)
-                      .removeFromWatchlist(userId, donationId);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                      content: Row(
-                        children: [
-                        Icon(
-                          Icons.star_border,
-                          color: Colors.green,
-                        ),
+                      ref
+                        .read(watchedDonationsServiceProvider)
+                        .removeFromWatchlist(userId, donationId);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(
+                                Icons.star_border,
+                                color: Colors.green,
+                              ),
                               SizedBox(width: 8),
                               Text("Removed from watchlist"),
                             ],

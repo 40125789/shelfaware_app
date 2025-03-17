@@ -65,6 +65,11 @@ class FoodService {
     });
   }
 
+   Future<void> updateFoodItem(String documentId, Map<String, dynamic> foodItemData) async {
+    await _foodRepository.updateFoodItem(documentId, foodItemData);
+  }
+
+
   // Returns a stream of food items for the currently logged-in user.
   Stream<List<DocumentSnapshot>> getUserFoodItems() {
     User? currentUser = _auth.currentUser;

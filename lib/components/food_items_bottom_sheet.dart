@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/components/food_item_card.dart';
 import 'package:shelfaware_app/components/food_item_form.dart';
 import 'package:shelfaware_app/notifiers/food_item_notifier.dart';
+import 'package:shelfaware_app/services/food_service.dart';
 
 class FoodItemsBottomSheet extends StatefulWidget {
   final List<Map<String, dynamic>> items;
@@ -94,12 +95,8 @@ class _FoodItemsBottomSheetState extends State<FoodItemsBottomSheet> {
 
   void _editFoodItem(
       BuildContext context, String documentId, WidgetRef ref) async {
-    final foodItemDoc = await FirebaseFirestore.instance
-        .collection('foodItems')
-        .doc(documentId)
-        .get();
-    final foodItemData = foodItemDoc.data();
-
+    final foodItemData = await FoodService().fetchFoodItemById(documentId);
+      
     if (foodItemData != null) {
       Navigator.push(
         context,

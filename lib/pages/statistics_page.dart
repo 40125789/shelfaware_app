@@ -11,7 +11,7 @@ class StatisticsPage extends StatefulWidget {
 class _StatisticsPageState extends State<StatisticsPage> {
   // Get the current user's ID
   String? userId;
-  bool isWeekly = true;  // Default to weekly
+
 
   @override
   void initState() {
@@ -20,12 +20,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     userId = FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Toggle view between weekly and monthly
-  void _toggleView(bool value) {
-    setState(() {
-      isWeekly = value;
-    });
-  }
+ 
 
  @override
 Widget build(BuildContext context) {

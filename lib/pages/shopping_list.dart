@@ -278,7 +278,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                               _loadShoppingList();
                             },
                           ),
-                          Text("Hide purchased"),
+                          Text("Hide Purchased"),
                         ],
                       ),
                     ],

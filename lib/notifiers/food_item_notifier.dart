@@ -2,9 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geolocator/geolocator.dart';
 
 class FoodItemNotifier extends StateNotifier<List<Map<String, dynamic>>> {
   FoodItemNotifier() : super([]);
@@ -57,6 +54,25 @@ class FoodItemNotifier extends StateNotifier<List<Map<String, dynamic>>> {
     }
   }
 }
+
+
+
+
+  Future<Map<String, dynamic>?> fetchFoodItemById(String documentId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('foodItems')
+          .doc(documentId)
+          .get();
+      if (doc.exists) {
+        return doc.data();
+      }
+    } catch (e) {
+      print('Error fetching food item by ID: $e');
+    }
+    return null;
+  }
+
 
 final foodItemProvider = StateNotifierProvider<FoodItemNotifier, List<Map<String, dynamic>>>(
   (ref) => FoodItemNotifier(),

@@ -17,7 +17,6 @@ import 'package:shelfaware_app/pages/favourites_page.dart';
 import 'package:shelfaware_app/pages/donations_page.dart';
 import 'package:shelfaware_app/pages/statistics_page.dart';
 import 'package:shelfaware_app/controllers/auth_controller.dart'; // Ensure this import is correct
-import 'package:geolocator/geolocator.dart';
 import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:wiredash/wiredash.dart';
 import 'package:shelfaware_app/services/user_service.dart';
@@ -239,57 +238,7 @@ class _HomePageState extends ConsumerState<HomePage>
     return formatExpiryDate(expiryTimestamp);
   }
 
-  Future<void> _donateFoodItem(BuildContext context, String id) async {
-    Future<Position> _getUserLocation() async {
-      return await _getUserLocation();
-    }
+ 
 
-    void _editFoodItem(String documentId) {}
-    return_deleteFoodItem(
-        BuildContext context, String documentId) async {
-      bool? confirm = await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Confirm Deletion"),
-            content: Text(
-                "Are you sure you want to delete this item? This action cannot be undone."),
-            actions: [
-              TextButton(
-                child: Text("Cancel"),
-                onPressed: () {
-                  Navigator.of(context)
-                      .pop(false); // Return false if user cancels
-                },
-              ),
-              TextButton(
-                child: Text("Delete"),
-                onPressed: () {
-                  Navigator.of(context)
-                      .pop(true); // Return true if user confirms
-                },
-              ),
-            ],
-          );
-        },
-      );
-
-      if (confirm == true) {
-        try {
-          await foodService.deleteFoodItem(
-              documentId); // Call the service method
-
-          // Notify the user of success
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Item deleted successfully.")),
-          );
-        } catch (e) {
-          print('Error deleting food item: $e');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to delete item: $e")),
-          );
-        }
-      }
-    }
-  }
+  
 }

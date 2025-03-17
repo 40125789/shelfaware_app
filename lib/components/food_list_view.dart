@@ -285,12 +285,9 @@ class FoodListView extends StatelessWidget {
     }
   }
 
-  void _editFoodItem(BuildContext context, String documentId) async {
-    final foodItemDoc = await FirebaseFirestore.instance
-        .collection('foodItems')
-        .doc(documentId)
-        .get();
-    final foodItemData = foodItemDoc.data();
+    void _editFoodItem(BuildContext context, String documentId) async {
+    final foodService = FoodService();
+    final foodItemData = await foodService.fetchFoodItemById(documentId);
 
     if (foodItemData != null) {
       Navigator.push(
@@ -305,11 +302,8 @@ class FoodListView extends StatelessWidget {
                 foodItem: foodItemData,
                 productImage: foodItemData['productImage'],
                 onSave: (productName, expiryDate, quantity, storageLocation,
-                    notes, category, productImage) {
-                  FirebaseFirestore.instance
-                      .collection('foodItems')
-                      .doc(documentId)
-                      .update({
+                    notes, category, productImage) async {
+                  await foodService.updateFoodItem(documentId, {
                     'productName': productName,
                     'expiryDate': expiryDate,
                     'quantity': quantity,
@@ -327,7 +321,6 @@ class FoodListView extends StatelessWidget {
       );
     }
   }
-
   Future<void> _deleteFoodItem(BuildContext context, String documentId) async {
     bool? confirm = await showDialog(
       context: context,
@@ -404,7 +397,7 @@ class FoodListView extends StatelessWidget {
     try {
       Position userPosition = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
-      await DonationService.donateFoodItem(context, documentId, userPosition);
+      await donationService.donateFoodItem(context, documentId, userPosition);
     } catch (e) {
       print('Error donating food item: $e');
       ScaffoldMessenger.of(context).showSnackBar(

@@ -31,6 +31,32 @@ Future<List<DonationLocation>> fetchDonationLocations(String userId) async {
 
 
 
+
+  // Remove a donation from the database
+  Future<void> removeDonation(String donationId) async {
+    try {
+      // Remove the donation from 'donations' collection
+      await _firestore.collection('donations').doc(donationId).delete();
+    } catch (e) {
+      throw Exception("Error removing donation: $e");
+    }
+  }
+
+
+  // Remove the donation from the user's donation list
+  Future<void> removeUserDonation(String userId, String donationId) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'myDonations': FieldValue.arrayRemove([donationId]),
+      });
+    } catch (e) {
+      throw Exception("Error removing donation from user: $e");
+    }
+  }
+
+
+
+
   Future<Map<String, dynamic>> getDonationDetails(String donationId) async {
     DocumentSnapshot donationDoc =
         await _firestore.collection('donations').doc(donationId).get();
@@ -158,22 +184,43 @@ Future<String?> getAssigneeProfileImage(String donationId) async {
         : null;
   }
 
+
+
+  // Add a new donation to the database
   Future<void> addDonation(Map<String, dynamic> donationData) async {
-    await _firestore
-        .collection('donations')
-        .doc(donationData['donationId'])
-        .set(donationData);
+    try {
+      final String donationId = _firestore.collection('donations').doc().id;
+
+      // Ensure donorId is set in the donationData map
+      final User? currentUser = auth.currentUser;
+      if (currentUser == null) {
+        throw Exception("User is not authenticated");
+      }
+      final String userId = currentUser.uid;
+    
+
+      // Prepare donation data and add to 'donations' collection
+      donationData['donationId'] = donationId;
+          donationData['donorId'] = userId; // Ensure donorId is set in the donationData map
+      await _firestore.collection('donations').doc(donationId).set(donationData);
+
+      // Update the user's donation list with the new donation
+      await _firestore.collection('users').doc(userId).update({
+        'myDonations': FieldValue.arrayUnion([donationId]),
+      });
+    } catch (e) {
+      throw Exception("Error adding donation: $e");
+    }
   }
 
+
+
+  // Remove a food item from the database
   Future<void> removeFoodItem(String id) async {
     await _firestore.collection('foodItems').doc(id).delete();
   }
 
-  Future<void> updateUserDonations(String userId, String donationId) async {
-    await _firestore.collection('users').doc(userId).update({
-      'myDonations': FieldValue.arrayUnion([donationId]),
-    });
-  }
+
 
   Future<String?> uploadDonationImage(File image) async {
     final String userId = auth.currentUser!.uid;
@@ -250,7 +297,7 @@ Future<String?> getAssigneeProfileImage(String donationId) async {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text(
-                'Donation request withdrawn and donation status updated to available')),
+                'Donation request withdrawn successfully')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

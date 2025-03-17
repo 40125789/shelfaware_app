@@ -45,4 +45,9 @@ class DonationRequestService {
 
     await _repository.addDonationRequest(updatedRequest);
   }
+
+  Future<bool> checkIfAlreadyRequested(String donationId, String requesterId) async {
+    return await _repository.checkIfAlreadyRequested(donationId, requesterId);
+  }
 }
+

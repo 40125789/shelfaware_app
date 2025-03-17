@@ -78,6 +78,10 @@ class _DonationMapScreenState extends ConsumerState<DonationMapScreen> {
   bool hasRequested = false;
   bool isLoading = true; // Add a loading state
   late DonationRequestRepository _donationRequestRepository;
+  final _donationRequestService = DonationRequestRepository(
+    firebaseFirestore: FirebaseFirestore.instance,
+    firebaseAuth: FirebaseAuth.instance,
+  );
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   Map<String, bool> watchlistStatus = {};
@@ -171,24 +175,14 @@ class _DonationMapScreenState extends ConsumerState<DonationMapScreen> {
     );
   }
 
-  Future<void> _checkIfAlreadyRequested() async {
+ Future<void> _checkIfAlreadyRequested() async {
     String userId = _auth.currentUser?.uid ?? '';
     try {
-      final donationRequestDoc = await FirebaseFirestore.instance
-          .collection('donationRequests')
-          .where('donationId', isEqualTo: widget.donationId)
-          .where('requesterId', isEqualTo: userId)
-          .get();
+      bool alreadyRequested = await _donationRequestService.checkIfAlreadyRequested(widget.donationId, userId);
 
-      if (donationRequestDoc.docs.isNotEmpty) {
-        setState(() {
-          hasRequested = true; // User has already requested the donation
-        });
-      } else {
-        setState(() {
-          hasRequested = false; // User has not requested the donation
-        });
-      }
+      setState(() {
+        hasRequested = alreadyRequested;
+      });
     } catch (e) {
       print('Error checking donation request: $e');
       // Handle errors appropriately, maybe show a message to the user

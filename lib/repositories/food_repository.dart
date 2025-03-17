@@ -63,4 +63,19 @@ class FoodRepository {
     QuerySnapshot snapshot = await firestore.collection('categories').get();
     return snapshot.docs;
   }
+
+    Future<void> updateFoodItem(String documentId, Map<String, dynamic> foodItemData) async {
+    await firestore.collection('foodItems').doc(documentId).update(foodItemData);
+  }
+
+    // Remove a food item by its ID
+  Future<void> removeFoodItem(String id) async {
+    try {
+      await firestore.collection('foodItems').doc(id).delete();
+    } catch (e) {
+      print("Error removing food item: $e");
+      rethrow;
+    }
+  }
+
 }

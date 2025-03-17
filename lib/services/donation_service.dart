@@ -63,8 +63,8 @@ class DonationService {
     return donations;
   }
 
-  static Future<void> donateFoodItem(
-      BuildContext context, String id, Position position) async {
+// Method to add a donation
+  Future<void> donateFoodItem(BuildContext context, String id, Position position) async {
     try {
       // Fetch the food item document
       Map<String, dynamic>? foodItemDoc =
@@ -145,15 +145,14 @@ class DonationService {
 
       // If location exists in the user's document, use that, otherwise use GeoLocator location
       GeoPoint userLocation;
-   final userData = userDoc.data() as Map<String, dynamic>?;
-   bool hasLocation = userData != null && userData.containsKey('location') && userData['location'] != null;
-   if (hasLocation) {
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      bool hasLocation = userData != null && userData.containsKey('location') && userData['location'] != null;
+      if (hasLocation) {
         userLocation = userData['location'];
-
       } else {
         // Use GeoLocator to get the current location
         Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+            desiredAccuracy: LocationAccuracy.high);
         userLocation = GeoPoint(position.latitude, position.longitude);
       }
 
@@ -166,31 +165,45 @@ class DonationService {
         foodItemDoc['imageUrl'] = formData['imageUrl'];
       }
 
-      // Add the item to the donations collection
-      await FirebaseFirestore.instance
-          .collection('donations')
-          .doc(donationId)
-          .set(foodItemDoc);
+      // Add the item to the donations collection through repository
+      await _donationRepository.addDonation(foodItemDoc);
 
-      // Remove the item from the foodItems collection
-      await FirebaseFirestore.instance.collection('foodItems').doc(id).delete();
+      // Remove the item from the foodItems collection through repository
+      await _donationRepository.removeFoodItem(id);
 
-      // Update the user's document with the new donation
-      await FirebaseFirestore.instance.collection('users').doc(donorId).update({
-        'myDonations': FieldValue.arrayUnion([donationId]),
-      });
 
       // Show a success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Donation added successfully.")),
       );
-        } catch (e) {
+    } catch (e) {
       print('Error donating food item: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to donate item: $e")),
       );
-        }
-      }
+    }
+  }
+
+  // Method to remove a donation
+  Future<void> removeDonation(BuildContext context, String donationId, String userId) async {
+    try {
+      final String userId = FirebaseAuth.instance.currentUser!.uid;
+
+      // Remove the donation through repository
+      await _donationRepository.removeDonation(donationId);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Donation removed successfully.")),
+      );
+    } catch (e) {
+      print('Error removing donation: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to remove donation: $e")),
+      );
+    }
+  }
+
 
   static GeoPoint _obscureLocation(GeoPoint location) {
     // Obscure the location by adding a small random offset
@@ -267,10 +280,7 @@ class DonationService {
     await _donationRepository.removeFoodItem(id);
   }
 
-  // Update user donations
-  Future<void> updateUserDonations(String userId, String donationId) async {
-    await _donationRepository.updateUserDonations(userId, donationId);
-  }
+
 
   // Upload donation image
   Future<String?> uploadDonationImage(File image) async {
@@ -296,6 +306,8 @@ class DonationService {
   Future<void> updateDonationStatus(String donationId, String status) async {
     await _donationRepository.updateDonationStatus(donationId, status);
   }
+
+  
 
   Stream<List<Map<String, dynamic>>> getDonationRequests(String donationId) {
     final String donorId = FirebaseAuth.instance.currentUser!.uid;
