@@ -291,28 +291,31 @@ class FoodListView extends StatelessWidget {
 
     if (foodItemData != null) {
       Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Scaffold(
-            appBar: AppBar(title: Text('Edit Food Item')),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: FoodItemForm(
-                isRecreated: false,
-                foodItem: foodItemData,
-                productImage: foodItemData['productImage'],
-                onSave: (productName, expiryDate, quantity, storageLocation,
-                    notes, category, productImage) async {
-                  await foodService.updateFoodItem(documentId, {
-                    'productName': productName,
-                    'expiryDate': expiryDate,
-                    'quantity': quantity,
-                    'storageLocation': storageLocation,
-                    'notes': notes,
-                    'category': category,
-                    'productImage': productImage,
-                  });
-                  Navigator.pop(context);
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+        appBar: AppBar(title: Text('Edit Food Item')),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: FoodItemForm(
+          isRecreated: false,
+          foodItem: foodItemData,
+          productImage: foodItemData['productImage'],
+          onSave: (productName, expiryDate, quantity, storageLocation,
+            notes, category, productImage) async {
+            await foodService.updateFoodItem(documentId, {
+            'productName': productName,
+            'expiryDate': expiryDate,
+            'quantity': quantity,
+            'storageLocation': storageLocation,
+            'notes': notes,
+            'category': category,
+            'productImage': productImage,
+            });
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Food Item updated successfully!")),
+            );
                 }, foodItems: [],
               ),
             ),

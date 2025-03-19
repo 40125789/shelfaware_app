@@ -26,8 +26,7 @@ class AddPhotoAndDetailsForm extends ConsumerStatefulWidget {
   _AddPhotoAndDetailsFormState createState() => _AddPhotoAndDetailsFormState();
 }
 
-class _AddPhotoAndDetailsFormState
-    extends ConsumerState<AddPhotoAndDetailsForm> {
+class _AddPhotoAndDetailsFormState extends ConsumerState<AddPhotoAndDetailsForm> {
   final _formKey = GlobalKey<FormState>();
   final _pickupTimesController = TextEditingController();
   final _pickupInstructionsController = TextEditingController();
@@ -35,7 +34,7 @@ class _AddPhotoAndDetailsFormState
   GoogleMapController? mapController;
   bool _isPhotoMissing = false;
   bool _isFetchingLocation = true;
-  bool _isUploadingPhoto = false; // Add this variable
+  bool _isUploadingPhoto = false;
   LatLng? _currentLocation;
   Set<Marker> _markers = {};
 
@@ -57,8 +56,8 @@ class _AddPhotoAndDetailsFormState
     LatLng? newLocation;
 
     final userData = userDoc.data() as Map<String, dynamic>?;
-    final hasLocation = userData?.containsKey('location') ?? false;
-    if (userDoc.exists && userData != null && hasLocation) {
+
+    if (userDoc.exists && userData != null && userData.containsKey('location')) {
       GeoPoint geoPoint = userDoc['location'];
       newLocation = LatLng(geoPoint.latitude, geoPoint.longitude);
     } else {
@@ -83,7 +82,6 @@ class _AddPhotoAndDetailsFormState
         };
       });
 
-      // Ensure the map updates with the new location
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (newLocation != null) {
           mapController?.animateCamera(CameraUpdate.newLatLng(newLocation));
@@ -145,6 +143,7 @@ class _AddPhotoAndDetailsFormState
   Widget build(BuildContext context) {
     final selectedLocation = ref.watch(locationProvider);
 
+    // Move ref.listen inside the build method
     ref.listen<LatLng?>(locationProvider, (previous, next) {
       if (next != null && mapController != null) {
         mapController!.animateCamera(CameraUpdate.newLatLng(next));
@@ -283,14 +282,6 @@ class _AddPhotoAndDetailsFormState
                         ),
                         onMapCreated: (GoogleMapController controller) {
                           mapController = controller;
-                          // Ensure the map is updated when the location changes
-                          ref.listen<LatLng?>(locationProvider,
-                              (previous, next) {
-                            if (next != null) {
-                              mapController
-                                  ?.animateCamera(CameraUpdate.newLatLng(next));
-                            }
-                          });
                         },
                         markers: _markers,
                       ),

@@ -40,38 +40,40 @@ class StatusFilterWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
-    Color badgeColor;
-    IconData badgeIcon;
+Widget _buildStatusBadge(String status) {
+  Color badgeColor;
+  IconData badgeIcon;
 
-    switch (status) {
-      case 'Available':
-        badgeColor = Colors.green;
-        badgeIcon = Icons.check_circle;
-        break;
-      case 'Reserved':
-        badgeColor = Colors.orange;
-        badgeIcon = Icons.hourglass_empty;
-        break;
-      case 'Picked Up':
-        badgeColor = Colors.blue;
-        badgeIcon = Icons.card_giftcard;
-        break;
-      default:
-        badgeColor = Colors.grey;
-        badgeIcon = Icons.help;
-    }
-
-    return CircleAvatar(
-      radius: 12,
-      backgroundColor: badgeColor,
-      child: Icon(
-        badgeIcon,
-        color: Colors.white,
-        size: 16,
-      ),
-    );
+  switch (status) {
+    case 'Available':
+      badgeColor = Colors.green;
+      badgeIcon = Icons.check_circle;
+      break;
+    case 'Reserved':
+      badgeColor = Colors.orange;
+      badgeIcon = Icons.hourglass_empty;
+      break;
+    case 'Picked Up':
+      badgeColor = Colors.blue;
+      badgeIcon = Icons.card_giftcard;
+      break;
+    default:
+      badgeColor = Colors.grey;
+      badgeIcon = Icons.help;
   }
+
+  return CircleAvatar(
+    key: Key('status-badge-$status'),  // Add a unique key for each status
+    radius: 12,
+    backgroundColor: badgeColor,
+    child: Icon(
+      badgeIcon,
+      color: Colors.white,
+      size: 16,
+    ),
+  );
+}
+
 
   Color _getStatusColor(String status) {
     switch (status) {

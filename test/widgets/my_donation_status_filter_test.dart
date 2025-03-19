@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shelfaware_app/components/my_donation_status_filter.dart';
 
 void main() {
-  testWidgets('StatusFilterWidget displays correct initial status', (WidgetTester tester) async {
+  testWidgets('StatusFilterWidget displays correct initial status',
+      (WidgetTester tester) async {
     const selectedStatus = 'Available';
     await tester.pumpWidget(
       MaterialApp(
@@ -19,7 +20,9 @@ void main() {
     expect(find.text(selectedStatus), findsOneWidget);
   });
 
-  testWidgets('StatusFilterWidget calls onStatusChanged when a new status is selected', (WidgetTester tester) async {
+  testWidgets(
+      'StatusFilterWidget calls onStatusChanged when a new status is selected',
+      (WidgetTester tester) async {
     String? changedStatus;
     await tester.pumpWidget(
       MaterialApp(
@@ -43,37 +46,58 @@ void main() {
     expect(changedStatus, 'Reserved');
   });
 
-  testWidgets('StatusFilterWidget displays correct badge and color for each status', (WidgetTester tester) async {
-  const statuses = ['Available', 'Reserved', 'Picked Up'];
-  final badgeColors = [ Colors.green, Colors.orange, Colors.blue];
-  final badgeIcons = [Icons.check_circle, Icons.hourglass_empty, Icons.card_giftcard];
+  testWidgets(
+      'StatusFilterWidget displays correct badge and color for each status',
+      (WidgetTester tester) async {
+    const statuses = ['Available', 'Reserved', 'Picked Up'];
+    final badgeColors = [Colors.green, Colors.orange, Colors.blue];
+    final badgeIcons = [
+      Icons.check_circle,
+      Icons.hourglass_empty,
+      Icons.card_giftcard
+    ];
 
-  for (int i = 0; i < statuses.length; i++) {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: StatusFilterWidget(
-            selectedStatus: statuses[i],
-            onStatusChanged: (String status) {},
+    for (int i = 0; i < statuses.length; i++) {
+      // Build the widget tree with the current status
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatusFilterWidget(
+              selectedStatus: statuses[i],
+              onStatusChanged: (String status) {},
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.byType(DropdownButton<String>));
-    await tester.pumpAndSettle();
+      // Open the dropdown by tapping the dropdown button
+      await tester.tap(find.byType(DropdownButton<String>));
+      await tester.pumpAndSettle();
 
-    expect(
-      find.descendant(
-        of: find.byWidgetPredicate((widget) => widget is DropdownMenuItem<String> && widget.value == statuses[i]),
-        matching: find.byWidgetPredicate((widget) => widget is Icon && widget.icon == badgeIcons[i]),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      (tester.widget(find.byType(CircleAvatar)) as CircleAvatar).backgroundColor,
-      badgeColors[i],
-    );
-  }
-});
+      // Find the DropdownMenuItem for the current status
+      final itemFinder =
+          find.widgetWithText(DropdownMenuItem<String>, statuses[i]);
+
+      // Check if the CircleAvatar inside the menu has the correct background color
+      final circleAvatarFinder = find.descendant(
+        of: itemFinder,
+        matching: find.byWidgetPredicate((widget) =>
+            widget is CircleAvatar && widget.backgroundColor == badgeColors[i]),
+      );
+      expect(circleAvatarFinder, findsOneWidget);
+      final circleAvatar = tester.widget<CircleAvatar>(circleAvatarFinder);
+
+      // Validate the background color
+      expect(circleAvatar.backgroundColor, badgeColors[i]);
+
+      // Ensure only one icon exists for the specific badge
+      final iconFinder = find.descendant(
+        of: itemFinder,
+        matching: find.byIcon(badgeIcons[i]),
+      );
+
+      // Ensure there's exactly one matching icon
+      expect(iconFinder, findsOneWidget);
+    }
+  });
 }

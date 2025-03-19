@@ -13,20 +13,6 @@ import 'package:shelfaware_app/providers/watched_donations_provider.dart';
 import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:shelfaware_app/services/user_service.dart';
 
-import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:lottie/lottie.dart';
-import 'package:shelfaware_app/components/donation_card.dart';
-import 'package:shelfaware_app/pages/user_donation_map.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shelfaware_app/pages/watched_donations_page.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shelfaware_app/providers/watched_donations_provider.dart';
-import 'package:shelfaware_app/repositories/user_repository.dart';
-import 'package:shelfaware_app/services/user_service.dart';
 import 'package:shelfaware_app/utils/donation_filter_calc_util.dart';
 
 

@@ -133,6 +133,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
   cloud_firestore_platform_interface: any
+  mocktail: ^1.0.4
 flutter:
 
   # The following line ensures that the Material Icons font is
