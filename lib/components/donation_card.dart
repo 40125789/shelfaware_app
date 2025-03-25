@@ -66,21 +66,25 @@ class DonationCard extends ConsumerWidget {
       distanceText = "Unknown distance";
     }
 
-    // Calculate expiry time
-    expiredTimeText = '';
-    isExpired = false;
-    if (expiryDate != null) {
-      var expiryDateTime = expiryDate!.toDate();
-      var difference = DateTime.now().difference(expiryDateTime);
-      if (difference.isNegative) {
-        expiredTimeText =
-            'Expires in ${-difference.inDays} days ${-difference.inHours % 24} hours';
-      } else {
-        expiredTimeText =
-            'Expired ${difference.inDays} days ${difference.inHours % 24} hours ago';
-        isExpired = true;
-      }
-    }
+// Calculate expiry time
+expiredTimeText = '';
+isExpired = false;
+
+if (expiryDate != null) {
+  DateTime expiryDateTime = expiryDate!.toDate();
+  DateTime today = DateTime.now();
+  
+  // Remove time component for accurate date comparison
+  DateTime expiryOnly = DateTime(expiryDateTime.year, expiryDateTime.month, expiryDateTime.day);
+  DateTime todayOnly = DateTime(today.year, today.month, today.day);
+
+  int daysDifference = expiryOnly.difference(todayOnly).inDays;
+
+  if (daysDifference < 0) {
+    expiredTimeText = 'Expired';
+    isExpired = true;
+  }
+}
 
     final theme = Theme.of(context);
     final textColor = isExpired
@@ -242,23 +246,35 @@ class DonationCard extends ConsumerWidget {
             child: Container(
               alignment: Alignment.center,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(12),
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.access_time,
+                color: Colors.white,
+                size: 16,
+              ),
+              SizedBox(width: 4),
+              Text(
+                expiredTimeText,
+                style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
                 ),
-                child: Text(
-                  expiredTimeText,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
               ),
             ),
           ),
+    
         Positioned(
           bottom: 8,
           left: 8,

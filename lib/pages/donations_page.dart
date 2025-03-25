@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/components/donation_list_widget.dart';
 import 'package:shelfaware_app/components/donation_search_bar.dart';
@@ -249,6 +250,9 @@ Future<void> _loadMap() async {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
+           DateTime expiryDateTime = DateTime.parse(donation.expiryDate); // Assuming expiryDate is in a String timestamp format
+    String formattedExpiryDate = DateFormat('dd/MM/yyyy').format(expiryDateTime);
+
         return DonationDetailsDialog(
           donorName: donation.donorName,
           imageUrl: donation.imageUrl,
@@ -258,7 +262,7 @@ Future<void> _loadMap() async {
           userLatitude: _currentLocation?.latitude ?? 0.0,
           userLongitude: _currentLocation?.longitude ?? 0.0,
           productName: donation.itemName,
-          expiryDate: donation.expiryDate,
+          expiryDate: formattedExpiryDate,
           donorEmail: donation.donorEmail,
           donatorId: donation.donorId,
           chatId: '',
@@ -387,6 +391,8 @@ Future<void> _loadMap() async {
                 _updateMarkers(_filteredDonations);
               },
             ),
+
+           
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator())

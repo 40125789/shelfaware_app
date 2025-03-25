@@ -15,7 +15,6 @@ import 'package:shelfaware_app/services/user_service.dart';
 
 import 'package:shelfaware_app/utils/donation_filter_calc_util.dart';
 
-
 class DonationListView extends ConsumerStatefulWidget {
   final LatLng? currentLocation;
   final bool filterExpiringSoon;
@@ -35,9 +34,7 @@ class DonationListView extends ConsumerStatefulWidget {
 
 class _DonationListViewState extends ConsumerState<DonationListView> {
   final UserService _userService = UserService(UserRepository(
-    firestore: FirebaseFirestore.instance, 
-    auth: FirebaseAuth.instance
-  ));
+      firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance));
   Map<String, bool> watchlistStatus = {};
   Map<String, double> donorRatings = {};
   double averageRating = 0.0;
@@ -77,9 +74,9 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
     return StreamBuilder(
       stream: FirebaseFirestore.instance
-        .collection('donations')
-        .orderBy('donatedAt', descending: true)
-        .snapshots(),
+          .collection('donations')
+          .orderBy('donatedAt', descending: true)
+          .snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) {
           return Center(child: CircularProgressIndicator());
@@ -103,7 +100,10 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
           return false;
         }).toList();
 
-        if (donations.isEmpty) {
+        if (donations.isEmpty ||
+            donations.every((doc) =>
+                (doc.data() as Map<String, dynamic>)['status'] ==
+                'Picked Up')) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -228,12 +228,12 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
                   .read(watchedDonationsServiceProvider)
                   .isDonationInWatchlist(userId!, donationId)
                   .then((value) {
-                  if (watchlistStatus[donationId] != value) {
-                    setState(() {
-                      watchlistStatus[donationId] = value;
-                    });
-                  }
-              }); 
+                if (watchlistStatus[donationId] != value) {
+                  setState(() {
+                    watchlistStatus[donationId] = value;
+                  });
+                }
+              });
 
               return DonationCard(
                 productName: productName,
@@ -250,7 +250,10 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
                 currentLocation: widget.currentLocation!,
                 onTap: (String donationId) async {
                   // Fetch the profile image URL
-                  String donorImageUrl = await UserService(UserRepository(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance)).fetchDonorProfileImageUrl(donorId);
+                  String donorImageUrl = await UserService(UserRepository(
+                          firestore: FirebaseFirestore.instance,
+                          auth: FirebaseAuth.instance))
+                      .fetchDonorProfileImageUrl(donorId);
 
                   try {
                     Navigator.push(
@@ -280,8 +283,9 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
                           donorImageUrl: donorImageUrl ?? '',
                           donationTime: donation['donatedAt'].toDate(),
                           pickupTimes: donation['pickupTimes'] ?? '',
-                          pickupInstructions: donation['pickupInstructions'] ?? '',
-                          donorRating: rating ?? 0.0, 
+                          pickupInstructions:
+                              donation['pickupInstructions'] ?? '',
+                          donorRating: rating ?? 0.0,
                         ),
                       ),
                     ).then((_) {
@@ -298,8 +302,8 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
                   setState(() {
                     if (watchlistStatus[donationId] == true) {
                       ref
-                        .read(watchedDonationsServiceProvider)
-                        .removeFromWatchlist(userId, donationId);
+                          .read(watchedDonationsServiceProvider)
+                          .removeFromWatchlist(userId, donationId);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Row(
@@ -332,19 +336,24 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
                                 SizedBox(width: 8),
                                 Text("Added to watchlist"),
                                 IconButton(
-                                  icon: Icon(Icons.arrow_forward, color: Colors.green),
+                                  icon: Icon(Icons.arrow_forward,
+                                      color: Colors.green),
                                   onPressed: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => WatchedDonationsPage(currentLocation: widget.currentLocation!),
+                                        builder: (context) =>
+                                            WatchedDonationsPage(
+                                                currentLocation:
+                                                    widget.currentLocation!),
                                       ),
                                     );
                                   },
                                 ),
                               ],
                             ),
-                            duration: Duration(seconds: 2), // Ensures auto-dismiss
+                            duration:
+                                Duration(seconds: 2), // Ensures auto-dismiss
                           ),
                         );
                     }

@@ -15,8 +15,8 @@ class TrendsService {
         return {"error": "No data found."};
       }
 
-      Map<String, dynamic> foodInsights = _analyzeHistoryData(historyData);
-      Map<String, dynamic> donationStats = _analyzeDonationStats(donations, userId);
+      Map<String, dynamic> foodInsights = analyzeHistoryData(historyData);
+      Map<String, dynamic> donationStats = analyzeDonationStats(donations, userId);
 
       return {
         "foodInsights": foodInsights,
@@ -31,7 +31,7 @@ class TrendsService {
     return _trendsRepository.fetchJoinDuration(userId);
   }
 
-  Map<String, dynamic> _analyzeHistoryData(List<Map<String, dynamic>> historyData) {
+  Map<String, dynamic> analyzeHistoryData(List<Map<String, dynamic>> historyData) {
     Map<String, int> foodItemCount = {};
     Map<String, int> foodCategoryCount = {};
     Map<String, int> discardReasonCount = {};
@@ -97,7 +97,7 @@ class TrendsService {
     }
   }
 
-  Map<String, dynamic> _analyzeDonationStats(List<Map<String, dynamic>> donations, String userId) {
+  Map<String, dynamic> analyzeDonationStats(List<Map<String, dynamic>> donations, String userId) {
     int givenDonations = 0;
     int receivedDonations = 0;
 

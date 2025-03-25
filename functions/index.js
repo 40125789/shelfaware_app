@@ -78,11 +78,20 @@ exports.sendExpiryNotifications = functions.pubsub.schedule("every 24 hours").on
 
 exports.sendExpiredItemNotifications = functions.pubsub.schedule("every 24 hours").onRun(async () => {
   const db = admin.firestore();
-  const currentDate = admin.firestore.Timestamp.now();
+
+  // Get the current date and calculate yesterday's date at midnight
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0); // Set time to midnight (00:00:00)
+  const yesterday = new Date(currentDate);
+  yesterday.setDate(currentDate.getDate() - 1); // Get yesterday's date
+
+  // Convert yesterday's date to Firestore Timestamp
+  const yesterdayTimestamp = admin.firestore.Timestamp.fromDate(yesterday);
 
   try {
+    // Query items where expiry date is before yesterday's date (fully passed)
     const expiredItemsSnapshot = await db.collection("foodItems")
-      .where("expiryDate", "<", currentDate) // Only items past the expiry date
+      .where("expiryDate", "<", yesterdayTimestamp) // Only items where expiry date has fully passed
       .get();
 
     if (expiredItemsSnapshot.empty) return null;
@@ -132,6 +141,7 @@ exports.sendExpiredItemNotifications = functions.pubsub.schedule("every 24 hours
     console.error("Error sending expired item notifications:", error);
   }
 });
+
 
 exports.sendMessageNotification = functions.firestore
 .document("chats/{chatId}/messages/{messageId}")

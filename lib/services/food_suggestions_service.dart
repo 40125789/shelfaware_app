@@ -1,9 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
+import 'package:shelfaware_app/repositories/food_suggestions_repository.dart';
 
 class FoodSuggestionsService {
+  final FoodSuggestionsRepository _repository;
+  final http.Client _httpClient;
+
+  FoodSuggestionsService({FoodSuggestionsRepository? repository, http.Client? httpClient})
+      : _repository = repository ?? FoodSuggestionsRepository(),
+        _httpClient = httpClient ?? http.Client();
+
   Future<List<String>> fetchFoodSuggestions(String query) async {
     if (query.isEmpty) {
       return [];
@@ -13,39 +20,16 @@ class FoodSuggestionsService {
       List<String> suggestions = [];
 
       // Fetch from the 'foodItems' collection
-      QuerySnapshot foodItemsSnapshot = await FirebaseFirestore.instance
-          .collection('foodItems')
-          .where('productName', isGreaterThanOrEqualTo: query)
-          .where('productName', isLessThan: query + 'z')
-          .get();
-
-      List<String> foodItemSuggestions = foodItemsSnapshot.docs
-          .map((doc) => doc['productName'] as String?)
-          .where((productName) => productName != null)
-          .cast<String>()
-          .toList();
-
+      List<String> foodItemSuggestions = await _repository.fetchFoodItems(query);
       suggestions.addAll(foodItemSuggestions);
 
       // Fetch from the 'history' collection (user's past entries)
-      QuerySnapshot historySnapshot = await FirebaseFirestore.instance
-          .collection('history')
-          .where('productName', isGreaterThanOrEqualTo: query)
-          .where('productName', isLessThan: query + 'z')
-          .get();
-
-      List<String> historySuggestions = historySnapshot.docs
-          .map((doc) => doc['productName'] as String?)
-          .where((productName) => productName != null)
-          .cast<String>()
-          .toList();
-
+      List<String> historySuggestions = await _repository.fetchHistoryItems(query);
       suggestions.addAll(historySuggestions);
 
       // If not enough suggestions, fetch from OpenFoodFacts
       if (suggestions.isEmpty) {
-        List<String> openFoodFactsSuggestions =
-            await fetchFromOpenFoodFacts(query);
+        List<String> openFoodFactsSuggestions = await fetchFromOpenFoodFacts(query);
         suggestions.addAll(openFoodFactsSuggestions);
       }
 
@@ -64,7 +48,7 @@ class FoodSuggestionsService {
         'https://world.openfoodfacts.org/cgi/search.pl?search_terms=$query&search_simple=1&action=process&json=1');
 
     try {
-      final response = await http.get(url);
+      final response = await _httpClient.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -80,8 +64,7 @@ class FoodSuggestionsService {
         await Future.delayed(Duration(seconds: 1));
         return fetchFromOpenFoodFacts(query); // Retry once
       } else {
-        print(
-            'Failed to fetch data from OpenFoodFacts: ${response.statusCode}');
+        print('Failed to fetch data from OpenFoodFacts: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching data from OpenFoodFacts: $e');

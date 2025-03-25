@@ -3,7 +3,8 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart'; // Import LatLng
 import 'package:google_maps_flutter/google_maps_flutter.dart'
-    show LatLng; // Import LatLng
+    show LatLng;
+import 'package:intl/intl.dart'; // Import LatLng
 
 class DonationLocation {
   final String id; // Unique identifier for the donation
@@ -44,6 +45,11 @@ class DonationLocation {
   factory DonationLocation.fromFirestore(Map<String, dynamic> doc) {
     final geoPoint = doc['location'] as GeoPoint; // Retrieve the GeoPoint
 
+    // Format expiryDate to 'dd/MM/yyyy'
+    String formattedExpiryDate = DateFormat('dd/MM/yyyy').format(
+      (doc['expiryDate'] as Timestamp).toDate().toLocal(),
+    );
+
     return DonationLocation(
         id: doc['id'] ?? '', // Unique donation ID
         location: LatLng(geoPoint.latitude,
@@ -60,7 +66,7 @@ class DonationLocation {
 
         donorEmail: doc['donorEmail'],
         donationId: doc['donationId'],
-        addedOn: (doc['addedOn'] as Timestamp).toDate().toLocal().toString(),
+        addedOn: (doc['donatedAt'] as Timestamp).toDate().toLocal().toString(),
         imageUrl: doc['imageUrl'] ?? '',
         pickupTimes: doc['pickupTimes'] ?? '',
         pickupInstructions: doc['pickupInstructions'] ?? '',);

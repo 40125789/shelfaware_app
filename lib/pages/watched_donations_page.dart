@@ -15,7 +15,8 @@ import 'package:shelfaware_app/services/user_service.dart';
 
 class WatchedDonationsPage extends ConsumerStatefulWidget {
   final LatLng currentLocation;
-  final UserService _userService = UserService(UserRepository(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance));
+  final UserService _userService = UserService(UserRepository(
+      firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance));
 
   WatchedDonationsPage({
     required this.currentLocation,
@@ -38,16 +39,17 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
   Future<void> fetchDonorRating(String donorId) async {
     double? rating = await widget._userService.fetchDonorRating(donorId);
     if (rating != null) {
-     
-        donorRating = rating;
-      
+      donorRating = rating;
     }
   }
 
   Future<void> _fetchUserLocation() async {
     final user = ref.read(authStateProvider).value;
     if (user != null) {
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       if (userDoc.exists && userDoc.data() != null) {
         final userData = userDoc.data() as Map<String, dynamic>;
         final GeoPoint? geoPoint = userData['location'];
@@ -75,18 +77,23 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
         title: Text('Watched Donations'),
       ),
       body: watchedDonationsStream.when(
+        loading: () => Center(child: CircularProgressIndicator()),
+        error: (e, stack) => Center(child: Text('Error: $e')),
         data: (snapshot) {
-          var donations = snapshot.docs;
+          final donations = snapshot.docs;
 
           if (donations.isEmpty) {
             return Center(child: Text('No watched donations yet.'));
           }
+         
 
-          return ListView.builder(
+            return ListView.builder(
             itemCount: donations.length,
             itemBuilder: (context, index) {
               var donation = donations[index].data() as Map<String, dynamic>;
               String donationId = donations[index].id;
+
+           
 
               return StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance
@@ -98,12 +105,14 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                     return Center(child: CircularProgressIndicator());
                   }
 
-                  var donationData = snapshot.data?.data() as Map<String, dynamic>?;
+                  var donationData =
+                      snapshot.data!.data() as Map<String, dynamic>?;
                   if (donationData == null) {
                     return Center(child: Text(''));
                   }
 
-                  String productName = donationData['productName'] ?? 'No product name';
+                  String productName =
+                      donationData['productName'] ?? 'No product name';
                   String status = donationData['status'] ?? 'Unknown';
                   String donorName = donationData['donorName'] ?? 'Anonymous';
                   String? imageUrl = donationData['imageUrl'];
@@ -111,8 +120,10 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                   GeoPoint? location = donationData['location'];
                   String donorId = donationData['donorId'] ?? '';
                   Timestamp? donationTime = donationData['addedOn'];
-                  String pickupTimes = donationData['pickupTimes'] ?? 'Not specified';
-                  String pickupInstructions = donationData['pickupInstructions'] ?? 'Not specified';
+                  String pickupTimes =
+                      donationData['pickupTimes'] ?? 'Not specified';
+                  String pickupInstructions =
+                      donationData['pickupInstructions'] ?? 'Not specified';
 
                   if (location == null) {
                     return Card(
@@ -122,9 +133,11 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                         contentPadding: EdgeInsets.all(16),
                         title: Text(
                           'Location unavailable for $productName',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
                         ),
-                        subtitle: Text("Expiry date: ${expiryDate?.toDate() ?? 'Unknown'}"),
+                        subtitle: Text(
+                            "Expiry date: ${expiryDate?.toDate() ?? 'Unknown'}"),
                         trailing: Text('$status'),
                       ),
                     );
@@ -145,10 +158,13 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                   );
 
                   double distanceInMiles = distanceInMeters / 1609.34;
-                  String distanceText = "${(distanceInMiles).toStringAsFixed(2)} miles";
+                  String distanceText =
+                      "${(distanceInMiles).toStringAsFixed(2)} miles";
 
                   return FutureBuilder<bool>(
-                    future: ref.read(watchedDonationsServiceProvider).isDonationInWatchlist(user.uid, donationId),
+                    future: ref
+                        .read(watchedDonationsServiceProvider)
+                        .isDonationInWatchlist(user.uid, donationId),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
                         return Center(child: CircularProgressIndicator());
@@ -158,16 +174,21 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                       return Stack(
                         children: [
                           Card(
-                            margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                            margin: EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
                             elevation: 3,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: InkWell(
                               onTap: () async {
-                                final donorData = await ref.read(watchedDonationsServiceProvider).getDonorData(donorId);
-                                final donorDataMap = donorData.data() as Map<String, dynamic>;
-                                final profilePicUrl = donorDataMap['profileImageUrl'];
+                                final donorData = await ref
+                                    .read(watchedDonationsServiceProvider)
+                                    .getDonorData(donorId);
+                                final donorDataMap =
+                                    donorData.data() as Map<String, dynamic>;
+                                final profilePicUrl =
+                                    donorDataMap['profileImageUrl'];
 
                                 // Navigate to Donation Map screen with relevant data
                                 Navigator.push(
@@ -179,18 +200,25 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                                       userLatitude: currentLocation.latitude,
                                       userLongitude: currentLocation.longitude,
                                       productName: productName,
-                                      expiryDate: DateFormat('yyyy-MM-dd').format(expiryDate!.toDate()),
+                                      expiryDate: DateFormat('dd/MM/yyyy')
+                                          .format(expiryDate!.toDate()),
                                       status: status,
-                                      donorEmail: donorDataMap['email'] ?? 'Unknown',
+                                      donorEmail:
+                                          donorDataMap['email'] ?? 'Unknown',
                                       donatorId: donorId,
-                                      chatId: 'chatId', // Replace with actual chatId if available
-                                      userId: ref.read(authStateProvider).value!.uid,
+                                      chatId:
+                                          'chatId', // Replace with actual chatId if available
+                                      userId: ref
+                                          .read(authStateProvider)
+                                          .value!
+                                          .uid,
                                       donorName: donorName,
                                       donorImageUrl: profilePicUrl,
                                       donationTime: donationTime!.toDate(),
                                       imageUrl: imageUrl ?? '',
                                       donationId: donations[index].id,
-                                      receiverEmail: 'receiverEmail', // Replace with actual receiverEmail if available
+                                      receiverEmail:
+                                          'receiverEmail', // Replace with actual receiverEmail if available
                                       pickupTimes: pickupTimes,
                                       pickupInstructions: pickupInstructions,
                                       donorRating: donorRating ?? 0.0,
@@ -205,14 +233,18 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                                   children: [
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
-                                      child: imageUrl != null && imageUrl.isNotEmpty
+                                      child: imageUrl != null &&
+                                              imageUrl.isNotEmpty
                                           ? CachedNetworkImage(
                                               imageUrl: imageUrl,
                                               width: 120,
                                               height: 120,
                                               fit: BoxFit.cover,
-                                              placeholder: (context, url) => CircularProgressIndicator(),
-                                              errorWidget: (context, url, error) => Icon(Icons.error),
+                                              placeholder: (context, url) =>
+                                                  CircularProgressIndicator(),
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      Icon(Icons.error),
                                             )
                                           : Image.asset(
                                               'assets/placeholder.png',
@@ -224,7 +256,8 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                                     SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             productName,
@@ -238,32 +271,59 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                                           Row(
                                             children: [
                                               FutureBuilder<DocumentSnapshot>(
-                                                future: ref.read(watchedDonationsServiceProvider).getDonorData(donorId),
+                                                future: ref
+                                                    .read(
+                                                        watchedDonationsServiceProvider)
+                                                    .getDonorData(donorId),
                                                 builder: (context, snapshot) {
-                                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                                  if (snapshot
+                                                          .connectionState ==
+                                                      ConnectionState.waiting) {
                                                     return CircleAvatar(
                                                       radius: 18,
-                                                      backgroundColor: Colors.grey[300],
-                                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                                      backgroundColor:
+                                                          Colors.grey[300],
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                              strokeWidth: 2),
                                                     );
                                                   }
-                                                  if (snapshot.hasError || !snapshot.hasData) {
+                                                  if (snapshot.hasError ||
+                                                      !snapshot.hasData) {
                                                     return CircleAvatar(
                                                       radius: 18,
-                                                      backgroundColor: Colors.grey[300],
-                                                      child: Icon(Icons.person, size: 18, color: Colors.grey),
+                                                      backgroundColor:
+                                                          Colors.grey[300],
+                                                      child: Icon(Icons.person,
+                                                          size: 18,
+                                                          color: Colors.grey),
                                                     );
                                                   }
-                                                  final donorData = snapshot.data!.data() as Map<String, dynamic>;
-                                                  final profilePicUrl = donorData['profileImageUrl'] ?? null;
+                                                  final donorData = snapshot
+                                                          .data!
+                                                          .data()
+                                                      as Map<String, dynamic>;
+                                                  final profilePicUrl = donorData[
+                                                          'profileImageUrl'] ??
+                                                      null;
 
                                                   return CircleAvatar(
                                                     radius: 18,
-                                                    backgroundImage: profilePicUrl != null
-                                                        ? CachedNetworkImageProvider(profilePicUrl)
+                                                    backgroundImage:
+                                                        profilePicUrl != null
+                                                            ? CachedNetworkImageProvider(
+                                                                profilePicUrl)
+                                                            : null,
+                                                    backgroundColor:
+                                                        profilePicUrl == null
+                                                            ? Colors.grey[300]
+                                                            : Colors
+                                                                .transparent,
+                                                    child: profilePicUrl == null
+                                                        ? Icon(Icons.person,
+                                                            size: 18,
+                                                            color: Colors.grey)
                                                         : null,
-                                                    backgroundColor: profilePicUrl == null ? Colors.grey[300] : Colors.transparent,
-                                                    child: profilePicUrl == null ? Icon(Icons.person, size: 18, color: Colors.grey) : null,
                                                   );
                                                 },
                                               ),
@@ -283,11 +343,14 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                                           SizedBox(height: 8),
                                           Row(
                                             children: [
-                                              Icon(Icons.location_on, color: Colors.grey, size: 16),
+                                              Icon(Icons.location_on,
+                                                  color: Colors.grey, size: 16),
                                               SizedBox(width: 4),
                                               Text(
                                                 '$distanceText away',
-                                                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey[500]),
                                               ),
                                             ],
                                           ),
@@ -306,7 +369,10 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                               backgroundColor: Colors.transparent,
                               radius: 18,
                               child: FutureBuilder<bool>(
-                                future: ref.read(watchedDonationsServiceProvider).isDonationInWatchlist(user.uid, donationId),
+                                future: ref
+                                    .read(watchedDonationsServiceProvider)
+                                    .isDonationInWatchlist(
+                                        user.uid, donationId),
                                 builder: (context, snapshot) {
                                   if (!snapshot.hasData) {
                                     return CircularProgressIndicator();
@@ -314,13 +380,19 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                                   bool isInWatchlist = snapshot.data!;
                                   return IconButton(
                                     icon: Icon(
-                                      isInWatchlist ? Icons.star : Icons.star_border,
-                                      color: isInWatchlist ? Colors.yellow : Colors.lightGreen,
+                                      isInWatchlist
+                                          ? Icons.star
+                                          : Icons.star_border,
+                                      color: isInWatchlist
+                                          ? Colors.yellow
+                                          : Colors.lightGreen,
                                       size: 24,
                                     ),
                                     onPressed: () async {
-                                      await ref.read(watchedDonationsServiceProvider).toggleWatchlist(
-                                          user.uid, donationId, donation);
+                                      await ref
+                                          .read(watchedDonationsServiceProvider)
+                                          .toggleWatchlist(
+                                              user.uid, donationId, donation);
                                     },
                                   );
                                 },
@@ -335,9 +407,13 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
               );
             },
           );
-        },
-        loading: () => Center(child: CircularProgressIndicator()),
-        error: (e, stack) => Center(child: Text('Error: $e')),
+        
+          }
+
+  
+
+
+      
       ),
     );
   }

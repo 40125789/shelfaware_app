@@ -1,47 +1,31 @@
+import 'package:intl/intl.dart';
+
 String getTimeRemaining(String expiryDateStr) {
-    DateTime? expiryDate;
+  try {
+    // Use DateFormat to parse the expiry date
+    DateFormat dateFormat = DateFormat('dd/MM/yyyy');
+    DateTime expiryDate = dateFormat.parse(expiryDateStr);
 
-    try {
-      // Manually convert the "dd/MM/yyyy" format to "yyyy-MM-dd"
-      String formattedDate = expiryDateStr;
-      List<String> dateParts = formattedDate.split('/');
+    // Get today's date without time (00:00:00)
+    DateTime today = DateTime.now();
+    DateTime todayWithoutTime = DateTime(today.year, today.month, today.day);
 
-      if (dateParts.length == 3) {
-        // Reformat to "yyyy-MM-dd" format
-        formattedDate =
-            '${dateParts[2]}-${dateParts[1]}-${dateParts[0]}'; // yyyy-MM-dd
-      }
-
-      // Now, use DateTime.parse() with the reformatted date
-      expiryDate = DateTime.parse(formattedDate);
-
-      // Check if expiryDate is null or invalid
-      if (expiryDate == null) {
-        return 'Invalid expiry date';
-      }
-    } catch (e) {
-      return 'Invalid expiry date'; // Return an error message if parsing fails
-    }
-
-    // Calculate the difference in hours between the expiry date and the current time
-    final int expiryDiffInHours = expiryDate.difference(DateTime.now()).inHours;
-
-    // If the item is expired
-    if (expiryDiffInHours < 0) {
+    // Check if expired
+    if (expiryDate.isBefore(todayWithoutTime)) {
       return 'Expired';
     }
 
-    // If the item expires in less than 24 hours
-    if (expiryDiffInHours < 24) {
-      return 'This item expires in less than a day';
-    }
+    // Calculate days remaining
+    int daysRemaining = expiryDate.difference(todayWithoutTime).inDays;
 
-    // If the item expires tomorrow
-    final int expiryDiffInDays = expiryDate.difference(DateTime.now()).inDays;
-    if (expiryDiffInDays == 1) {
+    if (daysRemaining == 0) {
+      return 'This item expires today';
+    } else if (daysRemaining == 1) {
       return 'This item expires tomorrow';
+    } else {
+      return 'This item expires in: $daysRemaining days';
     }
-
-    // If the item expires in more than 1 day
-    return 'This item expires in: $expiryDiffInDays days';
+  } catch (e) {
+    return 'Invalid expiry date'; // Handles parsing errors
   }
+}

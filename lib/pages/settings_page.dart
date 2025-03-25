@@ -3,7 +3,6 @@ import 'package:shelfaware_app/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,6 +44,7 @@ class SettingsPage extends ConsumerWidget {
                       ),
                     ),
                     trailing: Switch(
+                      key: Key('theme-switch'), // Key for the theme switch
                       value: isDarkMode,
                       onChanged: (bool value) {
                         ref.read(settingsProvider.notifier).toggleDarkMode(value);
@@ -76,8 +76,10 @@ class SettingsPage extends ConsumerWidget {
                         Text(
                           settingsState.messagesNotifications ? 'ON' : 'OFF',
                           style: const TextStyle(fontSize: 16),
+                          key: Key('messages-status'), // Key for the text widget
                         ),
                         Switch(
+                          key: Key('messages-switch'), // Key for the switch widget
                           value: settingsState.messagesNotifications,
                           onChanged: (value) {
                             ref.read(settingsProvider.notifier).toggleMessageNotifications(value);
@@ -94,8 +96,10 @@ class SettingsPage extends ConsumerWidget {
                         Text(
                           settingsState.requestNotifications ? 'ON' : 'OFF',
                           style: const TextStyle(fontSize: 16),
+                          key: Key('request-status'), // Key for the text widget
                         ),
                         Switch(
+                          key: Key('request-switch'), // Key for the switch widget
                           value: settingsState.requestNotifications,
                           onChanged: (value) {
                             ref.read(settingsProvider.notifier).toggleRequestNotifications(value);
@@ -112,8 +116,10 @@ class SettingsPage extends ConsumerWidget {
                         Text(
                           settingsState.expiryNotifications ? 'ON' : 'OFF',
                           style: const TextStyle(fontSize: 16),
+                          key: Key('expiry-status'), // Key for the text widget
                         ),
                         Switch(
+                          key: Key('expiry-switch'), // Key for the switch widget
                           value: settingsState.expiryNotifications,
                           onChanged: (value) {
                             ref.read(settingsProvider.notifier).toggleExpiryNotifications(value);
