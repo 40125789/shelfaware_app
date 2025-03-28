@@ -409,10 +409,6 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
           );
         
           }
-
-  
-
-
       
       ),
     );

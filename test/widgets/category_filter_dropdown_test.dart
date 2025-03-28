@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shelfaware_app/components/filter_dropdown.dart';
+import 'package:shelfaware_app/components/category_filter_dropdown.dart';
 import 'package:shelfaware_app/models/food_category.dart';
 import 'package:shelfaware_app/models/food_category_icons.dart';
 

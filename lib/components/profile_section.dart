@@ -13,14 +13,7 @@ import 'package:shelfaware_app/providers/profile_image_provider.dart';
 final isUploadingProvider = StateProvider<bool>((ref) => false);
 
 class ProfileSection extends ConsumerWidget {
-  final String firstName;
-  final String lastName;
-
-  const ProfileSection({
-    Key? key,
-    required this.firstName,
-    required this.lastName,
-  }) : super(key: key);
+  const ProfileSection({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -134,40 +127,45 @@ class ProfileSection extends ConsumerWidget {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (user != null)
-                    Text(
-                      "$firstName $lastName",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  if (user != null)
-                    FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        }
-                        if (snapshot.hasError) {
-                          return const Text(
-                            "Error loading email",
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal, color: Colors.white),
-                          );
-                        }
-                        final email = snapshot.data?.get('email') ?? 'No email';
-                        return Text(
-                          email,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal, color: Colors.white),
-                          overflow: TextOverflow.ellipsis, // Adds ellipsis when the text is too long
-                        );
-                      },
-                    ),
-                ],
+              child: FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance.collection('users').doc(user?.uid).get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  }
+                  if (snapshot.hasError) {
+                    return const Text(
+                      "Error loading profile",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal, color: Colors.white),
+                    );
+                  }
+
+                  // Fetch user data
+                  final userData = snapshot.data?.data() as Map<String, dynamic>?;
+
+                  final firstName = userData?['firstName'] ?? 'No First Name';
+                  final lastName = userData?['lastName'] ?? 'No Last Name';
+                  final email = userData?['email'] ?? 'No email';
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "$firstName $lastName",
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      Text(
+                        email,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal, color: Colors.white),
+                        overflow: TextOverflow.ellipsis, // Adds ellipsis when the text is too long
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
             // The tappable icon (chevron or arrow)
-            Icon(
+            const Icon(
               Icons.arrow_forward_ios, // Chevron icon to indicate a tapable area
               size: 16,
               color: Colors.white,

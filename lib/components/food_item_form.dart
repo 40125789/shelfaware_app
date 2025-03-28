@@ -224,78 +224,89 @@ class _FoodItemFormState extends State<FoodItemForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const SizedBox(height: 15),
-          if (_productImage != null)
+            if (_productImage != null)
             GestureDetector(
               onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return Dialog(
-                      child: Container(
-                        color: Colors.transparent,
-                        child: Center(
-                          child: Image.network(
-                            _productImage!,
-                            fit: BoxFit.contain,
-                            height: MediaQuery.of(context).size.height * 0.8,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-              child: Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Image.network(
-                      _productImage!,
-                      height: MediaQuery.of(context).size.height * 0.1,
-                      width: MediaQuery.of(context).size.width * 0.5,
-                      fit: BoxFit.cover,
-                    ),
-                    Positioned(
-                      right: 10,
-                      bottom: 10,
-                      child: Icon(
-                        Icons.zoom_in,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          const SizedBox(height: 15),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _productNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Product Name',
-                    hintText: 'Enter product name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                return Dialog(
+                  child: Container(
+                  color: Colors.transparent,
+                  child: Center(
+                    child: Image.network(
+                    _productImage!,
+                    fit: BoxFit.contain,
+                    height: MediaQuery.of(context).size.height * 0.8,
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a product name';
-                    }
-                    return null;
-                  },
-                  onChanged: _onProductNameChanged,
+                  ),
+                );
+                },
+              );
+              },
+              child: Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                Image.network(
+                  _productImage!,
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  width: MediaQuery.of(context).size.width * 0.5,
+                  fit: BoxFit.cover,
                 ),
+                Positioned(
+                  right: 10,
+                  bottom: 10,
+                  child: Icon(
+                  Icons.zoom_in,
+                  color: Colors.white,
+                  size: 30,
+                  ),
+                ),
+                ],
               ),
-              IconButton(
-                icon: Icon(Icons.camera_alt),
+              ),
+            ),
+            const SizedBox(height: 15),
+            Row(
+            children: [
+              Expanded(
+              child: TextFormField(
+              controller: _productNameController,
+              decoration: InputDecoration(
+              labelText: 'Product Name',
+              hintText: 'Enter product name',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              ),
+              validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a product name';
+              }
+              return null;
+              },
+              onChanged: _onProductNameChanged,
+              ),
+              ),
+                const SizedBox(width: 10),
+                ElevatedButton.icon(
                 onPressed: _scanBarcode,
-              ),
-            ],
-          ),
+                label: const Text(
+                'Scan Barcode',
+                style: TextStyle(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+                ),
+                ),
+                ),
+              ],
+            ),
           const SizedBox(height: 20),
           if (_foodSuggestions.isNotEmpty)
             Container(
@@ -338,28 +349,30 @@ class _FoodItemFormState extends State<FoodItemForm> {
                         _expiryDateController.text = formatDate(_expiryDate!);
                       });
                     }
-                  },
-                  child: AbsorbPointer(
+                    },
+                    child: AbsorbPointer(
                     child: TextFormField(
                       controller: _expiryDateController,
                       decoration: InputDecoration(
-                        labelText: 'Expiry Date',
-                        hintText: 'Select expiry date',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
+                      labelText: 'Expiry Date',
+                      hintText: 'Select expiry date',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      suffixIcon: Icon(Icons.calendar_today), // Add calendar icon here
                       ),
                       validator: (value) {
-                        if (_expiryDate == null) {
-                          return 'Please select an expiry date';
-                        }
-                        return null;
+                      if (_expiryDate == null) {
+                        return 'Please select an expiry date';
+                      }
+                      return null;
                       },
                       readOnly: true,
                     ),
                   ),
                 ),
               ),
+              const SizedBox(width: 10),
               ScanExpiryDate(
                 controller: _expiryDateController,
                 onDateDetected: (DateTime date) {

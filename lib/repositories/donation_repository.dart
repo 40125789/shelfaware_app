@@ -29,6 +29,14 @@ Future<List<DonationLocation>> fetchDonationLocations(String userId) async {
     }
   }
 
+  //update pickup times and instructions
+  Future<void> updateDonationPickupDetails(String donationId, String pickupTime, String pickupInstructions) async {
+    await _firestore.collection('donations').doc(donationId).update({
+      'pickupTimes': pickupTime,
+      'pickupInstructions': pickupInstructions,
+    });
+  }
+
 
 
 

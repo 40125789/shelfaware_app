@@ -74,9 +74,9 @@ void main() {
       await tester.tap(find.byType(DropdownButton<String>));
       await tester.pumpAndSettle();
 
-      // Find the DropdownMenuItem for the current status
+      // Find the DropdownMenuItem for the current status in the dropdown menu
       final itemFinder =
-          find.widgetWithText(DropdownMenuItem<String>, statuses[i]);
+          find.widgetWithText(DropdownMenuItem<String>, statuses[i]).last;
 
       // Check if the CircleAvatar inside the menu has the correct background color
       final circleAvatarFinder = find.descendant(

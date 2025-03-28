@@ -89,21 +89,25 @@ class _HistoryPageState extends State<HistoryPage> {
         backgroundColor: _isRecreateMode ? Colors.blue : Colors.green,
         actions: [
           if (!_isRecreateMode)
-            IconButton(
-              icon: Icon(Icons.edit),
+            TextButton.icon(
               onPressed: _toggleRecreateMode,
+              icon: Icon(Icons.replay, color: Colors.white),
+              label: Text(
+          'RECREATE',
+          style: TextStyle(color: Colors.white),
+              ),
             ),
           if (_isRecreateMode)
             IconButton(
               icon: Icon(Icons.refresh),
               onPressed: _selectedItems.isEmpty
-                  ? null
-                  : () {
-                      _onRecreateSelected(_selectedItems);
-                    },
+            ? null
+            : () {
+                _onRecreateSelected(_selectedItems);
+              },
             ),
         ],
-      ),
+            ),
       body: Column(
         children: [
           // Dropdown for sorting and filtering options below the app bar

@@ -8,7 +8,7 @@ import 'package:shelfaware_app/components/calendar_view_widget.dart';
 import 'package:shelfaware_app/components/food_list_view.dart';
 import 'package:shelfaware_app/components/side_drawer_menu.dart';
 import 'package:shelfaware_app/components/top_app_bar.dart';
-import 'package:shelfaware_app/components/filter_dropdown.dart'; // Import the new component
+import 'package:shelfaware_app/components/category_filter_dropdown.dart'; // Import the new component
 import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
 import 'package:shelfaware_app/pages/location_page.dart';
 import 'package:shelfaware_app/pages/notification_page.dart';

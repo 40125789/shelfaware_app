@@ -6,7 +6,7 @@ import 'package:fuzzy/fuzzy.dart'; // Import the fuzzy package
 class RecipeDetailsPage extends StatefulWidget {
   final Recipe recipe;
   final VoidCallback onFavoritesChanged;
-  final List<String> matchedIngredients;  // List of ingredients the user has
+  final List<String> matchedIngredients; // List of ingredients the user has
 
   const RecipeDetailsPage({
     Key? key,
@@ -21,12 +21,12 @@ class RecipeDetailsPage extends StatefulWidget {
 
 class _RecipeDetailsPageState extends State<RecipeDetailsPage> {
   bool _isFavorite = false;
-  late Fuzzy fuzzyMatcher;  // Instance of Fuzzy class
+  late Fuzzy fuzzyMatcher; // Instance of Fuzzy class
 
   @override
   void initState() {
     super.initState();
-   
+
     fuzzyMatcher = Fuzzy(widget.matchedIngredients); // Initialize Fuzzy matcher with matched ingredients
   }
 
@@ -87,7 +87,7 @@ class _RecipeDetailsPageState extends State<RecipeDetailsPage> {
                               ),
                               softWrap: true,
                             ),
-                          ),    
+                          ),
                         ],
                       ),
                     ),
@@ -121,9 +121,12 @@ class _RecipeDetailsPageState extends State<RecipeDetailsPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '${ingredient.amount} ${ingredient.unit} ${ingredient.name}',
-                            style: TextStyle(fontSize: 16),
+                          Expanded(
+                            child: Text(
+                              '${ingredient.amount} ${ingredient.unit} ${ingredient.name}',
+                              style: TextStyle(fontSize: 16),
+                              overflow: TextOverflow.ellipsis, // Prevent overflow by truncating text
+                            ),
                           ),
                           // Show check or empty circle based on match
                           Icon(

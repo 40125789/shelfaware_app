@@ -280,6 +280,13 @@ class DonationService {
     await _donationRepository.removeFoodItem(id);
   }
 
+  //update donation pickup times and instrcutions
+  Future<void> updateDonationPickupDetails(
+      String donationId, String pickupTimes, String pickupInstructions) async {
+    await _donationRepository.updateDonationPickupDetails(
+        donationId, pickupTimes, pickupInstructions);
+  }
+
 
 
   // Upload donation image

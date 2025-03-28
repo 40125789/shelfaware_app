@@ -16,8 +16,7 @@ class ShoppingListScreen extends StatefulWidget {
 
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
   final ShoppingListService _shoppingListService = ShoppingListService();
-  final FoodSuggestionsService _foodSuggestionsService =
-      FoodSuggestionsService();
+  final FoodSuggestionsService _foodSuggestionsService = FoodSuggestionsService();
   bool _hidePurchased = false; // Toggles hiding purchased items
   bool _allChecked = false; // Tracks if all items are checked
 
@@ -27,7 +26,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   TextEditingController _productController = TextEditingController();
   bool _isLoading = false;
   bool _isLoadingSuggestions = false; // Track loading state for suggestions
-  Timer? _debounce; // Add this line to define the _debounce variable
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -40,12 +39,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     final items = await _shoppingListService.getShoppingList();
     setState(() {
       _shoppingList = items;
-      _allChecked =
-          items.isNotEmpty && items.every((item) => item['isPurchased']);
+      _allChecked = items.isNotEmpty && items.every((item) => item['isPurchased']);
 
       if (_hidePurchased) {
-        _shoppingList =
-            _shoppingList.where((item) => !item['isPurchased']).toList();
+        _shoppingList = _shoppingList.where((item) => !item['isPurchased']).toList();
       }
     });
   }
@@ -70,8 +67,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   // Add a product to the shopping list
   _addProduct(String productName) async {
     if (productName.isNotEmpty) {
-      await _shoppingListService
-          .addToShoppingList(productName); // Adding with product name
+      await _shoppingListService.addToShoppingList(productName);
       _loadShoppingList(); // Refresh the list
     }
   }
@@ -83,14 +79,18 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   }
 
   // Mark item as purchased (update Firestore)
-  // Mark individual item as purchased or not
   _markAsPurchased(String itemId) async {
     final item = _shoppingList.firstWhere((item) => item['id'] == itemId);
     final newStatus = !item['isPurchased']; // Toggle the current status
 
-    await _shoppingListService.markAsPurchased(
-        itemId, newStatus); // Update in Firestore
+    await _shoppingListService.markAsPurchased(itemId, newStatus);
     _loadShoppingList(); // Refresh the list to update the UI
+  }
+
+  // Update quantity of a product
+  Future<void> _updateQuantity(String productId, int change) async {
+    await _shoppingListService.updateQuantity(productId, change);
+    _loadShoppingList(); // Refresh the list
   }
 
   // Fetch food suggestions based on the input query
@@ -107,9 +107,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     });
 
     try {
-      print('Fetching food suggestions for query: $query');
-      List<String> suggestions =
-          await _foodSuggestionsService.fetchFoodSuggestions(query);
+      List<String> suggestions = await _foodSuggestionsService.fetchFoodSuggestions(query);
       setState(() {
         _foodSuggestions = suggestions;
         _isLoadingSuggestions = false;
@@ -128,7 +126,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     _debounce = Timer(const Duration(milliseconds: 300), () {
       if (query.isEmpty) {
         setState(() {
-          _foodSuggestions = []; // Clear suggestions if the field is cleared
+          _foodSuggestions = [];
         });
       } else {
         _fetchFoodSuggestions(query);
@@ -141,18 +139,15 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     var status = await Permission.camera.request();
     if (status.isGranted) {
       setState(() {
-        _isLoading = true; // Set loading to true while scanning
+        _isLoading = true;
       });
 
-      // Scan barcode using the camera service
       String? scannedBarcode = await CameraService.scanBarcode();
 
       if (scannedBarcode != null && scannedBarcode.isNotEmpty) {
-        // Fetch product details from OpenFoodFacts API
         var product = await FoodApiService.fetchProductDetails(scannedBarcode);
 
         if (product != null) {
-          // Show the product details in a modal bottom sheet
           _showProductDialog(product);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -161,7 +156,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
         }
       }
       setState(() {
-        _isLoading = false; // Reset loading state after scanning
+        _isLoading = false;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -175,10 +170,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     final Map<String, dynamic>? confirmedProduct =
         await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
-      isScrollControlled:
-          true, // This allows the bottom sheet to resize based on content
+      isScrollControlled: true,
       builder: (BuildContext context) {
-        return ProductDetailsDialog(product: product); // Pass your product here
+        return ProductDetailsDialog(product: product);
       },
     );
 
@@ -199,9 +193,12 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       appBar: AppBar(
         title: Text('Shopping List'),
         actions: [
-          IconButton(
-            icon: Icon(Icons.camera_alt), // Camera icon for barcode scanner
-            onPressed: _scanBarcode, // Trigger barcode scan
+          TextButton.icon(
+            label: Text(
+              'Scan Barcode',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            onPressed: _scanBarcode,
           ),
         ],
       ),
@@ -222,8 +219,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                             labelText: 'Enter product name',
                             border: OutlineInputBorder(),
                           ),
-                          onChanged:
-                              _onProductNameChanged, // Listen for changes
+                          onChanged: _onProductNameChanged,
                         ),
                       ),
                     ),
@@ -241,16 +237,13 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                           size: 20,
                         ),
                         onPressed: () {
-                          _addProduct(
-                              _productController.text); // Add entered product
-                          _productController.clear(); // Clear input
+                          _addProduct(_productController.text);
+                          _productController.clear();
                         },
                       ),
                     ),
                   ],
                 ),
-
-                // Add a toggle to hide purchased items
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Row(
@@ -285,63 +278,107 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   ),
                 ),
                 if (_foodSuggestions.isNotEmpty) ...[
-                  ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _foodSuggestions.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(_foodSuggestions[index]),
-                        onTap: () {
-                          _productController.text = _foodSuggestions[
-                              index]; // Set selected suggestion
-                          setState(() {
-                            _foodSuggestions =
-                                []; // Clear suggestions after selection
-                          });
-                        },
-                      );
-                    },
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.3,
+                    ),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _foodSuggestions.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(_foodSuggestions[index]),
+                          onTap: () {
+                            _productController.text = _foodSuggestions[index];
+                            setState(() {
+                              _foodSuggestions = [];
+                            });
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ],
               ],
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: _shoppingList.length,
-              itemBuilder: (context, index) {
-                final item = _shoppingList[index];
-                return ListTile(
-                  leading: IconButton(
-                    icon: Icon(
-                      item['isPurchased']
-                          ? Icons.check_box
-                          : Icons.check_box_outline_blank,
-                      color: item['isPurchased'] ? Colors.green : Colors.black,
+            child: _shoppingList.isEmpty
+                ? Center(
+                    child: Text(
+                      'Your shopping list is empty!',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
                     ),
-                    onPressed: () {
-                      _markAsPurchased(
-                          item['id']); // Mark item as purchased/unpurchased
-                    },
-                  ),
-                  title: Text(
-                    item['productName'],
-                    style: TextStyle(
-                      decoration: item['isPurchased']
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                  subtitle:
-                      Text(item['isPurchased'] ? 'Purchased' : 'Not Purchased'),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () =>
-                        _removeProduct(item['id']), // Remove item from list
-                  ),
-                );
-              },
+                  )
+                : ListView.builder(
+  itemCount: _shoppingList.length,
+  itemBuilder: (context, index) {
+    final item = _shoppingList[index];
+    return ListTile(
+      leading: IconButton(
+        icon: Icon(
+          item['isPurchased']
+              ? Icons.check_box
+              : Icons.check_box_outline_blank,
+          color: item['isPurchased'] ? Colors.green : Colors.black,
+        ),
+        onPressed: () {
+          _markAsPurchased(item['id']);
+        },
+      ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item['productName'],
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              decoration: item['isPurchased']
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none,
             ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: 4),
+          Text(
+            item['isPurchased'] ? 'Purchased' : 'Not Purchased',
+            style: TextStyle(
+              fontSize: 12,
+              color: item['isPurchased'] ? Colors.green : Colors.grey,
+            ),
+          ),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.remove),
+            onPressed: () {
+              if ((item['quantity'] ?? 1) > 1) {
+                _updateQuantity(item['id'], -1);
+              }
+            },
+          ),
+          Text(
+            '${item['quantity'] ?? 1}',
+            style: TextStyle(fontSize: 16),
+          ),
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () {
+              _updateQuantity(item['id'], 1);
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.delete, color: Colors.red),
+            onPressed: () => _removeProduct(item['id']),
+          ),
+        ],
+      ),
+    );
+  },
+),
           ),
           if (_isLoading) Center(child: CircularProgressIndicator()),
         ],

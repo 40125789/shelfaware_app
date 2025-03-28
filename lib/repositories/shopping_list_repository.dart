@@ -5,10 +5,12 @@ class ShoppingListRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
-  ShoppingListRepository({required FirebaseFirestore firebaseFirestore, required FirebaseAuth firebaseAuth})
+  ShoppingListRepository(
+      {required FirebaseFirestore firebaseFirestore,
+      required FirebaseAuth firebaseAuth})
       : _firestore = firebaseFirestore,
         _auth = firebaseAuth;
-        
+
   Future<void> addToShoppingList(String productName) async {
     User? user = _auth.currentUser;
     if (user != null) {
@@ -39,17 +41,25 @@ class ShoppingListRepository {
   }
 
   Future<void> updateQuantity(String productId, int change) async {
-    final snapshot = await _firestore
-        .collection('shoppingList')
-        .where('id', isEqualTo: productId)
-        .get();
+    User? user = _auth.currentUser;
+    if (user != null) {
+      final snapshot = await _firestore
+          .collection('shoppingList')
+          .where('user_id', isEqualTo: user.uid)
+          .where('id', isEqualTo: productId)
+          .get();
 
-    for (var doc in snapshot.docs) {
-      final currentQuantity = doc.data()['quantity'] ?? 0;
-      final newQuantity = currentQuantity + change;
+      if (snapshot.docs.isNotEmpty) {
+        final doc = snapshot.docs.first;
+        final currentQuantity = (doc.data()['quantity'] as int?) ?? 0;
+        final newQuantity = currentQuantity + change;
 
-      if (newQuantity > 0) {
-        await doc.reference.update({'quantity': newQuantity});
+        if (newQuantity > 0) {
+          await doc.reference.update({'quantity': newQuantity});
+        } else {
+          await doc.reference
+              .delete(); // Remove the item if quantity becomes zero or less
+        }
       }
     }
   }
@@ -61,8 +71,12 @@ class ShoppingListRepository {
           .collection('shoppingList')
           .where('user_id', isEqualTo: user.uid)
           .get();
-    
-      return snapshot.docs.map((doc) => doc.data()).toList();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id; // Include the document ID in the returned data
+        return data;
+      }).toList();
     }
     return [];
   }
@@ -83,6 +97,9 @@ class ShoppingListRepository {
   }
 
   Future<void> markAsPurchased(String itemId, bool newStatus) async {
-    await _firestore.collection('shoppingList').doc(itemId).update({'isPurchased': newStatus});
+    await _firestore
+        .collection('shoppingList')
+        .doc(itemId)
+        .update({'isPurchased': newStatus});
   }
 }

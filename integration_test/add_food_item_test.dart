@@ -24,17 +24,19 @@ void main() {
     late FoodService foodService;
     late User user;
 
-    setUp(() async {
-      // Initialize Firebase
+   setUp(() async {
       await Firebase.initializeApp();
       auth = FirebaseAuth.instance;
+      final testEmail = dotenv.env['TEST_EMAIL']!;
+      final testPassword = dotenv.env['TEST_PASSWORD']!;
       await auth.signInWithEmailAndPassword(
-          email: 'smyth668@hotmail.com', password: 'Ya9maha8@');
+          email: testEmail, password: testPassword);
       firestore = FirebaseFirestore.instance;
       donationService = DonationService();
       foodService = FoodService();
       user = auth.currentUser!;
     });
+
 
     testWidgets('Tap on Plus button and display Add Food Item form',
         (WidgetTester tester) async {

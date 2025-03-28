@@ -23,7 +23,8 @@ class ScanExpiryDate extends StatelessWidget {
       if (image != null) {
         final inputImage = InputImage.fromFilePath(image.path);
         final textDetector = GoogleMlKit.vision.textRecognizer();
-        final RecognizedText recognizedText = await textDetector.processImage(inputImage);
+        final RecognizedText recognizedText =
+            await textDetector.processImage(inputImage);
 
         for (TextBlock block in recognizedText.blocks) {
           for (TextLine line in block.lines) {
@@ -33,7 +34,8 @@ class ScanExpiryDate extends StatelessWidget {
               onDateDetected(expiryDate);
               controller.text = _formatDate(expiryDate);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Expiry date detected and added!')),
+                const SnackBar(
+                    content: Text('Expiry date detected and added!')),
               );
               return;
             }
@@ -51,11 +53,9 @@ class ScanExpiryDate extends StatelessWidget {
     }
   }
 
- DateTime? _parseExpiryDate(String text) {
+  DateTime? _parseExpiryDate(String text) {
     final dateFormats = [
- 
-    
-    DateFormat('dd/MM/yyyy'),
+      DateFormat('dd/MM/yyyy'),
       DateFormat('MM/dd/yyyy'),
       DateFormat('yyyy/MM/dd'),
       DateFormat('dd-MM-yyyy'),
@@ -65,11 +65,11 @@ class ScanExpiryDate extends StatelessWidget {
       DateFormat('MMM dd, yyyy'),
       DateFormat('dd.MM.yyyy'), // Added format for 21.01.2024
       DateFormat('yyyy.MM.dd'), // Added format for 2024.01.21
-      DateFormat('yyyyMMdd'),   // Added format for 20240121
-      DateFormat('ddMMyyyy'),   // Added format for 21012024
+      DateFormat('yyyyMMdd'), // Added format for 20240121
+      DateFormat('ddMMyyyy'), // Added format for 21012024
     ];
 
-   for (var format in dateFormats) {
+    for (var format in dateFormats) {
       try {
         return format.parseStrict(text);
       } catch (e) {
@@ -86,9 +86,19 @@ class ScanExpiryDate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(Icons.camera_alt),
+    return ElevatedButton.icon(
       onPressed: () => _scanExpiryDate(context),
+      label: const Text(
+        'Scan Expiry',
+        style: TextStyle(color: Colors.white),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
     );
   }
 }

@@ -165,10 +165,7 @@ class _DonationMapScreenState extends ConsumerState<DonationMapScreen> {
           donorImageUrl: widget.donorImageUrl,
           imageUrl: widget.imageUrl,
           status: widget.status,
-          receiverEmail: '',
-    
-
-      
+          receiverEmail: ''
 
         );
       },

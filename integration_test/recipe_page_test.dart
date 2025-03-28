@@ -37,15 +37,18 @@ void main() {
 
     // Authenticate once for all tests
     setUp(() async {
+      await Firebase.initializeApp();
       auth = FirebaseAuth.instance;
-      final userCredential = await auth.signInWithEmailAndPassword(
-        email: 'smyth668@hotmail.com',
-        password: 'Ya9maha8@',
-      );
+      final testEmail = dotenv.env['TEST_EMAIL']!;
+      final testPassword = dotenv.env['TEST_PASSWORD']!;
+      await auth.signInWithEmailAndPassword(
+          email: testEmail, password: testPassword);
       firestore = FirebaseFirestore.instance;
       donationService = DonationService();
       foodService = FoodService();
-      user = userCredential.user!;
+      user = auth.currentUser!;
+    
+
 
       // Wait for Firebase to initialize properly if needed
       await Future.delayed(Duration(seconds: 2)); // Increase wait time if needed

@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:shelfaware_app/components/photo_upload.dart';
+import 'package:shelfaware_app/components/profile_section.dart';
 import 'package:shelfaware_app/pages/chat_list_page.dart';
 import 'package:shelfaware_app/pages/history_page.dart';
 import 'package:shelfaware_app/pages/shopping_list.dart';
@@ -50,8 +50,7 @@ class CustomDrawer extends ConsumerWidget {
             color: const Color(0xFF4CAF50), // Green background color
             padding: const EdgeInsets.all(16.0),
             child: ProfileSection(
-              firstName: firstName,
-              lastName: lastName,
+              
             ),
           ),
    

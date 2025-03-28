@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:shelfaware_app/components/food_card.dart';
 import 'package:shelfaware_app/pages/home_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
@@ -27,8 +28,10 @@ void main() {
     setUp(() async {
       await Firebase.initializeApp();
       auth = FirebaseAuth.instance;
+      final testEmail = dotenv.env['TEST_EMAIL']!;
+      final testPassword = dotenv.env['TEST_PASSWORD']!;
       await auth.signInWithEmailAndPassword(
-          email: 'smyth668@hotmail.com', password: 'Ya9maha8@');
+          email: testEmail, password: testPassword);
       firestore = FirebaseFirestore.instance;
       donationService = DonationService();
       foodService = FoodService();
@@ -114,6 +117,53 @@ void main() {
       await tester.tap(deleteButton);
       await tester.pumpAndSettle();
       expect(find.text('egg'), findsNothing);
+    });
+
+    //Test for adding a food item from inventory to shopping list
+    testWidgets('Add a food item from inventory to Shopping List',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: ThemeData(
+              appBarTheme: AppBarTheme(
+                backgroundColor: Colors.green,
+              ),
+            ),
+            home: HomePage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Expand all food categories to locate "Apple"
+      final expandableTileFinder = find.byType(ExpansionTile);
+      for (var i = 0; i < expandableTileFinder.evaluate().length; i++) {
+        await tester.tap(expandableTileFinder.at(i));
+        await tester.pumpAndSettle();
+      }
+
+      // Locate the correct food item card
+      final cardFinder = find.ancestor(
+        of: find.text('apple'),
+        matching: find.byType(Card),
+      );
+
+      // Tap the popup menu inside the specific card
+      final popupMenuFinder = find.descendant(
+        of: cardFinder,
+        matching: find.byIcon(Icons.more_vert),
+      );
+      await tester.tap(popupMenuFinder);
+      await tester.pumpAndSettle();
+
+      // Tap the "shopping list" option
+      await tester.tap(find.text('+ Shopping List'));
+      await tester.pumpAndSettle();
+
+      // Verify that "Apple" is added to the Shopping List, navigate to the Shopping List page
+      await navigateToShoppingList(tester);
+      expect(find.text('apple'), findsOneWidget);
     });
   });
 }
