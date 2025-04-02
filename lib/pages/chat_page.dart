@@ -44,7 +44,7 @@ class _ChatPageState extends State<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   final ProfanityFilter _profanityFilter = ProfanityFilter();
 
-  String _currentStatus = 'available'; // Default status
+  String donationstatus = '';
 
   @override
   void initState() {
@@ -56,6 +56,12 @@ class _ChatPageState extends State<ChatPage> {
 
       await _chatRepository.markMessagesAsRead(chatId, senderId); // Mark messages as read
       _scrollToBottom();
+
+      // Fetch donation status
+      final status = await _chatRepository.getDonationStatus(widget.donationId) ?? '';
+      setState(() {
+        donationstatus = status;
+      });
     });
   }
 
@@ -86,6 +92,7 @@ class _ChatPageState extends State<ChatPage> {
           widget.receiverId,
           widget.receiverEmail,
           widget.donationName,
+      
         );
 
         _messageController.clear();
@@ -125,7 +132,7 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  @override
+  
 @override
 Widget build(BuildContext context) {
   final String senderId = _auth.currentUser!.uid;
@@ -165,9 +172,16 @@ Widget build(BuildContext context) {
       ),
       body: Column(
         children: [
-          DonationDetailsHeader(
-            donationName: widget.donationName,
-            donationId: widget.donationId,
+          FutureBuilder<String?>(
+            future: _chatRepository.getDonationStatus(widget.donationId),
+            builder: (context, snapshot) {
+              final status = snapshot.data ?? donationstatus;
+              return DonationDetailsHeader(
+                donationName: widget.donationName,
+                donationId: widget.donationId, 
+                status: status,
+              );
+            },
           ),
           Expanded(child: _buildMessageList(chatId)),
           UserInput(

@@ -286,6 +286,7 @@ class _DonationListViewState extends ConsumerState<DonationListView> {
                           pickupInstructions:
                               donation['pickupInstructions'] ?? '',
                           donorRating: rating ?? 0.0,
+                        
                         ),
                       ),
                     ).then((_) {

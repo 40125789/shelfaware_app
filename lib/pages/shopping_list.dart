@@ -17,15 +17,15 @@ class ShoppingListScreen extends StatefulWidget {
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
   final ShoppingListService _shoppingListService = ShoppingListService();
   final FoodSuggestionsService _foodSuggestionsService = FoodSuggestionsService();
-  bool _hidePurchased = false; // Toggles hiding purchased items
-  bool _allChecked = false; // Tracks if all items are checked
+  bool _hidePurchased = false;
+  bool _allChecked = false;
 
   List<Map<String, dynamic>> _shoppingList = [];
-  List<String> _foodSuggestions = []; // Holds the suggestions
+  List<String> _foodSuggestions = [];
   String userId = FirebaseAuth.instance.currentUser!.uid;
   TextEditingController _productController = TextEditingController();
   bool _isLoading = false;
-  bool _isLoadingSuggestions = false; // Track loading state for suggestions
+  bool _isLoadingSuggestions = false;
   Timer? _debounce;
 
   @override
@@ -34,7 +34,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     _loadShoppingList();
   }
 
-  // Load shopping list from Firestore
   _loadShoppingList() async {
     final items = await _shoppingListService.getShoppingList();
     setState(() {
@@ -50,7 +49,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   void _toggleAllPurchased(bool value) async {
     await _shoppingListService.toggleAllPurchased(value);
     setState(() {
-      _allChecked = value; // Update the toggle state
+      _allChecked = value;
       for (var item in _shoppingList) {
         item['isPurchased'] = value;
       }
@@ -64,36 +63,35 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     _loadShoppingList();
   }
 
-  // Add a product to the shopping list
   _addProduct(String productName) async {
     if (productName.isNotEmpty) {
       await _shoppingListService.addToShoppingList(productName);
-      _loadShoppingList(); // Refresh the list
+      _loadShoppingList();
     }
   }
 
-  // Remove a product from the shopping list
   _removeProduct(String itemId) async {
     await _shoppingListService.removeFromShoppingList(itemId);
-    _loadShoppingList(); // Refresh the list
+    _loadShoppingList();
   }
 
-  // Mark item as purchased (update Firestore)
   _markAsPurchased(String itemId) async {
     final item = _shoppingList.firstWhere((item) => item['id'] == itemId);
-    final newStatus = !item['isPurchased']; // Toggle the current status
+    final newStatus = !item['isPurchased'];
 
     await _shoppingListService.markAsPurchased(itemId, newStatus);
-    _loadShoppingList(); // Refresh the list to update the UI
+    _loadShoppingList();
   }
 
-  // Update quantity of a product
-  Future<void> _updateQuantity(String productId, int change) async {
+  Future<void> _updateQuantity(String productId, int newQuantity) async {
+    final item = _shoppingList.firstWhere((item) => item['id'] == productId);
+    final currentQty = item['quantity'] ?? 1;
+    final change = (newQuantity - currentQty).toInt();
+    
     await _shoppingListService.updateQuantity(productId, change);
-    _loadShoppingList(); // Refresh the list
+    _loadShoppingList();
   }
 
-  // Fetch food suggestions based on the input query
   Future<void> _fetchFoodSuggestions(String query) async {
     if (query.isEmpty) {
       setState(() {
@@ -108,6 +106,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
     try {
       List<String> suggestions = await _foodSuggestionsService.fetchFoodSuggestions(query);
+      // Limit the number of suggestions to prevent overflow
+      suggestions = suggestions.take(5).toList();
+      
       setState(() {
         _foodSuggestions = suggestions;
         _isLoadingSuggestions = false;
@@ -120,7 +121,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     }
   }
 
-  // Handle changes in the product name field
   void _onProductNameChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
@@ -134,7 +134,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     });
   }
 
-  // Scan barcode and add product to the shopping list
   Future<void> _scanBarcode() async {
     var status = await Permission.camera.request();
     if (status.isGranted) {
@@ -151,7 +150,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           _showProductDialog(product);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Product details not found')),
+            const SnackBar(
+              content: Text('Product details not found'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -160,12 +162,14 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Camera permission is required')),
+        const SnackBar(
+          content: Text('Camera permission is required'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
-  // Show product details in a bottom sheet dialog
   void _showProductDialog(ProductDetails product) async {
     final Map<String, dynamic>? confirmedProduct =
         await showModalBottomSheet<Map<String, dynamic>>(
@@ -182,205 +186,315 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Product confirmed!')),
+        const SnackBar(
+          content: Text('Product confirmed!'),
+          backgroundColor: Colors.green,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color textColor = isDarkMode ? Colors.white : Colors.black87;
+    final Color cardColor = theme.cardColor;
+    final Color containerBgColor = isDarkMode ? theme.cardColor : Colors.white;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Shopping List'),
+        title: const Text('Shopping List'),
+        elevation: 0,
         actions: [
-          TextButton.icon(
-            label: Text(
-              'Scan Barcode',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
+          TextButton(
             onPressed: _scanBarcode,
+            child: Text(
+              'Scan Barcode',
+              style: TextStyle(color: theme.appBarTheme.titleTextStyle?.color ?? Colors.white),
+            ),
           ),
         ],
       ),
-      body: Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: TextField(
-                          controller: _productController,
-                          decoration: InputDecoration(
-                            labelText: 'Enter product name',
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: _onProductNameChanged,
-                        ),
-                      ),
+      body: Stack(
+        children: [
+          Column(
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: containerBgColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(isDarkMode ? 0.1 : 0.2),
+                      spreadRadius: 1,
+                      blurRadius: 3,
+                      offset: const Offset(0, 2),
                     ),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.green,
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 20,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _productController,
+                            decoration: InputDecoration(
+                              labelText: 'Enter product name',
+                              prefixIcon: Icon(Icons.search, color: theme.iconTheme.color),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              filled: true,
+                              fillColor: isDarkMode ? theme.inputDecorationTheme.fillColor ?? Colors.grey[800] : Colors.grey[100],
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            ),
+                            onChanged: _onProductNameChanged,
+                          ),
                         ),
-                        onPressed: () {
-                          _addProduct(_productController.text);
-                          _productController.clear();
-                        },
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 45,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Colors.green, Colors.teal],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            onPressed: () {
+                              _addProduct(_productController.text);
+                              _productController.clear();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Theme(
+                                data: Theme.of(context).copyWith(
+                                  checkboxTheme: CheckboxThemeData(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ),
+                                child: Checkbox(
+                                  value: _allChecked,
+                                  activeColor: Colors.green,
+                                  onChanged: (bool? value) {
+                                    _toggleAllPurchased(value ?? false);
+                                  },
+                                ),
+                              ),
+                              Text("Tick all", style: TextStyle(color: textColor)),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Switch(
+                                value: _hidePurchased,
+                                activeColor: Colors.green,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    _hidePurchased = value;
+                                  });
+                                  _loadShoppingList();
+                                },
+                              ),
+                              Text("Hide Purchased", style: TextStyle(color: textColor)),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _allChecked,
-                            onChanged: (bool? value) {
-                              _toggleAllPurchased(value ?? false);
-                            },
-                          ),
-                          Text("Tick all"),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Switch(
-                            value: _hidePurchased,
-                            onChanged: (bool value) {
-                              setState(() {
-                                _hidePurchased = value;
-                              });
-                              _loadShoppingList();
-                            },
-                          ),
-                          Text("Hide Purchased"),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (_foodSuggestions.isNotEmpty) ...[
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.3,
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _foodSuggestions.length,
-                      itemBuilder: (context, index) {
-                        return ListTile(
-                          title: Text(_foodSuggestions[index]),
-                          onTap: () {
-                            _productController.text = _foodSuggestions[index];
-                            setState(() {
-                              _foodSuggestions = [];
-                            });
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            if (_foodSuggestions.isNotEmpty)
+  Flexible(
+    child: Container(
+      decoration: BoxDecoration(
+        color: containerBgColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(isDarkMode ? 0.1 : 0.2),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
           ),
-          Expanded(
-            child: _shoppingList.isEmpty
-                ? Center(
-                    child: Text(
-                      'Your shopping list is empty!',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-  itemCount: _shoppingList.length,
-  itemBuilder: (context, index) {
-    final item = _shoppingList[index];
-    return ListTile(
-      leading: IconButton(
-        icon: Icon(
-          item['isPurchased']
-              ? Icons.check_box
-              : Icons.check_box_outline_blank,
-          color: item['isPurchased'] ? Colors.green : Colors.black,
-        ),
-        onPressed: () {
-          _markAsPurchased(item['id']);
+        ],
+      ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.3,  // Adjust for keyboard
+      ),
+      width: double.infinity,
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: _foodSuggestions.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            dense: true,
+            leading: const Icon(Icons.food_bank_outlined, color: Colors.green),
+            title: Text(
+              _foodSuggestions[index],
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: TextStyle(color: textColor),
+            ),
+            onTap: () {
+              _productController.text = _foodSuggestions[index];
+              setState(() {
+                _foodSuggestions = [];
+              });
+            },
+          );
         },
       ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            item['productName'],
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              decoration: item['isPurchased']
-                  ? TextDecoration.lineThrough
-                  : TextDecoration.none,
+    ),
+  ),
+
+              Expanded(
+                child: _shoppingList.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.shopping_cart_outlined,
+                              size: 80,
+                              color: isDarkMode ? Colors.grey[400] : Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Your shopping list is empty!',
+                              style: TextStyle(fontSize: 18, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add items above to get started',
+                              style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.grey[500] : Colors.grey[500]),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _shoppingList.length,
+                        itemBuilder: (context, index) {
+                          final item = _shoppingList[index];
+                          return Card(
+                            elevation: 1,
+                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            color: cardColor,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              leading: Checkbox(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                activeColor: Colors.green,
+                                value: item['isPurchased'],
+                                onChanged: (_) {
+                                  _markAsPurchased(item['id']);
+                                },
+                              ),
+                              title: Text(
+                                item['productName'],
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  decoration: item['isPurchased']
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                  color: item['isPurchased'] ? Colors.grey : textColor,
+                                ),
+                              ),
+                              subtitle: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: item['isPurchased'] 
+                                        ? (isDarkMode ? Colors.green[900] : Colors.green[50])
+                                        : (isDarkMode ? Colors.grey[800] : Colors.grey[200]),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      item['isPurchased'] ? 'Purchased' : 'To buy',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: item['isPurchased'] 
+                                          ? (isDarkMode ? Colors.green[300] : Colors.green) 
+                                          : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: DropdownButton<int>(
+                                      value: item['quantity'] ?? 1,
+                                      underline: Container(),
+                                      icon: const Icon(Icons.arrow_drop_down, color: Colors.green),
+                                      dropdownColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                                      items: List.generate(10, (index) => index + 1)
+                                        .map((int value) {
+                                          return DropdownMenuItem<int>(
+                                            value: value,
+                                            child: Text('$value', style: TextStyle(color: textColor)),
+                                          );
+                                      }).toList(),
+                                      onChanged: (int? newValue) {
+                                        if (newValue != null) {
+                                          _updateQuantity(item['id'], newValue);
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _removeProduct(item['id']),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                ),
+              ),
             ),
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(height: 4),
-          Text(
-            item['isPurchased'] ? 'Purchased' : 'Not Purchased',
-            style: TextStyle(
-              fontSize: 12,
-              color: item['isPurchased'] ? Colors.green : Colors.grey,
-            ),
-          ),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: Icon(Icons.remove),
-            onPressed: () {
-              if ((item['quantity'] ?? 1) > 1) {
-                _updateQuantity(item['id'], -1);
-              }
-            },
-          ),
-          Text(
-            '${item['quantity'] ?? 1}',
-            style: TextStyle(fontSize: 16),
-          ),
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () {
-              _updateQuantity(item['id'], 1);
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.delete, color: Colors.red),
-            onPressed: () => _removeProduct(item['id']),
-          ),
-        ],
-      ),
-    );
-  },
-),
-          ),
-          if (_isLoading) Center(child: CircularProgressIndicator()),
         ],
       ),
     );

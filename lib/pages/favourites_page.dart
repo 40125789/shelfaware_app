@@ -134,7 +134,7 @@ class _FavoritesPageState extends State<FavouritesPage> {
               },
             );
           } else {
-            return Center(child: Text("No favorite recipes found."));
+            return Center(child: Text("No favourite recipes found"));
           }
         },
       ),

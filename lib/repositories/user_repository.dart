@@ -30,6 +30,19 @@ class UserRepository {
     return null;
   }
 
+     Future<void> updateUserBio(String userId, String newBio) async {
+                    try {
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(userId)
+                          .update({'bio': newBio});
+                    } catch (e) {
+                      print('Error updating user bio: $e');
+                      throw e;
+                    }
+                  }
+                  
+
   Future<String?> fetchProfileImageUrl(String userId) async {
     try {
       DocumentSnapshot userDoc = await firestore.collection('users').doc(userId).get();

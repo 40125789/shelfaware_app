@@ -10,23 +10,22 @@ void main() {
   late MockFirebaseAuth mockAuth;
   late MockUser mockUser;
 
-setUp(() {
-  fakeFirestore = FakeFirebaseFirestore();
-  
-  mockUser = MockUser(
-    isAnonymous: false,
-    uid: 'testUserId',
-    email: 'testUserEmail',
-  );
+  setUp(() {
+    fakeFirestore = FakeFirebaseFirestore();
 
-  mockAuth = MockFirebaseAuth(mockUser: mockUser);
+    mockUser = MockUser(
+      isAnonymous: false,
+      uid: 'testUserId',
+      email: 'testUserEmail',
+    );
 
-  chatRepository = ChatRepository(
-    firebaseFirestore: fakeFirestore,
-    firebaseAuth: mockAuth,
-  );
-});
+    mockAuth = MockFirebaseAuth(signedIn: true, mockUser: mockUser);
 
+    chatRepository = ChatRepository(
+      firebaseFirestore: fakeFirestore,
+      firebaseAuth: mockAuth,
+    );
+  });
 
   test('sendMessage should send a message and update chat document', () async {
     await chatRepository.sendMessage(
@@ -37,11 +36,14 @@ setUp(() {
       'testProductName',
     );
 
-    final chatDoc = await fakeFirestore.collection('chats').doc('testDonationId').get();
+    final chatId = ['testDonationId', 'testUserId', 'testReceiverId']..sort();
+    final chatDoc =
+        await fakeFirestore.collection('chats').doc(chatId.join('_')).get();
     expect(chatDoc.exists, true);
 
     final chatData = chatDoc.data()!;
-    expect(chatData['participants'], containsAll(['testUserId', 'testReceiverId']));
+    expect(chatData['participants'],
+        containsAll(['testUserId', 'testReceiverId']));
     expect(chatData['lastMessage'], 'testMessageContent');
     expect(chatData['lastMessageTimestamp'], isNotNull);
     expect(chatData['product'], isA<Map<String, dynamic>>());
@@ -50,12 +52,13 @@ setUp(() {
 
     final messagesCollection = await fakeFirestore
         .collection('chats')
-        .doc('testDonationId')
+        .doc(chatId.join('_'))
         .collection('messages')
         .get();
 
     expect(messagesCollection.docs.length, 1);
-    expect(messagesCollection.docs.first.data(), containsPair('message', 'testMessageContent'));
+    expect(messagesCollection.docs.first.data(),
+        containsPair('message', 'testMessageContent'));
     expect(messagesCollection.docs.first.data()['timestamp'], isNotNull);
   });
 
@@ -70,7 +73,7 @@ setUp(() {
         .doc('testChatId')
         .collection('messages')
         .add({
-      'senderId': 'testUserId',
+      'receiverId': 'testUserId',
       'message': 'Hello',
       'isRead': false,
     });
@@ -94,19 +97,18 @@ setUp(() {
 
     await Future.delayed(Duration(milliseconds: 100));
 
-    final profileImageUrl = await chatRepository.getReceiverProfileImage('testReceiverId');
+    final profileImageUrl =
+        await chatRepository.getReceiverProfileImage('testReceiverId');
     expect(profileImageUrl, 'testProfileImageUrl');
   });
 
-  test('updateDonationStatus should update the status of a donation', () async {
+  test('getDonationStatus should return donation status', () async {
     await fakeFirestore.collection('donations').doc('testDonationId').set({
-      'status': 'oldStatus',
+      'status': 'available',
     });
 
-    await chatRepository.updateDonationStatus('testDonationId', 'newStatus');
-
-    final donationDoc = await fakeFirestore.collection('donations').doc('testDonationId').get();
-    expect(donationDoc.data()?['status'], 'newStatus');
+    final status = await chatRepository.getDonationStatus('testDonationId');
+    expect(status, 'available');
   });
 
   test('getUsersStream should return a stream of users', () {

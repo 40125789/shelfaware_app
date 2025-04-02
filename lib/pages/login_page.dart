@@ -89,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 // Welcome text
                 Text(
-                  'Welcome back!',
+                  'Welcome Back!',
                   style: TextStyle(
                       color: Colors.grey[700],
                       fontWeight: FontWeight.bold,

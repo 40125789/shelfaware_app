@@ -81,33 +81,78 @@ void main() {
       expect(find.text('egg'), findsOneWidget);
     });
 
-    testWidgets('Mark an item as purchased', (WidgetTester tester) async {
-      await navigateToShoppingList(tester);
-      final Finder eggItem = find.ancestor(
-        of: find.text('egg'),
-        matching: find.byType(ListTile),
-      );
-
-      final Finder eggCheckBox = find.descendant(
-        of: eggItem,
-        matching: find.byIcon(Icons.check_box_outline_blank),
-      );
-
-      await tester.tap(eggCheckBox);
-      await tester.pumpAndSettle();
-      expect(find.text('Purchased'), findsOneWidget);
-    });
+  testWidgets('Mark an item as purchased', (WidgetTester tester) async {
+    await navigateToShoppingList(tester);
+    
+    // Find the egg item in the list
+    final Finder eggItem = find.ancestor(
+    of: find.text('egg'),
+    matching: find.byType(ListTile),
+    );
+    
+    // Find the checkbox within the egg item
+    final Finder eggCheckBox = find.descendant(
+    of: eggItem,
+    matching: find.byType(Checkbox),
+    );
+    
+    // Tap the checkbox to mark as purchased
+    await tester.tap(eggCheckBox);
+    await tester.pumpAndSettle();
+    
+    // Add a delay to ensure the purchased state is updated
+    await Future.delayed(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    
+    // Verify the item is marked as purchased
+    final purchasedText = find.text('Purchased');
+    expect(purchasedText, findsOneWidget);
+    
+    
+  });
 
     testWidgets('Toggle Hide Purchased Items', (WidgetTester tester) async {
       await navigateToShoppingList(tester);
+      
+      // Now test the toggle functionality
       final Finder toggleButton = find.byType(Switch);
+      
+      // Toggle to ON position
       await tester.tap(toggleButton);
       await tester.pumpAndSettle();
+      
+  
       expect(find.text('egg'), findsNothing);
-
+      // Toggle back to OFF position
       await tester.tap(toggleButton);
       await tester.pumpAndSettle();
       expect(find.text('egg'), findsOneWidget);
+      
+      
+     
+    });
+
+    testWidgets('Increase the quantity of a food item in the Shopping List',
+      (WidgetTester tester) async {
+      await navigateToShoppingList(tester);
+      
+      // Find the dropdown showing quantity "1"
+      final quantityDropdown = find.byType(DropdownButton<int>);
+      expect(quantityDropdown, findsOneWidget);
+      
+      // Open the dropdown
+      await tester.tap(quantityDropdown);
+      await tester.pumpAndSettle();
+      
+      // Select quantity "2" from the dropdown
+      await tester.tap(find.text('2').last);
+      await tester.pumpAndSettle();
+      
+      // Verify the quantity has been updated to "2"
+      expect(find.descendant(
+      of: quantityDropdown,
+      matching: find.text('2'),
+      ), findsOneWidget);
     });
 
     testWidgets('Delete an item from the Shopping List',
@@ -166,4 +211,5 @@ void main() {
       expect(find.text('apple'), findsOneWidget);
     });
   });
+  
 }

@@ -11,7 +11,7 @@ class BottomNavigationBarComponent extends ConsumerStatefulWidget {
       : super(key: key);
 
   @override
-  _BottomNavigationBarComponentState createState() =>
+  ConsumerState<BottomNavigationBarComponent> createState() =>
       _BottomNavigationBarComponentState();
 }
 
@@ -20,28 +20,22 @@ class _BottomNavigationBarComponentState
   bool _isPressed = false;
 
   void _onFabTap() {
-    setState(() {
-      _isPressed = true;
-    });
+    setState(() => _isPressed = true);
 
     Future.delayed(const Duration(milliseconds: 150), () {
-      setState(() {
-        _isPressed = false;
-      });
+      setState(() => _isPressed = false);
     });
 
     Navigator.push(
-        context,
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 300),
-          pageBuilder: (context, animation, secondaryAnimation) {
-            return FadeTransition(
-              opacity: animation,
-              child: AddFoodItem(
-                  foodItems: []), // Pass the required 'foodItems' argument
-            );
-          },
-        ));
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (_, animation, __) => FadeTransition(
+          opacity: animation,
+          child: AddFoodItem(foodItems: []),
+        ),
+      ),
+    );
   }
 
   void _onItemTapped(int index) {
@@ -52,14 +46,13 @@ class _BottomNavigationBarComponentState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    widget.pageController.addListener(() {
-      setState(() {});
-    });
+    widget.pageController.addListener(() => setState(() {}));
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(bottomNavControllerProvider);
+    final width = MediaQuery.of(context).size.width;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -84,31 +77,35 @@ class _BottomNavigationBarComponentState
           ],
         ),
         Positioned(
-          left: MediaQuery.of(context).size.width * 0.5 - 25,
+          left: width * 0.5 - 30,
           bottom: 30,
-          child: GestureDetector(
-            onTap: _onFabTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeInOut,
-              decoration: BoxDecoration(
-                color: _isPressed ? Colors.green[800] : Colors.green,
-                shape: BoxShape.circle,
-              ),
-              child: CircleAvatar(
-                radius: 22,
-                backgroundColor: Colors.transparent,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 150),
-                  transitionBuilder:
-                      (Widget child, Animation<double> animation) {
-                    return FadeTransition(opacity: animation, child: child);
-                  },
-                  child: Icon(
-                    Icons.add,
-                    key: ValueKey<bool>(_isPressed),
-                    color: Colors.white,
-                    size: 24,
+          child: Semantics(
+            label: 'Add food item',
+            button: true,
+            child: GestureDetector(
+              onTap: _onFabTap,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeInOut,
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: _isPressed ? Colors.green[800] : Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                child: CircleAvatar(
+                  radius: 28,
+                  backgroundColor: Colors.transparent,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 150),
+                    transitionBuilder: (child, animation) => 
+                      FadeTransition(opacity: animation, child: child),
+                    child: Icon(
+                      Icons.add,
+                      key: ValueKey<bool>(_isPressed),
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ),
               ),

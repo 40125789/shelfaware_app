@@ -112,13 +112,22 @@ Future<void> sendMessage(
     }
   }
 
-  Future<void> updateDonationStatus(String donationId, String newStatus) async {
+  Future<String?> getDonationStatus(String donationId) async {
     try {
-      await _firestore.collection('donations').doc(donationId).update({'status': newStatus});
+      DocumentSnapshot donationDoc = await _firestore.collection('donations').doc(donationId).get();
+      
+      if (donationDoc.exists) {
+        final data = donationDoc.data() as Map<String, dynamic>;
+        return data['status'] as String?;
+      } else {
+        return null; // Donation not found
+      }
     } catch (e) {
-      throw Exception("Failed to update status: $e");
+      throw Exception("Failed to get donation status: $e");
     }
   }
+
+
 
   Stream<List<Map<String, dynamic>>> getUsersStream() {
     return _firestore.collection('users').snapshots().map((snapshot) {

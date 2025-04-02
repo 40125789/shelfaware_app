@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shelfaware_app/components/editable_bio.dart';
 import 'package:shelfaware_app/components/review_section.dart';
 import 'package:shelfaware_app/models/user_model.dart';
+import 'package:shelfaware_app/repositories/user_repository.dart';
+import 'package:shelfaware_app/services/user_service.dart';
 
 class ProfilePage extends StatefulWidget {
   final String userId;
@@ -20,35 +22,44 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isEditingBio = false;
   String? loggedInUserId;
   UserData? userData;
-  bool isImageLoading = true; // Track image loading state
+  bool isImageLoading = true;
+  final UserRepository _userRepository = UserRepository(firestore: FirebaseFirestore.instance, auth: FirebaseAuth.instance);
+  late final UserService _userService;
 
   @override
   void initState() {
     super.initState();
+    _userService = UserService(_userRepository);
     _fetchLoggedInUserId();
     _fetchUserData();
   }
 
   Future<void> _fetchLoggedInUserId() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+    String? userId = await FirebaseAuth.instance.currentUser?.uid;
+    // Check if the logged-in user ID is the same as the profile being viewed
+    if (userId != null) {
       setState(() {
-        loggedInUserId = user.uid;
+        loggedInUserId = userId;
       });
     }
   }
 
   Future<void> _fetchUserData() async {
-    DocumentSnapshot snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .get();
-    setState(() {
-      userData =
-          UserData.fromFirestore(snapshot.data() as Map<String, dynamic>);
-      isImageLoading =
-          false; // After loading user data, set image loading state to false
-    });
+    try {
+      final userMap = await _userService.getUserData(widget.userId);
+      setState(() {
+        userData = UserData.fromFirestore(userMap);
+        // Set the initial bio in the controller
+        _bioController.text = userData!.bio;
+        // Set the image loading state to false after fetching data
+        isImageLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isImageLoading = false;
+      });
+      print('Error fetching user data: $e');
+    }
   }
 
   @override
@@ -74,38 +85,56 @@ class _ProfilePageState extends State<ProfilePage> {
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  GestureDetector(
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: userData!.profileImageUrl.isNotEmpty
-                              ? Image.network(
-                                  userData!.profileImageUrl,
-                                  errorBuilder: (BuildContext context,
-                                      Object error, StackTrace? stackTrace) {
-                                    return Image.asset(
-                                        'assets/default_avatar.png');
-                                  },
-                                ).image
-                              : AssetImage('assets/default_avatar.png')
-                                  as ImageProvider,
-                          fit: BoxFit.cover,
-                        ),
-                        border: Border.all(color: Colors.white, width: 4),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              spreadRadius: 2),
-                        ],
-                      ),
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            spreadRadius: 2),
+                      ],
+                      color: Colors.grey[200], // Placeholder color
+                    ),
+                    child: ClipOval(
+                      child: userData!.profileImageUrl.isNotEmpty
+                          ? FadeInImage.assetNetwork(
+                              placeholder: 'assets/default_avatar.png',
+                              image: userData!.profileImageUrl,
+                              fit: BoxFit.cover,
+                              fadeInDuration: Duration(milliseconds: 300),
+                              imageErrorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/default_avatar.png',
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            )
+                          : Image.asset(
+                              'assets/default_avatar.png',
+                              fit: BoxFit.cover,
+                            ),
                     ),
                   ),
                   if (isImageLoading)
-                    Positioned(child: CircularProgressIndicator()),
+                    Positioned(
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withOpacity(0.3),
+                        ),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
                   if (userData!.averageRating != null)
                     Positioned(
                       bottom: 1,
@@ -185,13 +214,10 @@ class _ProfilePageState extends State<ProfilePage> {
               // Editable Bio Container with fixed height
               EditableBio(
                 initialBio: userData!.bio,
-                onBioChanged: (newBio) {
+                onBioChanged: (newBio) async {
+                  await _userService.updateUserBio(widget.userId, newBio);
                   setState(() {
                     userData!.bio = newBio;
-                    FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(widget.userId)
-                        .update({'bio': newBio});
                   });
                 },
               ),

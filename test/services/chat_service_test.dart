@@ -52,8 +52,9 @@ void main() {
   });
 
   test('updateDonationStatus should call updateDonationStatus on the repository', () async {
-    await chatService.updateDonationStatus('donationId', 'newStatus');
-    verify(mockChatRepository.updateDonationStatus('donationId', 'newStatus')).called(1);
+    const String donationId = 'testDonationId';
+    await chatService.getDonationStatus(donationId);
+    verify(mockChatRepository.getDonationStatus(donationId)).called(1);
   });
 
   test('getChatId should return a sorted chat ID', () {

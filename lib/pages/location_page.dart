@@ -290,9 +290,16 @@ class _LocationPageState extends State<LocationPage> {
                       backgroundColor: Colors.green,
                       padding: EdgeInsets.symmetric(vertical: 16.0),
                     ),
-                    child: Text(
-                      'Set as Current Location',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.location_pin, size: 20, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text(
+                          'Set as Current Location',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ],
                     ),
                   ),
                 ),

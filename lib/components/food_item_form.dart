@@ -406,31 +406,51 @@ class _FoodItemFormState extends State<FoodItemForm> {
             ),
           ),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _quantityController,
-                  decoration: InputDecoration(
-                    labelText: 'Quantity',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  readOnly: true,
-                ),
-              ),
-              const SizedBox(width: 10),
-              IconButton(
-                icon: const Icon(Icons.remove),
-                onPressed: _decrementQuantity,
-              ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _incrementQuantity,
-              ),
-            ],
+
+Row(
+  children: [
+    Expanded(
+      child: TextFormField(
+        controller: _quantityController,
+        decoration: InputDecoration(
+          labelText: 'Quantity',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
           ),
+        ),
+        readOnly: true,
+      ),
+    ),
+    const SizedBox(width: 10),
+    Semantics(
+      label: 'Decrease quantity',
+      button: true,
+      child: CircleAvatar(
+        radius: 20, // Circle size
+        backgroundColor: Colors.red, // Red color for minus
+        child: IconButton(
+          icon: const Icon(Icons.remove, color: Colors.white),
+          onPressed: _decrementQuantity,
+          tooltip: 'Decrease quantity',
+        ),
+      ),
+    ),
+    const SizedBox(width: 10),
+    Semantics(
+      label: 'Increase quantity',
+      button: true,
+      child: CircleAvatar(
+        radius: 20,// Circle size
+        backgroundColor: Colors.green, // Green color for plus
+        child: IconButton(
+          icon: const Icon(Icons.add, color: Colors.white),
+          onPressed: _incrementQuantity,
+          tooltip: 'Increase quantity',
+        ),
+      ),
+    ),
+  ],
+),
           const SizedBox(height: 20),
           TextFormField(
             controller: _storageLocationController,

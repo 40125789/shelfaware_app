@@ -126,6 +126,9 @@ class DonationActionButtons extends StatelessWidget {
       icon: Icon(Icons.check_circle, color: Colors.white),
       label: Text("Mark as Picked Up", style: TextStyle(color: Colors.white)),
       onPressed: () async {
+        // Store the context before the async gap
+        final currentContext = context;
+        
         List<Map<String, dynamic>> requests =
             await donationService.getDonationRequests(donationId).first;
 
@@ -141,15 +144,22 @@ class DonationActionButtons extends StatelessWidget {
           await donationService.updateDonationRequestStatus(
               donationId, requestId, 'Picked Up');
 
+          // Call refreshPage to update the UI
           refreshPage();
+          
+          // Removed the Navigator.pop line to stay on the current screen
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('No accepted request found for this donation'),
-            ),
-          );
+          // Check if the widget is still in the tree before using context
+          if (currentContext.mounted) {
+            ScaffoldMessenger.of(currentContext).showSnackBar(
+              SnackBar(
+                content: Text('No accepted request found for this donation'),
+              ),
+            );
+          }
         }
       },
     );
   }
-}
+  }
+

@@ -19,10 +19,12 @@ class CalendarView extends ConsumerStatefulWidget {
 class _CalendarViewState extends ConsumerState<CalendarView> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  CalendarFormat _calendarFormat = CalendarFormat.month;
 
   @override
   void initState() {
     super.initState();
+    _selectedDay = _focusedDay;
     ref.read(foodItemProvider.notifier).fetchFoodItems(widget.userId);
   }
 
@@ -59,57 +61,106 @@ class _CalendarViewState extends ConsumerState<CalendarView> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TableCalendar(
-          firstDay: DateTime.utc(2020, 1, 1),
-          lastDay: DateTime.utc(2030, 12, 31),
-          focusedDay: _focusedDay,
-          selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-          onDaySelected: (selectedDay, focusedDay) {
-            setState(() {
-              _selectedDay = selectedDay;
-              _focusedDay = focusedDay;
-            });
+    final theme = Theme.of(context);
+    
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      elevation: 4.0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0), // Increased padding
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+            TableCalendar(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: _focusedDay,
+              calendarFormat: _calendarFormat,
+              headerStyle: HeaderStyle(
+                titleCentered: true,
+                formatButtonVisible: false,
+                titleTextStyle: TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                  color: theme.primaryColor,
+                ),
+                leftChevronIcon: Icon(Icons.chevron_left, color: theme.primaryColor),
+                rightChevronIcon: Icon(Icons.chevron_right, color: theme.primaryColor),
+              ),
+              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
 
-            // Show the bottom sheet when a day is selected
-            _showFoodItemsBottomSheet(selectedDay);
-          },
-          eventLoader: _getItemsForDay,
-          calendarStyle: CalendarStyle(
-            markerDecoration: BoxDecoration(
-              color: Colors.red,
-              shape: BoxShape.circle,
-            ),
-          ),
-          calendarBuilders: CalendarBuilders(
-            markerBuilder: (context, day, events) {
-              if (events.isNotEmpty) {
-                // Display the number of expiring items as a small badge in the corner
-                return Positioned(
-                  right: 2,
-                  top: 2,
-                  child: Container(
-                    padding: EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '${events.length}', // Display number of expiring items
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
+                // Show the bottom sheet when a day is selected
+                _showFoodItemsBottomSheet(selectedDay);
+              },
+              eventLoader: _getItemsForDay,
+              calendarStyle: CalendarStyle(
+                outsideDaysVisible: false,
+                weekendTextStyle: TextStyle(color: Colors.red[400]),
+                holidayTextStyle: TextStyle(color: Colors.red[400]),
+                todayDecoration: BoxDecoration(
+                  color: theme.primaryColor.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: theme.primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                markerDecoration: BoxDecoration(
+                  color: Colors.red[600],
+                  shape: BoxShape.circle,
+                ),
+                markersMaxCount: 3,
+              ),
+              calendarBuilders: CalendarBuilders(
+                markerBuilder: (context, day, events) {
+                  if (events.isNotEmpty) {
+                    return Positioned(
+                      right: 1,
+                      bottom: 1,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red[600],
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 2,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '${events.length}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }
-              return Container(); // No marker for days without events
-            },
-          ),
+                    );
+                  }
+                  return null;
+                },
+              ),
+              rowHeight: 45, // Explicitly set row height
+              daysOfWeekHeight: 20, // Explicitly set days of week row height
+            ),
+            const SizedBox(height: 8), // Added bottom spacing
+          ],
         ),
-      ],
+      ),
+    ),
     );
+    
   }
 }
+

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shelfaware_app/components/watchlist_star_button.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -222,6 +223,7 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                                       pickupTimes: pickupTimes,
                                       pickupInstructions: pickupInstructions,
                                       donorRating: donorRating ?? 0.0,
+                                  
                                     ),
                                   ),
                                 );
@@ -362,43 +364,34 @@ class _WatchedDonationsPageState extends ConsumerState<WatchedDonationsPage> {
                               ),
                             ),
                           ),
-                          Positioned(
-                            bottom: 8,
-                            left: 8,
-                            child: CircleAvatar(
-                              backgroundColor: Colors.transparent,
-                              radius: 18,
-                              child: FutureBuilder<bool>(
-                                future: ref
-                                    .read(watchedDonationsServiceProvider)
-                                    .isDonationInWatchlist(
-                                        user.uid, donationId),
-                                builder: (context, snapshot) {
-                                  if (!snapshot.hasData) {
-                                    return CircularProgressIndicator();
-                                  }
-                                  bool isInWatchlist = snapshot.data!;
-                                  return IconButton(
-                                    icon: Icon(
-                                      isInWatchlist
-                                          ? Icons.star
-                                          : Icons.star_border,
-                                      color: isInWatchlist
-                                          ? Colors.yellow
-                                          : Colors.lightGreen,
-                                      size: 24,
-                                    ),
-                                    onPressed: () async {
-                                      await ref
-                                          .read(watchedDonationsServiceProvider)
-                                          .toggleWatchlist(
-                                              user.uid, donationId, donation);
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
+                         Positioned(
+  bottom: 8,
+  left: 8,
+  child: CircleAvatar(
+    backgroundColor: Colors.transparent,
+    radius: 18,
+    child: FutureBuilder<bool>(
+      future: ref.read(watchedDonationsServiceProvider)
+          .isDonationInWatchlist(user.uid, donationId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return CircularProgressIndicator();
+        }
+
+        bool isInWatchlist = snapshot.data!;
+
+        return WatchlistToggleButton(
+          isInWatchlist: isInWatchlist,
+          onToggle: () async {
+            await ref.read(watchedDonationsServiceProvider)
+                .toggleWatchlist(user.uid, donationId, donation);
+          },
+        );
+      },
+    ),
+  ),
+)
+
                         ],
                       );
                     },

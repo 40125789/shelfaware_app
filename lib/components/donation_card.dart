@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shelfaware_app/components/watchlist_star_button.dart';
 import 'package:shelfaware_app/services/profile_image_service.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
 
@@ -93,159 +94,159 @@ if (expiryDate != null) {
 
     return Stack(
       children: [
-        Card(
-          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          elevation: 3,
-          shape: RoundedRectangleBorder(
+      Card(
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        ),
+        color: isExpired ? Colors.grey[300] : theme.cardColor,
+        child: InkWell(
+        onTap: isExpired ? null : () => onTap(donationId),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
             borderRadius: BorderRadius.circular(12),
-          ),
-          color: isExpired ? Colors.grey[300] : theme.cardColor,
-          child: InkWell(
-            onTap: isExpired ? null : () => onTap(donationId),
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: imageUrl != null && imageUrl!.isNotEmpty
+              ? CachedNetworkImage(
+                imageUrl: imageUrl!,
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+                placeholder: (context, url) =>
+                  CircularProgressIndicator(),
+                errorWidget: (context, url, error) => Image.asset(
+                  'assets/placeholder.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
+                )
+              : Image.asset(
+                'assets/placeholder.png',
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+                ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+              Text(
+                productName,
+                style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: textColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 8),
+              Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: imageUrl != null && imageUrl!.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: imageUrl!,
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                CircularProgressIndicator(),
-                            errorWidget: (context, url, error) => Image.asset(
-                              'assets/placeholder.png',
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Image.asset(
-                            'assets/placeholder.png',
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                          ),
+                ProfileImage(donorId: donorId, userId: ''),
+                SizedBox(width: 8),
+                Text(
+                  donorName,
+                  style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: textColor,
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          productName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: textColor,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            ProfileImage(donorId: donorId, userId: ''),
-                            SizedBox(width: 8),
-                            Text(
-                              donorName,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: textColor,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(width: 6),
-                            if (donorRating != null && donorRating! > 0)
-                              Row(
-                                children: [
-                                  Icon(Icons.star,
-                                      color: Colors.amber, size: 16),
-                                  Text(
-                                    donorRating!.toStringAsFixed(1),
-                                    style: TextStyle(
-                                        fontSize: 14, color: textColor),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        StatusIconWidget(status: status),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.location_on,
-                                color: Colors.grey, size: 16),
-                            SizedBox(width: 4),
-                            Text(
-                              distanceText,
-                              style: TextStyle(
-                                  fontSize: 12, color: Colors.grey[500]),
-                            ),
-                          ],
-                        ),
-                        if (!isExpired && (isNewlyAdded || isExpiringSoon)) ...[
-                          SizedBox(height: 8),
-                          Row(
-                            children: [
-                              if (isNewlyAdded) ...[
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    'New',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                              ],
-                              if (isExpiringSoon) ...[
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    'Expiring Soon',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ],
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(width: 6),
+                if (donorRating != null && donorRating! > 0)
+                  Row(
+                  children: [
+                    Icon(Icons.star,
+                      color: Colors.amber, size: 16),
+                    Text(
+                    donorRating!.toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 14, color: textColor),
                     ),
+                  ],
                   ),
                 ],
               ),
+              SizedBox(height: 8),
+              StatusIconWidget(status: status),
+              SizedBox(height: 8),
+              Row(
+                children: [
+                Icon(Icons.location_on,
+                  color: Colors.grey, size: 16),
+                SizedBox(width: 4),
+                Text(
+                  distanceText,
+                  style: TextStyle(
+                    fontSize: 12, color: Colors.grey[500]),
+                ),
+                ],
+              ),
+              if (!isExpired && (isNewlyAdded || isExpiringSoon)) ...[
+                SizedBox(height: 8),
+                Row(
+                children: [
+                  if (isNewlyAdded) ...[
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                    'New',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  ],
+                  if (isExpiringSoon) ...[
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                    'Expiring Soon',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    ),
+                  ),
+                  ],
+                ],
+                ),
+              ],
+              ],
             ),
+            ),
+          ],
           ),
         ),
-        if (isExpired)
-          Positioned.fill(
-            child: Container(
-              alignment: Alignment.center,
-              child: Container(
+        ),
+      ),
+      if (isExpired)
+        Positioned.fill(
+        child: Container(
+          alignment: Alignment.center,
+          child: Container(
           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.red,
@@ -254,46 +255,39 @@ if (expiryDate != null) {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.access_time,
-                color: Colors.white,
-                size: 16,
+            Icon(
+              Icons.access_time,
+              color: Colors.white,
+              size: 16,
+            ),
+            SizedBox(width: 4),
+            Text(
+              expiredTimeText,
+              style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
               ),
-              SizedBox(width: 4),
-              Text(
-                expiredTimeText,
-                style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              textAlign: TextAlign.center,
+            ),
             ],
           ),
-              ),
-            ),
-          ),
-    
-        Positioned(
-          bottom: 8,
-          left: 8,
-          child: CircleAvatar(
-            backgroundColor: Colors.transparent,
-            radius: 18,
-            child: IconButton(
-              icon: Icon(
-                isInWatchlist ? Icons.star : Icons.star_border,
-                color: isInWatchlist ? Colors.green : Colors.grey,
-                size: 24,
-              ),
-              onPressed: () {
-                onWatchlistToggle(donationId);
-              },
-            ),
           ),
         ),
+        ),
+    
+      Positioned(
+        bottom: 16,
+        left: 16,
+        child: WatchlistToggleButton(
+          isInWatchlist: isInWatchlist,
+          onToggle: () => onWatchlistToggle(donationId),
+        ),
+      ),
       ],
-    );
-  }
-}
+        );
+      }
+    }
+
+    
+    

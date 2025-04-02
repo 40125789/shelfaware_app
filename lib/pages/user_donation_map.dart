@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/components/pickedUp_dialog.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
+import 'package:shelfaware_app/components/watchlist_star_button.dart';
 import 'package:shelfaware_app/pages/chat_page.dart';
 import 'package:shelfaware_app/pages/donation_request_form.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart'; // Ensure this import is correct
@@ -35,6 +36,7 @@ class DonationMapScreen extends ConsumerStatefulWidget {
   final String pickupTimes;
   final String pickupInstructions;
   final double? donorRating;
+
  
 
   String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -59,6 +61,7 @@ class DonationMapScreen extends ConsumerStatefulWidget {
     required receiverEmail,
     required this.pickupTimes,
     required this.pickupInstructions,
+
   
     
     this.donorRating,
@@ -382,31 +385,25 @@ class _DonationMapScreenState extends ConsumerState<DonationMapScreen> {
                                   ],
                                 ),
 
-                                // Right side: Watchlist Star Icon
-                                IconButton(
-                                  icon: Icon(
-                                    watchlistStatus[widget.donationId] ?? false
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    color: watchlistStatus[widget.donationId] ??
-                                            false
-                                        ? Colors.green
-                                        : Colors.green,
-                                  ),
-                                  onPressed: () {
-                                    toggleWatchlistStatus(
-                                      context,
-                                      widget.userId,
-                                      widget.donationId,
-                                      watchlistStatus,
-                                      setState,
-                                      ref,
-                                      mounted,
-                                    );
-                                  },
-                                ),
+                              Positioned(
+        bottom: 16,
+        left: 16,
+        child: WatchlistToggleButton(
+          isInWatchlist: watchlistStatus[widget.donationId] ?? false,
+          onToggle: () {
+            bool newStatus = !(watchlistStatus[widget.donationId] ?? false);
+            toggleWatchlistStatus(context, widget.userId, widget.donationId, watchlistStatus,
+                setState, ref, mounted);
+            setState(() {
+              watchlistStatus[widget.donationId] = newStatus;
+            });
+          },
+        ),
+                              
+                            ),  
                               ],
                             ),
+      
                             SizedBox(height: 16),
                             Text(
                               widget.productName,

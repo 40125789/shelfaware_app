@@ -44,9 +44,11 @@ class ChatService {
     return await _chatRepository.getReceiverProfileImage(receiverId);
   }
 
-  Future<void> updateDonationStatus(String donationId, String newStatus) async {
-    await _chatRepository.updateDonationStatus(donationId, newStatus);
+  Future<String?> getDonationStatus(String donationId) async {
+    return await _chatRepository.getDonationStatus(donationId);
   }
+
+
 
   String getChatId(String donationId, String userId, String receiverId) {
     List<String> ids = [donationId, userId, receiverId];

@@ -6,7 +6,7 @@ import 'package:shelfaware_app/providers/review_provider.dart';
 class ReviewSection extends ConsumerWidget {
   final String loggedInUserId;
 
-  ReviewSection({required this.loggedInUserId});
+  const ReviewSection({required this.loggedInUserId, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,12 +25,17 @@ class ReviewSection extends ConsumerWidget {
             if (reviews.isEmpty) {
               return Center(child: Text('No reviews yet.'));
             }
+            
+            // Sort reviews by timestamp in descending order (newest first)
+            final sortedReviews = List.from(reviews)
+              ..sort((a, b) => (b['timestamp'] ?? DateTime(1970)).compareTo(a['timestamp'] ?? DateTime(1970)));
+            
             return ListView.builder(
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
-              itemCount: reviews.length,
+              itemCount: sortedReviews.length,
               itemBuilder: (context, index) {
-                var reviewData = reviews[index];
+                var reviewData = sortedReviews[index];
                 return ReviewCard(reviewData: reviewData);
               },
             );

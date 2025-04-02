@@ -48,6 +48,8 @@ class UserData {
     };
   }
 
+ 
+
   String _formatJoinDate() {
     return DateFormat('MMMM yyyy').format(joinDate);
   }
