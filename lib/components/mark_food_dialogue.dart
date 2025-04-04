@@ -6,11 +6,10 @@ import 'package:shelfaware_app/components/consumed_dialog.dart';
 import 'package:shelfaware_app/components/discarded_dialog.dart';
 import 'package:shelfaware_app/utils/date_formatter.dart';
 
-
 class MarkFoodDialog extends StatefulWidget {
   final String documentId;
 
-  MarkFoodDialog({required this.documentId});
+  const MarkFoodDialog({required this.documentId, Key? key}) : super(key: key);
 
   @override
   _MarkFoodDialogState createState() => _MarkFoodDialogState();
@@ -38,22 +37,26 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final labelColor = isDarkMode ? Colors.white70 : Colors.grey[600];
+    final cardColor = isDarkMode ? Colors.grey[800] : Colors.white;
+
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight:
-            MediaQuery.of(context).size.height * 0.6, // Limits the max height
+        maxHeight: MediaQuery.of(context).size.height * 0.6,
       ),
       child: FutureBuilder<MarkFood?>(
         future: _markFoodService.getFoodItem(widget.documentId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return SizedBox(
-              height: 200, // Prevents flickering by ensuring min height
+            return const SizedBox(
+              height: 200,
               child: Center(child: CircularProgressIndicator()),
             );
           }
           if (!snapshot.hasData || snapshot.data == null) {
-            return SizedBox(
+            return const SizedBox(
               height: 200,
               child: Center(child: Text("No data available")),
             );
@@ -61,121 +64,158 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
 
           _foodItem = snapshot.data!;
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
+          return Container(
+            padding: const EdgeInsets.all(20.0),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // Ensures compact height
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_foodItem.productName != null &&
-                      _foodItem.productName!.isNotEmpty)
-                    Text(
-                      _foodItem.productName!,
-                      style: TextStyle(
-                          fontSize: 22,
+                  // Header with product name and image
+                  if (_foodItem.productName != null && _foodItem.productName!.isNotEmpty)
+                    Center(
+                      child: Text(
+                        _foodItem.productName!,
+                        style: TextStyle(
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
-                     ),
-                    ),
-                  SizedBox(height: 16),
-                  if (_foodItem.productImage != null &&
-                      _foodItem.productImage!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Image.network(
-                        _foodItem.productImage!,
-                        height: 150,
-                        width: 150,
-                        fit: BoxFit.contain,
+                          color: textColor,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                  if (_foodItem.quantity > 0)
-                    Row(
-                      children: [
-                        Icon(Icons.confirmation_number,
-                            size: 24, color: Colors.blue),
-                        SizedBox(width: 8),
-                        Text('Quantity: ${_foodItem.quantity}',
-                            style: TextStyle(fontSize: 16)),
-                      ],
+                  const SizedBox(height: 16),
+                  if (_foodItem.productImage != null && _foodItem.productImage!.isNotEmpty)
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          _foodItem.productImage!,
+                          height: 170,
+                          width: 170,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => 
+                            Container(
+                              height: 170,
+                              width: 170,
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+                            ),
+                        ),
+                      ),
                     ),
-                  if (_foodItem.expiryDate != null)
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_today,
-                            size: 24, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text(
-                            'Expiry Date: ${formatExpiryDate(Timestamp.fromDate(_foodItem.expiryDate!))}',
-                            style: TextStyle(fontSize: 16)),
-                      ],
+                  const SizedBox(height: 24),
+                  
+                  // Product details card
+                  Card(
+                    elevation: 2,
+                    color: cardColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_foodItem.quantity > 0)
+                            _buildInfoRow(Icons.confirmation_number, 'Quantity', '${_foodItem.quantity}', Colors.blue, textColor, labelColor),
+                          
+                          if (_foodItem.expiryDate != null)
+                            _buildInfoRow(
+                              Icons.calendar_today, 
+                              'Expiry Date', 
+                              formatExpiryDate(Timestamp.fromDate(_foodItem.expiryDate!)), 
+                              Colors.orange,
+                              textColor,
+                              labelColor
+                            ),
+                          
+                          if (_foodItem.storageLocation != null && _foodItem.storageLocation!.isNotEmpty)
+                            _buildInfoRow(
+                              Icons.location_on, 
+                              'Storage', 
+                              _foodItem.storageLocation!, 
+                              Colors.red,
+                              textColor,
+                              labelColor
+                            ),
+                            
+                          if (_foodItem.notes != null && _foodItem.notes!.isNotEmpty)
+                            _buildInfoRow(Icons.note, 'Notes', _foodItem.notes!, Colors.grey, textColor, labelColor),
+                        ],
+                      ),
                     ),
-                  if (_foodItem.notes != null && _foodItem.notes!.isNotEmpty)
-                    Row(
-                      children: [
-                        Icon(Icons.note, size: 24, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Expanded(
-                            child: Text('Notes: ${_foodItem.notes}',
-                                style: TextStyle(fontSize: 16))),
-                      ],
-                    ),
-                  if (_foodItem.storageLocation != null &&
-                      _foodItem.storageLocation!.isNotEmpty)
-                    Row(
-                      children: [
-                        Icon(Icons.location_on, size: 24, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Storage Location: ${_foodItem.storageLocation}',
-                            style: TextStyle(fontSize: 16)),
-                      ],
-                    ),
-                  SizedBox(height: 24),
-                  Text(
-                    "Take action on this item",
-                    style: TextStyle(
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Action section
+                  Center(
+                    child: Text(
+                      "Take Action",
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        ),
+                        color: textColor,
+                      ),
+                    ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 16),
+                  
+                  // Action buttons
                   Row(
-                    mainAxisSize:
-                        MainAxisSize.min, // Use min size to avoid extra space
-                    mainAxisAlignment:
-                        MainAxisAlignment.center, // Center buttons
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          _showConsumedQuantityDialog();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.green,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 8),
-                            const Text("Consumed"),
-                          ],
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _showConsumedQuantityDialog,
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.check_circle, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text(
+                                "Consumed",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      SizedBox(width: 16), // Add spacing between buttons
-                      ElevatedButton(
-                        onPressed: () {
-                          _showDiscardReasonDialog();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.red,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, color: Colors.white),
-                            SizedBox(width: 8),
-                            const Text("Discarded"),
-                          ],
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _showDiscardReasonDialog,
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.delete, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text(
+                                "Discarded",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -189,22 +229,58 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
     );
   }
 
+  Widget _buildInfoRow(IconData icon, String label, String value, Color iconColor, Color textColor, Color? labelColor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 22, color: iconColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: labelColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showConsumedQuantityDialog() {
     if (_foodItem.quantity == 1) {
       // If quantity is 1, consume directly without showing the dialog
       _markFoodService.markAsConsumed(_foodItem, 1).then((_) {
-        // Update the UI with the new quantity (which is now 0)
         setState(() {
-          _foodItem.quantity =
-              0; // Assuming you set the quantity to 0 after consuming
+          _foodItem.quantity = 0;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Food item consumed')),
+          const SnackBar(
+            content: Text('Food item consumed'),
+            backgroundColor: Colors.green,
+          ),
         );
 
-        // Delay the closing of the bottom sheet to ensure the state update is completed
-        Future.delayed(Duration(milliseconds: 300), () {
-          Navigator.pop(context); // Close the bottom sheet after consuming
+        Future.delayed(const Duration(milliseconds: 300), () {
+          Navigator.pop(context);
         });
       });
     } else if (_foodItem.quantity > 1) {
@@ -217,16 +293,17 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
             onSubmit: (quantity) async {
               await _markFoodService.markAsConsumed(_foodItem, quantity);
               setState(() {
-                // Update the food item quantity after consumption
                 _foodItem.quantity -= quantity;
               });
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Food item consumed')),
+                const SnackBar(
+                  content: Text('Food item consumed'),
+                  backgroundColor: Colors.green,
+                ),
               );
-              // Delay the bottom sheet closure
               if (_foodItem.quantity == 0) {
-                Future.delayed(Duration(milliseconds: 300), () {
-                  Navigator.pop(context); // Close the bottom sheet
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  Navigator.pop(context);
                 });
               }
             },
@@ -245,17 +322,17 @@ class _MarkFoodDialogState extends State<MarkFoodDialog> {
           onSubmit: (reason, quantity) async {
             await _markFoodService.markAsDiscarded(_foodItem, reason, quantity);
             setState(() {
-              // Update the food item quantity after discarding
               _foodItem.quantity -= quantity;
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Item marked as discarded')),
+              const SnackBar(
+                content: Text('Item marked as discarded'),
+                backgroundColor: Colors.red,
+              ),
             );
-            // Delay the bottom sheet closure
             if (_foodItem.quantity == 0) {
-              Future.delayed(Duration(milliseconds: 300), () {
-                Navigator.pop(
-                    context); // Close the bottom sheet if quantity is 0
+              Future.delayed(const Duration(milliseconds: 300), () {
+                Navigator.pop(context);
               });
             }
           },

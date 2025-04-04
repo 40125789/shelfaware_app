@@ -7,7 +7,7 @@ class MessageItem extends StatelessWidget {
   final DocumentSnapshot doc;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  MessageItem({required this.doc});
+  MessageItem({required this.doc, required ValueKey<String> key});
 
   @override
   Widget build(BuildContext context) {

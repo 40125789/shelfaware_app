@@ -85,7 +85,15 @@ class _AddFoodItemState extends State<AddFoodItem> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Food Item'),
+      title: Text(
+        'Add Food Item',
+        style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+        color: Theme.of(context).appBarTheme.titleTextStyle?.color ?? Colors.white,
+        ),
+      ),
       ),
       body: SafeArea(
         child: Center(

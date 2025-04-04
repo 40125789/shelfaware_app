@@ -39,20 +39,18 @@ class ChatListPageState extends ConsumerState<ChatListPage> {
         final String currentUserId = user.uid;
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Chat List'),
-            actions: [
-              IconButton(
-                icon: Icon(_isDescending ? Icons.arrow_downward : Icons.arrow_upward),
-                onPressed: () {
-                  setState(() {
-                    _isDescending = !_isDescending;
-                  });
-                },
+            appBar: AppBar(
+              title: Text(
+                'Chat List',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  color: Theme.of(context).appBarTheme.titleTextStyle?.color ?? Colors.white,
+                ),
               ),
-            ],
-          ),
-          body: Column(
+            ),
+            body: Column(
             children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -73,7 +71,35 @@ class ChatListPageState extends ConsumerState<ChatListPage> {
                 child: ref.watch(chatStreamProvider(_isDescending)).when(
                   data: (snapshot) {
                     if (snapshot.docs.isEmpty) {
-                      return const Center(child: Text('No chats available.'));
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.chat_bubble_outline,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'No Active Chats',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Start a conversation by viewing\nand responding to donations',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
                     }
 
                     final chats = snapshot.docs;

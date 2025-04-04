@@ -7,6 +7,7 @@ import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/components/donation_list_widget.dart';
 import 'package:shelfaware_app/components/donation_search_bar.dart';
 import 'package:shelfaware_app/components/filter_dialogue_widget.dart';
+import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:shelfaware_app/services/location_service.dart';
 import 'package:shelfaware_app/services/map_service.dart';
 import 'package:shelfaware_app/services/places_service.dart';
@@ -15,10 +16,10 @@ import 'package:shelfaware_app/models/place_details.dart';
 import 'package:shelfaware_app/models/donation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:shelfaware_app/services/user_service.dart';
 import 'package:shelfaware_app/utils/location_permission_util.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
-
 
 
 class DonationsPage extends StatefulWidget {
@@ -30,6 +31,7 @@ class _DonationsScreenState extends State<DonationsPage> with SingleTickerProvid
   final LocationService _locationService = LocationService();
   final MapService _mapService = MapService();
   final PlacesService _placesService = PlacesService();
+  final UserService _userService = UserService(UserRepository(auth: FirebaseAuth.instance, firestore: FirebaseFirestore.instance));
 
   LatLng? _currentLocation;
   Set<Marker> _markers = {};
@@ -142,7 +144,14 @@ Future<void> _loadMap() async {
     print("Error loading map: $e");
   }
 }
-
+Future<String?> _fetchDonorProfileImage(String donorId) async {
+  try {
+    return await _userService.fetchDonorProfileImageUrl(donorId);
+  } catch (e) {
+    print("Error fetching donor profile image: $e");
+    return null;
+  }
+}
   
 
   Future<void> _updateMarkers(List<DonationLocation> donations) async {
@@ -240,18 +249,22 @@ Future<void> _loadMap() async {
     );
   }
 
-  void _showDonationDetails(BuildContext context, DonationLocation donation) async {
+  Future<void> _showDonationDetails(BuildContext context, DonationLocation donation) async {
     List<Placemark> placemarks = await placemarkFromCoordinates(donation.location.latitude, donation.location.longitude);
     String address = '';
     if (placemarks.isNotEmpty) {
       Placemark placemark = placemarks[0];
       address = '${placemark.thoroughfare}, ${placemark.locality}, ${placemark.postalCode}, ${placemark.country}';
     }
+    final donorImageUrl = await _fetchDonorProfileImage(donation.donorId) ?? '';
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
            DateTime expiryDateTime = DateTime.parse(donation.expiryDate); // Assuming expiryDate is in a String timestamp format
     String formattedExpiryDate = DateFormat('dd/MM/yyyy').format(expiryDateTime);
+
+
+
 
         return DonationDetailsDialog(
           donorName: donation.donorName,
@@ -266,7 +279,7 @@ Future<void> _loadMap() async {
           donorEmail: donation.donorEmail,
           donatorId: donation.donorId,
           chatId: '',
-          donorImageUrl: donation.imageUrl,
+          donorImageUrl: donorImageUrl,
           donationTime: DateTime.parse(donation.addedOn),
           donationId: donation.donationId,
           receiverEmail: donation.donorEmail,
@@ -354,34 +367,47 @@ Future<void> _loadMap() async {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       body: Column(
-        children: [
-          TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: 'Donations List'),
-              Tab(text: 'Donations Map'),
-            ],
+  mainAxisSize: MainAxisSize.min, // Prevents extra spacing
+  children: [
+          Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: TabBar(
+          controller: _tabController,
+          indicator: UnderlineTabIndicator(
+            borderSide: BorderSide(
+          width: 3.0, 
+          color: isDarkMode ? Colors.white : Theme.of(context).primaryColor,
+            ),
+            insets: EdgeInsets.symmetric(horizontal: 16.0),
           ),
-          if (_tabController.index == 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    icon: Row(
-                      children: [
-                        Icon(Icons.filter_alt_rounded),
-                        SizedBox(width: 4),
-                        Text('Filter', style: TextStyle(fontSize: 16)),
-                      ],
-                    ),
-                    onPressed: _showFilterDialog,
-                    tooltip: 'Filter Donations',
-                  ),
-                ],
+          labelColor: isDarkMode ? Colors.white : Theme.of(context).primaryColor,
+          unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+          labelStyle: TextStyle(fontWeight: FontWeight.bold),
+          dividerColor: Colors.transparent,
+          tabs: [
+            Tab(text: 'Donations List'),
+            Tab(text: 'Donations Map'),
+          ],
+        ),
+            ),
+            if (_tabController.index == 0)
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+              padding: const EdgeInsets.only(right: 8.0, top: 4.0, bottom: 4.0),
+              child: ElevatedButton.icon(
+                onPressed: _showFilterDialog,
+                icon: Icon(Icons.filter_alt_rounded, color: Colors.white, size: 20.0),
+                label: Text('Filter', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                ),
+              ),
               ),
             ),
           if (_tabController.index == 1)

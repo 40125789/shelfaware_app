@@ -117,7 +117,18 @@ class _ReviewPageState extends State<ReviewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Leave a Review'), elevation: 0),
+      appBar: AppBar(
+      title: Text(
+        'Leave a Review',
+        style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+        color: Theme.of(context).appBarTheme.titleTextStyle?.color ?? Colors.white,
+        ),
+      ),
+      elevation: 0,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(8.0),

@@ -38,14 +38,23 @@ class _WatchlistToggleButtonState extends State<WatchlistToggleButton>
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDarkMode 
+        ? Colors.grey[800]
+        : Colors.white.withOpacity(0.9);
+    
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: backgroundColor,
         shape: BoxShape.circle,
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+          BoxShadow(
+            color: isDarkMode ? Colors.black54 : Colors.black12, 
+            blurRadius: 4, 
+            offset: const Offset(0, 2)
+          )
         ],
       ),
       child: Material(
@@ -65,7 +74,9 @@ class _WatchlistToggleButtonState extends State<WatchlistToggleButton>
                   duration: const Duration(milliseconds: 300),
                   child: Icon(
                     widget.isInWatchlist ? Icons.star : Icons.star_border,
-                    color: widget.isInWatchlist ? Colors.amber : Colors.grey,
+                    color: widget.isInWatchlist 
+                        ? Colors.amber 
+                        : isDarkMode ? Colors.grey[400] : Colors.grey,
                     size: 24,
                     key: ValueKey<bool>(widget.isInWatchlist),
                   ),

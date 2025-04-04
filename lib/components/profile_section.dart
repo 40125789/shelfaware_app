@@ -21,47 +21,48 @@ class ProfileSection extends ConsumerWidget {
     final profileImageUrl = ref.watch(profileImageProvider(user?.uid ?? ''));
     final isUploading = ref.watch(isUploadingProvider.state).state;
 
-    Future<void> _uploadProfileImage(
-        String uid, dynamic isUploadingProvider) async {
-      if (user == null) return;
+    Future<void> _uploadProfileImage(String uid, WidgetRef ref) async {
+  final user = ref.read(authProvider).user;
+  if (user == null) return;
 
-      try {
-        final picker = ImagePicker();
-        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+  try {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-        if (pickedFile == null) {
-          debugPrint('No image selected.');
-          return;
-        }
-
-        ref.read(isUploadingProvider.state).state = true;
-
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('user_profile_images/$uid.jpg');
-        final uploadTask = storageRef.putFile(File(pickedFile.path));
-
-        uploadTask.snapshotEvents.listen((taskSnapshot) {
-          double progress =
-              taskSnapshot.bytesTransferred / taskSnapshot.totalBytes;
-          debugPrint(
-              'Upload progress: ${(progress * 100).toStringAsFixed(2)}%');
-        });
-
-        final snapshot = await uploadTask.whenComplete(() {});
-        final downloadUrl = await snapshot.ref.getDownloadURL();
-
-        await FirebaseFirestore.instance.collection('users').doc(uid).update({
-          'profileImageUrl': downloadUrl,
-        });
-
-        ref.invalidate(profileImageProvider(user.uid));
-        debugPrint('Profile image uploaded successfully!');
-      } catch (e) {
-        ref.read(isUploadingProvider.state).state = false;
-        debugPrint('Error uploading profile image: $e');
-      }
+    if (pickedFile == null) {
+      debugPrint('No image selected.');
+      return;
     }
+
+    ref.read(isUploadingProvider.notifier).state = true;
+
+    final storageRef =
+        FirebaseStorage.instance.ref().child('user_profile_images/$uid.jpg');
+    final uploadTask = storageRef.putFile(File(pickedFile.path));
+
+    uploadTask.snapshotEvents.listen((taskSnapshot) {
+      double progress =
+          taskSnapshot.bytesTransferred / taskSnapshot.totalBytes;
+      debugPrint('Upload progress: ${(progress * 100).toStringAsFixed(2)}%');
+    });
+
+    final snapshot = await uploadTask.whenComplete(() {});
+    final downloadUrl = await snapshot.ref.getDownloadURL();
+
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'profileImageUrl': downloadUrl,
+    });
+
+    ref.invalidate(profileImageProvider(user.uid));
+    debugPrint('Profile image uploaded successfully!');
+  } catch (e) {
+    debugPrint('Error uploading profile image: $e');
+  } finally {
+    ref.read(isUploadingProvider.notifier).state = false; // Reset to false
+  }
+}
+  
+
 
     return GestureDetector(
       onTap: () {
@@ -91,7 +92,7 @@ class ProfileSection extends ConsumerWidget {
               children: [
                 GestureDetector(
                   onTap: user != null
-                      ? () => _uploadProfileImage(user.uid, isUploadingProvider)
+                      ? () => _uploadProfileImage(user.uid, ref)
                       : null,
                   child: Stack(
                     alignment: Alignment.center,
@@ -150,40 +151,55 @@ class ProfileSection extends ConsumerWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user?.uid)
-                        .get(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator();
-                      }
-                      if (snapshot.hasError) {
-                        return const Text(
-                          "Error loading profile",
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.white),
-                        );
-                      }
+                  future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user?.uid)
+                    .get(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                    return AnimatedOpacity(
+                      opacity: 0.0,
+                      duration: const Duration(milliseconds: 500),
+                      child: const Text(
+                      "Loading...",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white
+                      ),
+                      ),
+                    );
+                    }
+                    if (snapshot.hasError) {
+                    return const Text(
+                      "Error loading profile",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.normal,
+                        color: Colors.white),
+                    );
+                    }
 
-                      // Fetch user data
-                      final userData =
-                          snapshot.data?.data() as Map<String, dynamic>?;
+                    // Fetch user data
+                    final userData =
+                      snapshot.data?.data() as Map<String, dynamic>?;
 
-                      final firstName =
-                          userData?['firstName'] ?? 'No First Name';
-                      final lastName = userData?['lastName'] ?? 'No Last Name';
+                    final firstName =
+                      userData?['firstName'] ?? 'No First Name';
+                    final lastName = userData?['lastName'] ?? 'No Last Name';
 
-                      return Text(
-                        "$firstName $lastName",
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white),
-                      );
-                    },
+                    return AnimatedOpacity(
+                    opacity: 1.0,
+                    duration: const Duration(milliseconds: 500),
+                    child: Text(
+                      "$firstName $lastName",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                    ),
+                    );
+                  },
                   ),
                 ),
                 // The tappable icon (chevron or arrow)

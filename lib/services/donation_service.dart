@@ -254,8 +254,11 @@ class DonationService {
   }
 
   // Decline a donation request
-  Future<void> declineDonationRequest(String requestId) async {
+  Future<void> declineDonationRequest(BuildContext context, String requestId) async {
     await _donationRepository.declineDonationRequest(requestId);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Donation request declined.")),
+    );
   }
 
   // Update donation request status

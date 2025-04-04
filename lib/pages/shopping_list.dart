@@ -204,17 +204,29 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Shopping List'),
-        elevation: 0,
-        actions: [
-          TextButton(
-            onPressed: _scanBarcode,
-            child: Text(
-              'Scan Barcode',
-              style: TextStyle(color: theme.appBarTheme.titleTextStyle?.color ?? Colors.white),
-            ),
+      title: Text(
+        'Shopping List',
+        style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+        color: theme.appBarTheme.titleTextStyle?.color ?? Colors.white,
+        ),
+      ),
+      elevation: 0,
+      actions: [
+        TextButton.icon(
+        onPressed: _scanBarcode,
+        label: Text(
+          'Scan Barcode',
+          style: TextStyle(
+          color: theme.appBarTheme.titleTextStyle?.color ?? Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
           ),
-        ],
+        ),
+        ),
+      ],
       ),
       body: Stack(
         children: [

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
 import 'package:shelfaware_app/components/watchlist_star_button.dart';
 import 'package:shelfaware_app/pages/user_donation_map.dart';
@@ -63,7 +64,6 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
           firebaseFirestore: FirebaseFirestore.instance,
           firebaseAuth: FirebaseAuth.instance));
 
-  // Watchlist state
   bool isInWatchlist = false;
 
   @override
@@ -88,9 +88,6 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
       return;
     }
 
-    print(
-        "Checking watchlist status for user: ${user.uid}, donation: ${widget.donationId}");
-
     bool status = await watchedDonationsService.isDonationInWatchlist(
         user.uid, widget.donationId);
 
@@ -100,34 +97,40 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
   }
 
   void toggleWatchlist() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     if (isInWatchlist) {
       await watchedDonationsService.removeFromWatchlist(
           FirebaseAuth.instance.currentUser!.uid, widget.donationId);
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.star_border, color: Colors.red),
+              Icon(Icons.star_border, color: Colors.white),
               SizedBox(width: 8),
               Text("Removed from watchlist"),
             ],
           ),
-          duration: Duration(seconds: 2),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     } else {
       await watchedDonationsService.addToWatchlist(
           FirebaseAuth.instance.currentUser!.uid, widget.donationId, {});
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.star, color: Colors.green),
+              Icon(Icons.star, color: Colors.white),
               SizedBox(width: 8),
               Text("Added to watchlist"),
             ],
           ),
-          duration: Duration(seconds: 2),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -139,166 +142,295 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    // Calculate a better height based on screen size
+    final screenHeight = MediaQuery.of(context).size.height;
+    final dialogHeight = screenHeight * 0.75; // Use 75% of screen height
+    
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: dialogHeight,
+        minHeight: 450, // Ensure minimum height to show buttons
       ),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (widget.imageUrl.isNotEmpty)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      widget.imageUrl,
-                      height: 120,
-                      width: 120,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                          Icons.broken_image,
-                          size: 50,
-                          color: Colors.grey),
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(child: CircularProgressIndicator());
-                      },
-                    ),
-                  ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.productName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+      child: Card(
+        margin: EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 4,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image at the top with fixed height
+              ClipRRect(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+                child: widget.imageUrl.isNotEmpty
+                    ? Image.network(
+                        widget.imageUrl,
+                        width: double.infinity,
+                        height: 150,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 150,
+                          width: double.infinity,
+                          color: Colors.grey.shade200,
+                          child: Icon(Icons.broken_image, size: 50, color: Colors.grey.shade400),
                         ),
-                        overflow: TextOverflow.ellipsis,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 150,
+                            width: double.infinity,
+                            color: Colors.grey.shade100,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / 
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        height: 150,
+                        width: double.infinity,
+                        color: Colors.grey.shade200,
+                        child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey.shade400),
                       ),
-                      SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Text('Donor:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          SizedBox(width: 5),
-                          Text(
-                            widget.donorName,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (donorRating != null) ...[
-                            SizedBox(width: 5),
-                            Icon(Icons.star, color: Colors.amber, size: 16),
-                            SizedBox(width: 3),
-                            Text(donorRating!.toStringAsFixed(1)),
-                          ],
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Text('Expiry:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          SizedBox(width: 5),
-                          Text(
-                            widget.expiryDate,
+              ),
+              
+              // Details below image
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Product name and info
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.productName,
                             style: TextStyle(
-                                color: Colors.red, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Text('Status:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          SizedBox(width: 5),
-                          StatusIconWidget(status: widget.status),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                WatchlistToggleButton(
-                  isInWatchlist: isInWatchlist,
-                  onToggle: toggleWatchlist,
-                ),
-                Expanded(
-                  child: Center(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        backgroundColor: Colors.blue,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DonationMapScreen(
-                              donationLatitude: widget.donationLatitude,
-                              donationLongitude: widget.donationLongitude,
-                              userLatitude: widget.userLatitude,
-                              userLongitude: widget.userLongitude,
-                              productName: widget.productName,
-                              expiryDate: widget.expiryDate,
-                              status: widget.status,
-                              donorName: widget.donorName,
-                              chatId: widget.chatId,
-                              donorEmail: widget.donorEmail,
-                              donatorId: widget.donatorId,
-                              donationId: widget.donationId,
-                              imageUrl: widget.imageUrl,
-                              donorImageUrl: widget.donorImageUrl,
-                              donationTime: widget.donationTime,
-                              pickupTimes: widget.pickupTimes,
-                              pickupInstructions: widget.pickupInstructions,
-                              receiverEmail: '',
-                              userId: FirebaseAuth.instance.currentUser!.uid,
-                              donorRating: donorRating ?? 0.0,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
                             ),
                           ),
-                        ).then((_) {
-                          // Refresh data when coming back from the map screen
-                          fetchDonorRating();
-                          checkWatchlistStatus();
-                        });
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.info, color: Colors.white),
-                          SizedBox(width: 5),
-                          Text('View Details',
-                              style: TextStyle(color: Colors.white)),
-                        ],
-                      ),
+                        ),
+                        StatusIconWidget(status: widget.status),
+                      ],
                     ),
-                  ),
+                    
+                    SizedBox(height: 12),
+                    
+                    // Donor info
+                    _buildInfoRow(
+                      icon: Icons.person,
+                      label: 'Donor:',
+                      value: widget.donorName,
+                      trailing: donorRating != null
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star, color: Colors.amber, size: 16),
+                                SizedBox(width: 3),
+                                Text(
+                                  donorRating!.toStringAsFixed(1),
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            )
+                          : null,
+                    ),
+                    
+                    SizedBox(height: 8),
+                    
+                    // Expiry
+                    _buildInfoRow(
+                      icon: Icons.calendar_today,
+                      label: 'Expiry:',
+                      value: widget.expiryDate,
+                      valueColor: _getExpiryColor(widget.expiryDate),
+                    ),
+                    
+                    SizedBox(height: 8),
+                    
+                    // Posted time
+                    _buildInfoRow(
+                      icon: Icons.access_time,
+                      label: 'Posted:',
+                      value: DateFormat('MMM d, yyyy • h:mm a').format(widget.donationTime),
+                    ),
+                    
+                    // Divider
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: Divider(height: 1, thickness: 1),
+                    ),
+                    
+                    // Pickup info preview
+                    if (widget.pickupTimes.isNotEmpty || widget.pickupInstructions.isNotEmpty)
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (widget.pickupTimes.isNotEmpty) ...[
+                              _buildInfoRow(
+                                icon: Icons.schedule,
+                                label: 'Pickup times:',
+                                value: widget.pickupTimes,
+                              ),
+                              SizedBox(height: 6),
+                            ],
+                            if (widget.pickupInstructions.isNotEmpty)
+                              _buildInfoRow(
+                                icon: Icons.info,
+                                label: 'Instructions:',
+                                value: widget.pickupInstructions,
+                                maxLines: 2,
+                              ),
+                          ],
+                        ),
+                      ),
+                    
+                    SizedBox(height: 24), // Increased spacing before buttons
+                    
+                    // Action buttons - moved to bottom with clear spacing
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        WatchlistToggleButton(
+                          isInWatchlist: isInWatchlist,
+                          onToggle: toggleWatchlist,
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 12.0),
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                backgroundColor: Theme.of(context).primaryColor,
+                                elevation: 2,
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DonationMapScreen(
+                                      donationLatitude: widget.donationLatitude,
+                                      donationLongitude: widget.donationLongitude,
+                                      userLatitude: widget.userLatitude,
+                                      userLongitude: widget.userLongitude,
+                                      productName: widget.productName,
+                                      expiryDate: widget.expiryDate,
+                                      status: widget.status,
+                                      donorName: widget.donorName,
+                                      chatId: widget.chatId,
+                                      donorEmail: widget.donorEmail,
+                                      donatorId: widget.donatorId,
+                                      donationId: widget.donationId,
+                                      imageUrl: widget.imageUrl,
+                                      donorImageUrl: widget.donorImageUrl,
+                                      donationTime: widget.donationTime,
+                                      pickupTimes: widget.pickupTimes,
+                                      pickupInstructions: widget.pickupInstructions,
+                                      receiverEmail: '',
+                                      userId: FirebaseAuth.instance.currentUser!.uid,
+                                      donorRating: donorRating ?? 0.0,
+                                    ),
+                                  ),
+                                ).then((_) {
+                                  fetchDonorRating();
+                                  checkWatchlistStatus();
+                                });
+                              },
+                              icon: Icon(Icons.map, color: Colors.white),
+                              label: Text('View Details & Map',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8), // Add space at the bottom
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+  
+  Color _getExpiryColor(String expiryDate) {
+    try {
+      final expiry = DateFormat('yyyy-MM-dd').parse(expiryDate);
+      final now = DateTime.now();
+      final difference = expiry.difference(now).inDays;
+      
+      if (difference < 0) return Colors.red;
+      if (difference < 3) return Colors.orange;
+      return Colors.green;
+    } catch (e) {
+      return Colors.red;
+    }
+  }
+  
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    String? value,
+    Color? valueColor,
+    Widget? trailing,
+    Widget? custom,
+    int maxLines = 1,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: Colors.grey.shade700),
+        SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        SizedBox(width: 4),
+        custom != null
+            ? custom
+            : Expanded(
+                child: Text(
+                  value ?? "",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: valueColor,
+                    fontWeight: valueColor != null ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: maxLines,
+                ),
+              ),
+        if (trailing != null) trailing,
+      ],
     );
   }
 }

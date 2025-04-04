@@ -38,6 +38,8 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: BottomSheet(
@@ -46,7 +48,7 @@ class _FilterDialogState extends State<FilterDialog> {
           height: MediaQuery.of(context).size.height * 0.6,
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
-         
+            color: Theme.of(context).scaffoldBackgroundColor,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(16.0),
               topRight: Radius.circular(16.0),
@@ -82,7 +84,7 @@ class _FilterDialogState extends State<FilterDialog> {
         Align(
           alignment: Alignment.topRight,
           child: IconButton(
-            icon: Icon(Icons.close),
+            icon: Icon(Icons.close, color: Theme.of(context).iconTheme.color),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
@@ -94,7 +96,7 @@ class _FilterDialogState extends State<FilterDialog> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               SizedBox(height: 8),
-              Divider(thickness: 2, color: Colors.grey),
+              Divider(thickness: 2, color: Theme.of(context).dividerColor),
             ],
           ),
         ),
@@ -106,7 +108,7 @@ class _FilterDialogState extends State<FilterDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Sort by:'),
+        Text('Sort by:', style: Theme.of(context).textTheme.bodyLarge),
         Row(
           children: [
             _buildToggleButton(
@@ -140,13 +142,13 @@ class _FilterDialogState extends State<FilterDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Maximum Distance:'),
+        Text('Maximum Distance:', style: Theme.of(context).textTheme.bodyLarge),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Add space between buttons
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [0.3, 0.6, 1.3].map((distance) {
             return Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4.0), // Add spacing between buttons
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
                 child: _buildToggleButton(
                   label: '${distance.toStringAsFixed(1)} miles',
                   isSelected: filterDistance == distance,
@@ -173,9 +175,9 @@ class _FilterDialogState extends State<FilterDialog> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), // Reduced padding
-        foregroundColor: isSelected ? Colors.white : Colors.black,
-        backgroundColor: isSelected ? Colors.green : Colors.grey[200],
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        foregroundColor: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+        backgroundColor: isSelected ? Colors.green : Theme.of(context).colorScheme.surface,
       ),
       child: Text(label),
     );
@@ -189,10 +191,11 @@ class _FilterDialogState extends State<FilterDialog> {
         style: ElevatedButton.styleFrom(
           padding: EdgeInsets.symmetric(vertical: 12),
           backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
         ),
         child: Text(
           'Apply',
-          style: TextStyle(color: Colors.white, fontSize: 18),
+          style: TextStyle(fontSize: 18),
         ),
       ),
     );

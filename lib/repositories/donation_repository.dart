@@ -295,7 +295,7 @@ Future<String?> getAssigneeProfileImage(String donationId) async {
         var donationData = donationDoc.data() as Map<String, dynamic>;
         if (donationData['assignedTo'] == requestDoc['requesterId']) {
           await _firestore.collection('donations').doc(donationId).update({
-            'status': 'available',
+            'status': 'Available',
             'assignedTo': FieldValue.delete(),
             'assignedToName': FieldValue.delete(),
           });

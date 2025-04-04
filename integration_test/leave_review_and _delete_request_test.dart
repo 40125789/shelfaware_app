@@ -145,5 +145,82 @@ void main() {
       expect(find.text('Thanks for your review!'), findsOneWidget);
       await tester.pumpAndSettle();
     });
-  });
-}
+
+    testWidgets('Test withdraw/delete a donation request', (tester) async {
+      // Navigate to the "Manage Donations" page
+      await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+        routes: {
+          '/myDonations': (context) => MyDonationsPage(userId: user.uid),
+        },
+        theme: ThemeData(
+          appBarTheme: AppBarTheme(
+          backgroundColor: Colors.green,
+          ),
+        ),
+        home: HomePage(),
+        ),
+      ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Open the side drawer
+      final Finder menuButton = find.byTooltip('Open navigation menu');
+      await tester.tap(menuButton);
+      await tester.pumpAndSettle();
+
+      // Tap on "Manage Donations"
+      final Finder manageDonationsNavItem = find.text('Manage Donations');
+      await tester.tap(manageDonationsNavItem);
+      await tester.pumpAndSettle();
+
+      // Tap on the "Sent Requests" tab
+      final Finder sentRequestsTab = find.text('Sent Requests');
+      await tester.tap(sentRequestsTab);
+      await tester.pumpAndSettle();
+
+      // Wait for widget tree to stabilize
+      await tester.pumpAndSettle(Duration(seconds: 2));
+      
+      // Open the filter dropdown
+      final Finder dropdown = find.byType(DropdownButton<String>);
+      await tester.ensureVisible(dropdown);
+      await tester.tap(dropdown);
+      await tester.pumpAndSettle();
+
+      // Select "Available" from the dropdown
+      final Finder availableOption = find.descendant(
+        of: find.byType(DropdownMenuItem<String>),
+        matching: find.text('Accepted'),
+      ).first;
+      await tester.tap(availableOption);
+      await tester.pumpAndSettle(Duration(seconds: 1));
+
+      // Find and tap on the first available donation expansion tile
+      await tester.pumpAndSettle();
+      final Finder anyDonationTile = find.byType(ExpansionTile).first;
+      expect(anyDonationTile, findsOneWidget);
+      await tester.tap(anyDonationTile);
+      await tester.pumpAndSettle();
+
+      // Find and tap on the "Withdraw Request" button
+      final Finder withdrawRequestButton = find.text('Withdraw Request');
+      expect(withdrawRequestButton, findsOneWidget);
+      await tester.tap(withdrawRequestButton);
+      await tester.pumpAndSettle();
+
+      // Confirm the deletion in the dialog
+      final Finder confirmButton = find.text('Withdraw');
+      expect(confirmButton, findsOneWidget);
+      await tester.tap(confirmButton);
+      await tester.pumpAndSettle();
+      // Verify the donation is no longer in the list
+      expect(find.text('Banana Bread'), findsNothing);
+
+      // Add delay before test completion
+      await Future.delayed(const Duration(seconds: 1));
+      });
+      });
+    }

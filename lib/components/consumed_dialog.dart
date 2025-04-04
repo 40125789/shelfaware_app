@@ -4,7 +4,11 @@ class ConsumedDialog extends StatefulWidget {
   final int maxQuantity;
   final Function(int) onSubmit;
 
-  ConsumedDialog({required this.maxQuantity, required this.onSubmit});
+  const ConsumedDialog({
+    Key? key,
+    required this.maxQuantity,
+    required this.onSubmit,
+  }) : super(key: key);
 
   @override
   _ConsumedDialogState createState() => _ConsumedDialogState();
@@ -17,32 +21,49 @@ class _ConsumedDialogState extends State<ConsumedDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Consumed Quantity", textAlign: TextAlign.center),
+      title: const Text(
+        "Consumed Quantity",
+        textAlign: TextAlign.center,
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       content: StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DropdownButton<int>(
-                value: _selectedQuantity,
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedQuantity = newValue!;
-                  });
-                },
-                items: List.generate(widget.maxQuantity, (index) {
-                  return DropdownMenuItem(
-                    value: index + 1,
-                    child: Text('${index + 1}'),
-                  );
-                }),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: _selectedQuantity,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedQuantity = newValue!;
+                        _errorMessage = null;
+                      });
+                    },
+                    items: List.generate(widget.maxQuantity, (index) {
+                      return DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                      );
+                    }),
+                  ),
+                ),
               ),
               if (_errorMessage != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: const EdgeInsets.only(top: 12.0),
                   child: Text(
                     _errorMessage!,
-                    style: TextStyle(color: Colors.red),
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
                   ),
                 ),
             ],
@@ -50,6 +71,13 @@ class _ConsumedDialogState extends State<ConsumedDialog> {
         },
       ),
       actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.grey[700],
+          ),
+          child: const Text("Cancel"),
+        ),
         TextButton(
           onPressed: () {
             if (_selectedQuantity > 0) {
@@ -61,15 +89,13 @@ class _ConsumedDialogState extends State<ConsumedDialog> {
               });
             }
           },
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).primaryColor,
+          ),
           child: const Text("Submit"),
         ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: const Text("Cancel"),
-        ),
       ],
+      actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
   }
 }

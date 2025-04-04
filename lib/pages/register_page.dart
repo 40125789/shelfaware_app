@@ -285,7 +285,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             onTap: signUserUp,
                           ),
                   ),
-                  const SizedBox(height: 20.0),
+                  const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

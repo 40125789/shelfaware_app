@@ -200,7 +200,7 @@ class DonationRequestList extends StatelessWidget {
             refreshPage();
           },
           onDecline: () async {
-            await donationService.declineDonationRequest(requestId);
+            await donationService.declineDonationRequest(context, requestId);
             Navigator.pop(context);
             refreshPage();
           },

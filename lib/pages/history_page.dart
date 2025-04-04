@@ -66,6 +66,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -85,32 +86,42 @@ class _HistoryPageState extends State<HistoryPage> {
           _isRecreateMode
               ? '${_selectedItems.length} Items selected'
               : 'Food History',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+            color: theme.appBarTheme.titleTextStyle?.color ?? Colors.white,
+          ),
         ),
         backgroundColor: _isRecreateMode ? Colors.blue : Colors.green,
         actions: [
           if (!_isRecreateMode)
             TextButton.icon(
               onPressed: _toggleRecreateMode,
-              icon: Icon(Icons.replay, color: Colors.white),
+              icon: Icon(Icons.replay, color: theme.appBarTheme.titleTextStyle?.color ?? Colors.white),
               label: Text(
-          'RECREATE',
-          style: TextStyle(color: Colors.white),
+                'RECREATE',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  color: theme.appBarTheme.titleTextStyle?.color ?? Colors.white,
+                ),
               ),
             ),
           if (_isRecreateMode)
             IconButton(
               icon: Icon(Icons.refresh),
               onPressed: _selectedItems.isEmpty
-            ? null
-            : () {
-                _onRecreateSelected(_selectedItems);
-              },
+                ? null
+                : () {
+                    _onRecreateSelected(_selectedItems);
+                  },
             ),
         ],
-            ),
+      ),
       body: Column(
         children: [
-          // Dropdown for sorting and filtering options below the app bar
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: FoodHistorySortingFilteringDropdown(
@@ -123,7 +134,6 @@ class _HistoryPageState extends State<HistoryPage> {
               },
             ),
           ),
-          // Food list
           Expanded(
             child: FutureBuilder<List<FoodHistory>>(
               future: _foodItems,
@@ -133,16 +143,32 @@ class _HistoryPageState extends State<HistoryPage> {
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No food items found.'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.history, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'No Food History Yet',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Your food history will appear here\nonce you start adding items.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 List<FoodHistory> foodItems = snapshot.data!;
 
-                // Sort and filter
                 sortFoodHistoryItems(foodItems, _isNewestToOldest);
                 foodItems = filterFoodHistoryItems(foodItems, _filterOption);
 
-                // Group food items by month
                 Map<String, List<FoodHistory>> groupedFoodItems =
                     groupFoodHistoryItemsByMonth(foodItems);
 

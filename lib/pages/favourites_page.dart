@@ -8,14 +8,26 @@ class FavouritesPage extends StatefulWidget {
   _FavoritesPageState createState() => _FavoritesPageState();
 }
 
-class _FavoritesPageState extends State<FavouritesPage> {
+class _FavoritesPageState extends State<FavouritesPage> with SingleTickerProviderStateMixin {
   late Future<List<Recipe>> favoritesFuture;
   final FavouritesRepository _favouritesRepository = FavouritesRepository();
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     favoritesFuture = _fetchFavorites();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<List<Recipe>> _fetchFavorites() async {
@@ -30,10 +42,22 @@ class _FavoritesPageState extends State<FavouritesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final textColor = brightness == Brightness.dark ? Colors.white : Colors.black87;
+    final subtitleColor = brightness == Brightness.dark ? Colors.white70 : Colors.grey[700];
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Favourites"),
-        elevation: 1,
+      title: Text(
+        'Favourites',
+        style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+        color: Theme.of(context).appBarTheme.titleTextStyle?.color ?? Colors.white,
+        ),
+      ),
+      elevation: 2,
       ),
       body: FutureBuilder<List<Recipe>>(
         future: favoritesFuture,
@@ -41,100 +65,148 @@ class _FavoritesPageState extends State<FavouritesPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
+            return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: textColor)));
           } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
             List<Recipe> favorites = snapshot.data!;
 
-            return ListView.builder(
-              itemCount: favorites.length,
-              itemBuilder: (context, index) {
-                Recipe recipe = favorites[index];
+            return AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return ListView.builder(
+                  itemCount: favorites.length,
+                  itemBuilder: (context, index) {
+                    Recipe recipe = favorites[index];
+                    final itemAnimation = Tween<Offset>(
+                      begin: Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: _animationController,
+                      curve: Interval(
+                        index / favorites.length,
+                        (index + 1) / favorites.length,
+                        curve: Curves.easeInOut,
+                      ),
+                    ));
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
+                    return SlideTransition(
+                      position: itemAnimation,
+                      child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      child: InkWell(
+                        onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
                           builder: (context) => RecipeDetailsPage(
                             recipe: recipe,
                             onFavoritesChanged: _refreshFavorites,
                             matchedIngredients: [],
+                            isFavorite: true,
+                            favouritesRepository: _favouritesRepository, // Added this line since it's coming from favorites
                           ),
+                          ),
+                        );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      );
-                    },
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 4,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                            child: Image.network(
-                              recipe.imageUrl,
-                              height: 150,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(height: 150, color: Colors.grey[300]),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(10),
+                            elevation: 4,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  recipe.title,
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                SizedBox(height: 5),
-                                Text(
-                                  recipe.summary,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Colors.grey[700]),
-                                ),
-                                SizedBox(height: 10),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                Stack(
                                   children: [
-                                    TextButton(
-                                      onPressed: () {
-                                        if (recipe.sourceUrl.isNotEmpty) {
-                                          // Open the recipe source URL in a browser
-                                        }
-                                      },
-                                      child: Text("View Recipe"),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                                      child: Image.network(
+                                        recipe.imageUrl,
+                                        height: 180,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            Container(height: 180, color: Colors.grey[300]),
+                                      ),
                                     ),
-                                    IconButton(
-                                      icon: Icon(Icons.favorite, color: Colors.red),
-                                      onPressed: () async {
-                                        await _favouritesRepository.deleteFavorite(recipe.id);
-                                        _refreshFavorites();
-                                      },
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () async {
+                                            await _favouritesRepository.deleteFavorite(recipe.id);
+                                            _refreshFavorites();
+                                          },
+                                          customBorder: CircleBorder(),
+                                          child: Container(
+                                            padding: EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.8),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(Icons.favorite, color: Colors.red),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ],
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        recipe.title,
+                                        style: TextStyle(
+                                          fontSize: 20, 
+                                          fontWeight: FontWeight.bold,
+                                          color: textColor,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (recipe.summary.isNotEmpty) ...[
+                                        SizedBox(height: 8),
+                                        Text(
+                                          recipe.summary,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: subtitleColor,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 );
               },
             );
           } else {
-            return Center(child: Text("No favourite recipes found"));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.favorite_border, size: 64, color: subtitleColor),
+                  SizedBox(height: 16),
+                  Text(
+                    "No favourite recipes yet",
+                    style: TextStyle(fontSize: 18, color: textColor),
+                  ),
+                ],
+              ),
+            );
           }
         },
       ),

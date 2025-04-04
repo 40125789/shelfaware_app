@@ -34,17 +34,24 @@ class _RecipeCardState extends State<RecipeCard> {
     _checkIfFavourite();
   }
 
-  void _checkIfFavourite() async {
-    final isFav = await widget.favouritesRepository
-        .isFavourite(widget.recipe.id.toString());
-    setState(() {
-      isFavourite = isFav;
-    });
+  Future<void> _checkIfFavourite() async {
+    try {
+      final isFav = await widget.favouritesRepository
+          .isFavourite(widget.recipe.id.toString());
+      if (mounted) {
+        setState(() {
+          isFavourite = isFav;
+        });
+      }
+    } catch (e) {
+      print('Error checking favourite status: $e');
+    }
   }
 
   void _toggleFavourite() async {
+    final newValue = !isFavourite;
     setState(() {
-      isFavourite = !isFavourite;
+      isFavourite = newValue;
     });
 
     try {
@@ -74,7 +81,12 @@ class _RecipeCardState extends State<RecipeCard> {
       }
     } catch (e) {
       print("Error updating favourites: $e");
+      return;
     }
+    
+    setState(() {
+      isFavourite = newValue;
+    });
   }
 
   void _showSnackBar(String message, IconData icon) {
@@ -103,6 +115,10 @@ class _RecipeCardState extends State<RecipeCard> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  Future<void> refreshFavorites() async {
+    await _checkIfFavourite();
+  }
+
   List<String> getMatchingIngredients() {
     Set<String> matchingIngredients = {};
 
@@ -126,20 +142,26 @@ class _RecipeCardState extends State<RecipeCard> {
     final totalIngredients = widget.recipe.ingredients.length;
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RecipeDetailsPage(
-              recipe: widget.recipe,
-              matchedIngredients: matchingIngredients.toSet().toList(),
-              onFavoritesChanged: () {
-                setState(() {});
-              },
-            ),
-          ),
-        );
-      },
+onTap: () async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => RecipeDetailsPage(
+        recipe: widget.recipe,
+        matchedIngredients: matchingIngredients.toSet().toList(),
+        onFavoritesChanged: refreshFavorites,
+        isFavorite: isFavourite,
+        favouritesRepository: widget.favouritesRepository,
+      ),
+    ),
+  );
+
+  // Refresh favorite status when returning
+  if (mounted) {
+    _checkIfFavourite();
+    setState(() {}); // Force rebuild to reflect changes
+  }
+},
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),

@@ -73,7 +73,16 @@ class NotificationPage extends ConsumerWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Notifications'),
+          title: Text(
+            'Notifications',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: Theme.of(context).appBarTheme.titleTextStyle?.color ??
+                  Colors.white,
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () async {
@@ -85,39 +94,65 @@ class NotificationPage extends ConsumerWidget {
               ),
             ),
           ],
-          bottom: TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: [
-              Tab(text: 'Expiry Dates'),
-              Tab(text: 'Messages'),
-              Tab(text: 'Requests'),
-            ],
-          ),
         ),
-        body: notificationState.isLoading
-            ? Center(child: CircularProgressIndicator())
-            : notificationState.error != null
-                ? Center(child: Text('Error: ${notificationState.error}'))
-                : TabBarView(
-                    children: [
-                      _buildNotificationList(
-                          context,
-                          filterByType(
-                              notificationState.notifications, 'expiry'),
-                          ref),
-                      _buildNotificationList(
-                          context,
-                          filterByType(
-                              notificationState.notifications, 'message'),
-                          ref),
-                      _buildNotificationList(
-                          context,
-                          filterByType(
-                              notificationState.notifications, 'request'),
-                          ref),
-                    ],
+        body: Column(
+          children: [
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: TabBar(
+                indicator: UnderlineTabIndicator(
+                  borderSide: BorderSide(
+                    width: 3.0,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Theme.of(context).primaryColor,
                   ),
+                  insets: const EdgeInsets.symmetric(horizontal: 16.0),
+                ),
+                labelColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Theme.of(context).primaryColor,
+                unselectedLabelColor:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[700],
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(text: 'Expirys'),
+                  Tab(text: 'Messages'),
+                  Tab(text: 'Requests'),
+                ],
+              ),
+            ),
+            Expanded(
+              child: notificationState.isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : notificationState.error != null
+                      ? Center(child: Text('Error: ${notificationState.error}'))
+                      : TabBarView(
+                          children: [
+                            _buildNotificationList(
+                                context,
+                                filterByType(
+                                    notificationState.notifications, 'expiry'),
+                                ref),
+                            _buildNotificationList(
+                                context,
+                                filterByType(
+                                    notificationState.notifications, 'message'),
+                                ref),
+                            _buildNotificationList(
+                                context,
+                                filterByType(
+                                    notificationState.notifications, 'request'),
+                                ref),
+                          ],
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }

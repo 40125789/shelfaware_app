@@ -137,7 +137,13 @@ class _LocationPageState extends State<LocationPage> {
         ));
       }
 
+      // Clear suggestions immediately
       _addressSuggestions = [];
+      
+      // Set address text without triggering suggestions
+      _addressController.removeListener(_onAddressChanged);
+      _addressController.text = address;
+      _addressController.addListener(_onAddressChanged);
     });
   }
 
@@ -157,17 +163,29 @@ class _LocationPageState extends State<LocationPage> {
           }, SetOptions(merge: true));
 
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Location saved successfully!')),
+            SnackBar(
+              content: Text('Location saved successfully!'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error saving location: $e')),
+            SnackBar(
+              content: Text('Error saving location: $e'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         }
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a valid location first')),
+        SnackBar(
+          content: Text('Please select a valid location first'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -175,6 +193,8 @@ class _LocationPageState extends State<LocationPage> {
   @override
   void dispose() {
     _addressController.removeListener(_onAddressChanged);
+    _addressController.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -182,7 +202,16 @@ class _LocationPageState extends State<LocationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Select Location'),
+        title: Text(
+          'Select Location',
+          style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+        color: Theme.of(context).appBarTheme.titleTextStyle?.color ?? Colors.white,
+          ),
+        ),
+        elevation: 0,
       ),
       body: Stack(
         children: [
@@ -197,114 +226,188 @@ class _LocationPageState extends State<LocationPage> {
                     _mapController = controller;
                   },
                   markers: _markers,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
+                  mapToolbarEnabled: false,
                 ),
-          if (_addressSuggestions.isNotEmpty)
-  Positioned(
-    top: 70,
-    left: 10,
-    right: 10,
-    child: Container(
-      height: 250,
-      decoration: BoxDecoration(
-        color: Colors.white, // Ensure background is white
-        borderRadius: BorderRadius.circular(8.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 5.0,
-            spreadRadius: 1.0,
-          ),
+          _buildSearchBar(),
+          if (_addressSuggestions.isNotEmpty) _buildSuggestionsList(),
+          _buildBottomControls(),
         ],
       ),
-      child: ListView.builder(
-        itemCount: _addressSuggestions.length,
-        itemBuilder: (context, index) {
-          var suggestion = _addressSuggestions[index];
-          String address = suggestion['place_name'];
-          double lat = suggestion['geometry']['coordinates'][1];
-          double lon = suggestion['geometry']['coordinates'][0];
+    );
+  }
 
-          return ListTile(
-            title: Text(
-              address,
-              style: TextStyle(color: Colors.black), // Ensure text is black
+  Widget _buildSearchBar() {
+    return Positioned(
+      top: 16,
+      left: 16,
+      right: 16,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, 2),
             ),
-            tileColor: Colors.white, // Keep each item white
-            onTap: () => _onSuggestionSelected(address, lat, lon),
-          );
-        },
+          ],
+        ),
+        child: TextField(
+          controller: _addressController,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.grey[800] 
+                : Colors.white,
+            hintText: 'Search for a location',
+            prefixIcon: Icon(Icons.search, color: Colors.blue.shade700),
+            suffixIcon: _addressController.text.isNotEmpty
+                ? IconButton(
+                    icon: Icon(Icons.clear, color: Colors.grey),
+                    onPressed: () {
+                      _addressController.clear();
+                      setState(() {
+                        _addressSuggestions = [];
+                      });
+                    },
+                  )
+                : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          ),
+          style: TextStyle(fontSize: 16),
+        ),
       ),
-    ),
-  ),
+    );
+  }
 
-          Positioned(
-            top: 8,
-            left: 10,
-            right: 10,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: _addressController,
-  decoration: InputDecoration(
-    filled: true,
-    fillColor: Colors.white, // Make background white
-    labelText: 'Search Address',
-    labelStyle: TextStyle(color: Colors.black), // Ensure label is black
-    suffixIcon: Icon(Icons.search, color: Colors.black), // Ensure icon is visible
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8.0),
-      borderSide: BorderSide(color: Colors.grey),
-    ),
-  ),
-  style: TextStyle(color: Colors.black), // Ensure text input is black
-),
+  Widget _buildSuggestionsList() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return Positioned(
+      top: 80,
+      left: 16,
+      right: 16,
+      child: Container(
+        constraints: BoxConstraints(maxHeight: 300),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: BouncingScrollPhysics(),
+            itemCount: _addressSuggestions.length,
+            separatorBuilder: (context, index) => Divider(
+              height: 1,
+              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+            ),
+            itemBuilder: (context, index) {
+              var suggestion = _addressSuggestions[index];
+              String address = suggestion['place_name'];
+              double lat = suggestion['geometry']['coordinates'][1];
+              double lon = suggestion['geometry']['coordinates'][0];
+
+              return ListTile(
+                leading: Icon(
+                  Icons.location_on, 
+                  color: Colors.blue.shade700
                 ),
-              ),
-            
-          
-          Positioned(
-            bottom: 0,
-            left: 10,
-            right: 10,
-            child: Column(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _getCurrentLocation,
-                  icon: Icon(Icons.my_location, size: 20, color: Colors.white),
-                  label: Text(
-                    'Locate Me',
-                    style: TextStyle(fontSize: 14, color: Colors.white),
+                title: Text(
+                  address,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isDarkMode ? Colors.white : Colors.black87,
                   ),
-                  style: ElevatedButton.styleFrom(
-                    shape: StadiumBorder(),
-                    backgroundColor: Colors.blue,
-                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _setCurrentLocation,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.location_pin, size: 20, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text(
-                          'Set as Current Location',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                onTap: () => _onSuggestionSelected(address, lat, lon),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomControls() {
+    return Positioned(
+      bottom: 24,
+      left: 16,
+      right: 16,
+      child: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
-                SizedBox(height: 16),
               ],
+            ),
+            child: ElevatedButton.icon(
+              onPressed: _getCurrentLocation,
+              icon: Icon(Icons.my_location, size: 20, color: Colors.white),
+              label: Text('Locate Me', style: TextStyle(fontSize: 16)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade700,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+          SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ElevatedButton.icon(
+              onPressed: _setCurrentLocation,
+              icon: Icon(Icons.check_circle_outline, size: 24, color: Colors.white),
+              label: Text(
+                'Set as Current Location',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade600,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
             ),
           ),
         ],

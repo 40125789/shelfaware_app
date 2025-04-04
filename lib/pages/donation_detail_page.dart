@@ -50,7 +50,16 @@ class _DonationDetailsPageState extends State<DonationDetailsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Donation Details"),
+      title: Text(
+        "Manage Donation",
+        style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+        color: Theme.of(context).appBarTheme.titleTextStyle?.color ?? Colors.white,
+        ),
+      ),
+      elevation: 0,
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: donationDetails,

@@ -29,12 +29,32 @@ Widget build(BuildContext context) {
     child: Scaffold(
       body: Column(
         children: [
-          // Directly add TabBar in the body instead of AppBar
-          TabBar(
-            tabs: [
-              Tab(text: 'Overview'),  // Change the tab text
-              Tab(text: 'Trends'),
-            ],
+          // Styled TabBar with padding and custom indicator
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: TabBar(
+              indicator: UnderlineTabIndicator(
+          borderSide: BorderSide(
+            width: 3.0,
+            color: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.white 
+                : Theme.of(context).primaryColor,
+          ),
+          insets: EdgeInsets.symmetric(horizontal: 16.0),
+              ),
+              labelColor: Theme.of(context).brightness == Brightness.dark 
+            ? Colors.white 
+            : Theme.of(context).primaryColor,
+              unselectedLabelColor: Theme.of(context).brightness == Brightness.dark 
+            ? Colors.grey[400] 
+            : Colors.grey[700],
+              labelStyle: TextStyle(fontWeight: FontWeight.bold),
+              dividerColor: Colors.transparent,
+              tabs: [
+          Tab(text: 'Overview'),
+          Tab(text: 'Trends'),
+              ],
+            ),
           ),
           Expanded(
             child: TabBarView(
