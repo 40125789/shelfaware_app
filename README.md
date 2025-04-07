@@ -1,36 +1,55 @@
-# ShelfAware
+# 📱 ShelfAware
 
 ShelfAware is a Flutter-based mobile app designed to help users manage their food inventory, track expiration dates, donate surplus food to local communities, and reduce food waste. It provides an intuitive user interface for users to view food expiry dates, track donations, and receive push notifications when items are about to expire.
 
-## Features
+## ✨ Features
 
-- **Track Food Expiry:** Keep track of the expiry dates of food items and receive notifications before they expire.
-- **Donate Surplus Food:** Easily donate surplus food to people in your local area.
-- **Donation Map:** View donation locations on a map for easy collection.
-- **Push Notifications:** Get notified when items are about to expire.
-- **Monthly Food Stats:** The app helps users monitor their food waste reduction progress through visual statistics and actionable insights.
+- **Track Food Expiry:** Keep track of the expiry dates of food items and receive notifications before they expire
+- **Donate Surplus Food:** Easily donate surplus food to people in your local area
+- **Donation Map:** View donation locations on a map for easy collection
+- **Push Notifications:** Get notified when items are about to expire
+- **Monthly Food Stats:** Monitor food waste reduction progress through visual statistics and actionable insights
 
-## Tech Stack
+## 🔧 Tech Stack
 
-- **Flutter:** For building the cross-platform mobile app.
-- **Firebase:** For real-time database and push notifications.
-- **Google Maps API:** For displaying maps and donation markers.
-- **Mapbox API:** For searching and geocoding addresses
-- **Spoonacular API:** Used for retrieving recipes based on the user's ingredients and providing cooking instructions.
-- **Open Food Facts API:** Used for retrieving food details from barcodes.
+- **Flutter:** Cross-platform mobile app development
+- **Firebase:** Real-time database and push notifications
+- **Google Maps API:** Maps and donation markers
+- **Mapbox API:** Address search and geocoding
+- **Spoonacular API:** Recipe retrieval and cooking instructions
+- **Open Food Facts API:** Barcode-based food details
 
-## Installation
+## 💻 Installation
 
-### Clone the repository:
+### Prerequisites
+
+- [Flutter SDK](https://flutter.dev/docs/get-started/install)
+- [Dart SDK](https://dart.dev/get-dart)
+- [Firebase CLI](https://firebase.google.com/docs/cli#install_the_firebase_cli)
+- Code editor (VS Code recommended)
+
+### Firebase Setup
+
+1. Create a project at [Firebase Console](https://console.firebase.google.com/)
+2. Enable Authentication, Firestore, and Storage
+3. Install Firebase CLI and login:
+```bash
+npm install -g firebase-tools
+firebase login
+```
+4. Initialise Firebase:
+```bash
+firebase init
+```
+5. Add `google-services.json` to `android/app/`
+6. Add `GoogleService-Info.plist` to iOS
+
+### Getting Started
+
+1. Clone the repository:
 ```bash
 git clone https://github.com/40125789/shelfaware_app.git
-```
-
-## Run Locally
-
-1. Go to the project directory
-```bash
-cd your_project
+cd shelfaware_app
 ```
 
 2. Install dependencies:
@@ -38,20 +57,18 @@ cd your_project
 flutter pub get
 ```
 
-3. Run the app
+3. Run the app:
 ```bash
 flutter run
 ```
 
-## App Manual
+## 📖 Documentation
 
 For detailed instructions on how to use ShelfAware, please refer to the [User Manual](docs/user_manual.pdf).
 
+## 🔑 Environment Setup
 
-## Environment Variables
-
-Create a `.env` file in the root directory and add:
-
+Create `.env` in root directory:
 ```bash
 SPOONACULAR_API_KEY=your_api_key_here
 GOOGLE_MAPS_API_KEY=your_other_api_key_here
@@ -59,31 +76,16 @@ GOOGLE_MAPS_API_KEY=your_other_api_key_here
 
 > **Note:** Do not commit your .env file. Add it to .gitignore.
 
-## Contributing
+## 🤝 Contributing
 
-Thank you for your interest in contributing to **ShelfAware**! 🎉
+We welcome contributions! You can:
+- Report bugs
+- Suggest features
+- Write tests
+- Fix issues
+- Improve documentation
 
-### How You Can Contribute
-
-- 🐛 Report bugs
-- 💡 Suggest new features
-- 🧪 Write tests
-- 🛠️ Fix bugs
-- 🧹 Refactor code
-- 📝 Improve documentation
-
-### Getting Started
-
-1. Fork the repository
-2. Clone your fork:
-```bash
-git clone https://github.com/your-username/shelfaware_app.git
-cd shelfaware_app
-```
-
-## Acknowledgements 🙏
-
-This project uses these open-source Flutter packages:
+## 📦 Dependencies
 
 ### Firebase
 - firebase_core
@@ -94,32 +96,28 @@ This project uses these open-source Flutter packages:
 - cloud_functions
 - firebase_app_check
 
-### UI & Design
+### UI Components
 - flutter_slidable
 - flutter_swipe_action_cell
 - lottie
-- cupertino_icons
 - google_nav_bar
 - flutter_launcher_icons
-- badges
-- fancy_bottom_navigation
 - curved_navigation_bar
 
-### Location & Maps
+### Maps & Location
 - google_maps_flutter
-- google_maps_webservice
 - geolocator
 - location
 - geocoding
-- latlong2
 
-### Other Components
+### Utilities
 - flutter_dotenv
 - provider
 - hive
-- intl
 - barcode_scan2
 - camera
 - google_ml_kit
 
-Special thanks to my supervisor Leo Galway for guidance throughout this project.
+## 👏 Acknowledgements
+
+Special thanks to my supervisor Leo Galway for his help and guidance throughout this project.
