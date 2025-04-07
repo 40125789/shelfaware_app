@@ -45,7 +45,7 @@ flutter run
 
 ## App Manual
 
-For detailed instructions on how to use ShelfAware, please refer to the [User Manual](file:///C:/Users/Smyth/OneDrive/Documents/Dissertation/ShelfAware%20User%20Manual%20(PDF).pdf).
+For detailed instructions on how to use ShelfAware, please refer to the [User Manual](docs/user_manual.pdf).
 
 
 ## Environment Variables
