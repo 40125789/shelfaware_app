@@ -1,6 +1,4 @@
-<img src="assets/icons/app_icon.png" alt="ShelfAware Logo" width="120" style="vertical-align: middle"/> 
-
-# ShelfAware {.display-1}
+# <img src="assets/icons/app_icon.png" alt="ShelfAware Logo" width="120" style="vertical-align: middle"/> ShelfAware
 
 ShelfAware is a Flutter-based mobile app designed to help users manage their food inventory, track expiration dates, donate surplus food to local communities, and reduce food waste. It provides an intuitive user interface for users to view food expiry dates, track donations, and receive push notifications when items are about to expire.
 
