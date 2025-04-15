@@ -325,26 +325,30 @@ class _RecipeDetailsPageState extends State<RecipeDetailsPage>
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
+                      color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.grey[900] 
+                        : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                        ),
+                      ],
                       ),
                       child: Html(
-                        data: widget.recipe.instructions,
-                        style: {
-                          "body": Style(
-                            fontSize: FontSize(16),
-                            lineHeight: LineHeight(1.6),
-                            color: Colors.black87,
-                          ),
-                          "li": Style(),
-                        },
+                      data: widget.recipe.instructions,
+                      style: {
+                        "body": Style(
+                        fontSize: FontSize(16),
+                        lineHeight: LineHeight(1.6),
+                        color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
+                        ),
+                        "li": Style(),
+                      },
                       ),
                     ),
                     SizedBox(height: 24),

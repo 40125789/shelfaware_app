@@ -19,7 +19,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    await dotenv.load(fileName: "assets/.env");
+    await dotenv.load(fileName: ".env");
     await Permission.location.request(); // Request location permission
     await Permission.camera.request(); // Request camera permission
   });
@@ -141,7 +141,7 @@ void main() {
   // Verify that the request was sent successfully
   expect(find.text('Donation request sent successfully!'), findsOneWidget);
   await tester.pumpAndSettle();
-  
+
 await Future.delayed(Duration(seconds: 5)); // Allow Firestore to sync
 await tester.pumpAndSettle();
 

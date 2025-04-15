@@ -14,7 +14,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    await dotenv.load(fileName: "assets/.env");
+    await dotenv.load(fileName: ".env");
   });
 
   group('Chat List Page Integration Tests', () {

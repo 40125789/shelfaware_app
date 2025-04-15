@@ -15,7 +15,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    await dotenv.load(fileName: "assets/.env");
+    await dotenv.load(fileName: ".env");
   });
 
   group('HomePage Integration Tests', () {
@@ -127,7 +127,7 @@ void main() {
       await tester.tap(toggleButton);
       await tester.pumpAndSettle();
       expect(find.text('egg'), findsOneWidget);
-      
+
       
      
     });

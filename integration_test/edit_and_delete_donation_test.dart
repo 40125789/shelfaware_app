@@ -18,7 +18,7 @@ void main() {
 
   setUpAll(() async {
     await Firebase.initializeApp();
-    await dotenv.load(fileName: "assets/.env");
+    await dotenv.load(fileName: ".env");
     await Permission.storage.request(); // Request storage permission
     await Permission.camera.request(); // Request camera permission
     await Permission.location.request(); // Request location permission

@@ -130,7 +130,7 @@ Future<void> _loadMap() async {
           snippet: details?.openingHours?.first ?? "No opening hours available",
           onTap: () => _showPlaceDetails(context, place, details),
         ),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
       );
     })).then((markers) => markers.toSet());
 
@@ -144,16 +144,7 @@ Future<void> _loadMap() async {
     print("Error loading map: $e");
   }
 }
-Future<String?> _fetchDonorProfileImage(String donorId) async {
-  try {
-    return await _userService.fetchDonorProfileImageUrl(donorId);
-  } catch (e) {
-    print("Error fetching donor profile image: $e");
-    return null;
-  }
-}
   
-
   Future<void> _updateMarkers(List<DonationLocation> donations) async {
     try {
       Set<Marker> donationMarkers = await _mapService.getMarkers(
@@ -173,6 +164,15 @@ Future<String?> _fetchDonorProfileImage(String donorId) async {
       print("Error updating markers: $e");
     }
   }
+
+  Future<String?> _fetchDonorProfileImage(String donorId) async {
+  try {
+    return await _userService.fetchDonorProfileImageUrl(donorId);
+  } catch (e) {
+    print("Error fetching donor profile image: $e");
+    return null;
+  }
+}
 
   Future<List<DonationLocation>> fetchDonationLocations() async {
     try {

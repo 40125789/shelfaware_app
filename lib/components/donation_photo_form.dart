@@ -181,17 +181,21 @@ class _AddPhotoAndDetailsFormState
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
+            decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark 
+              ? Theme.of(context).colorScheme.surface 
+              : Colors.white,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
+              color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
               ),
             ],
           ),
@@ -306,13 +310,15 @@ class _AddPhotoAndDetailsFormState
                                     Text(
                                       'Take Photo',
                                       style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: theme.primaryColor,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Theme.of(context).brightness == Brightness.dark 
+                                        ? Theme.of(context).colorScheme.primary 
+                                        : theme.primaryColor,
                                       ),
                                     ),
-                                  ],
-                                ),
+                                    ],
+                                  ),
                                 if (_isPhotoMissing)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 8),

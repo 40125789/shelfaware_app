@@ -112,6 +112,8 @@ class _HomePageState extends ConsumerState<HomePage>
   @override
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(bottomNavControllerProvider);
+    // Track position of draggable FAB
+    final ValueNotifier<Offset> fabPosition = ValueNotifier(Offset(300, 500)); // Initial position
 
     return Scaffold(
       appBar: TopAppBar(
@@ -129,7 +131,6 @@ class _HomePageState extends ConsumerState<HomePage>
       drawer: CustomDrawer(
         firstName: firstName,
         lastName: lastName,
-      
         onSignOut: () async {
           await context.read<AuthNotifier>().signOut();
         },
@@ -141,91 +142,126 @@ class _HomePageState extends ConsumerState<HomePage>
         },
         onNavigateToDonationWatchList: () {},
       ),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          ref
-              .read(bottomNavControllerProvider.notifier)
-              .navigateTo(index); // Update Riverpod state
-        },
-        physics: const NeverScrollableScrollPhysics(),
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              ref
+                  .read(bottomNavControllerProvider.notifier)
+                  .navigateTo(index);
+            },
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Filter Dropdown on the left
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Add category icon
-                        const SizedBox(width: 8),
-                        FilterDropdown(
-                          selectedFilter: selectedFilter,
-                          filterOptions: filterOptions,
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedFilter = newValue!;
-                            });
-                          },
+                        Row(
+                          children: [
+                            const SizedBox(width: 8),
+                            FilterDropdown(
+                              selectedFilter: selectedFilter,
+                              filterOptions: filterOptions,
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  selectedFilter = newValue!;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              _isToggled ? "Calendar view" : "List view",
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            Switch(
+                              value: _isToggled,
+                              onChanged: (bool value) {
+                                setState(() {
+                                  _isToggled = value;
+                                });
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    Row(
-                      children: [
-                        Text(
-                          _isToggled ? "Calendar view" : "List view",
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        Switch(
-                          value: _isToggled,
-                          onChanged: (bool value) {
-                            setState(() {
-                              _isToggled = value;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
+                    const SizedBox(height: 20),
+                    _isToggled
+                        ? SizedBox(
+                            height: 400,
+                            child: CalendarView(user, userId: user.uid),
+                          )
+                        : Expanded(
+                            child: FoodListView(
+                              user: user,
+                              selectedFilter: selectedFilter,
+                              donationService: donationService,
+                            ),
+                          )
                   ],
                 ),
-                const SizedBox(height: 20),
-
-                // Conditionally show either the list view or the calendar view
-                _isToggled
-                    ? SizedBox(
-                        height: 400, // Adjust height of the calendar view
-                        child: CalendarView(user, userId: user.uid),
-                      )
-                    : Expanded(
-                        child: FoodListView(
-                          user: user,
-                          selectedFilter: selectedFilter,
-                          donationService: donationService,
-                        ),
-                      )
-              ],
-            ),
+              ),
+              RecipesPage(),
+              DonationsPage(),
+              StatisticsPage(),
+            ],
           ),
-          RecipesPage(),
-          DonationsPage(),
-          StatisticsPage(),
+            ValueListenableBuilder<Offset>(
+            valueListenable: fabPosition,
+            builder: (context, position, child) {
+              // Get screen size
+              final screenSize = MediaQuery.of(context).size;
+              // Get safe area
+              final padding = MediaQuery.of(context).padding;
+              // Calculate available space (accounting for FAB size ~56)
+              final maxX = screenSize.width - 56;
+              final maxY = screenSize.height - 56 - padding.bottom - 80; // 80 for bottom nav
+              final minY = padding.top + 56; // Account for app bar
+
+              // Constrain position within bounds
+              final constrainedX = position.dx.clamp(0, maxX);
+              final constrainedY = position.dy.clamp(minY, maxY);
+
+              return Positioned(
+              left: constrainedX.toDouble(),
+              top: constrainedY.toDouble(),
+              child: Draggable(
+                feedback: FloatingActionButton(
+                onPressed: null,
+                child: const Icon(Icons.feedback_rounded),
+                ),
+                childWhenDragging: Container(),
+                onDragEnd: (details) {
+                // Constrain final position
+                fabPosition.value = Offset(
+                  details.offset.dx.clamp(0, maxX),
+                  details.offset.dy.clamp(minY, maxY),
+                );
+                },
+                child: FloatingActionButton(
+                onPressed: () {
+                  Wiredash.of(context).show(inheritMaterialTheme: true);
+                },
+                child: const Icon(Icons.feedback_rounded),
+                elevation: 6.0,
+                shape: const CircleBorder(),
+                ),
+                ),
+              );
+            },
+          ),
         ],
       ),
       bottomNavigationBar:
           BottomNavigationBarComponent(pageController: _pageController),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add your onPressed functionality here
-          Wiredash.of(context).show(inheritMaterialTheme: true);
-        },
-        child: const Icon(Icons.feedback_rounded),
-        elevation: 6.0,
-        shape: const CircleBorder(),
-      ),
     );
   }
 

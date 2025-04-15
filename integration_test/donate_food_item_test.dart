@@ -18,7 +18,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    await dotenv.load(fileName: "assets/.env");
+    await dotenv.load(fileName: ".env");
     await Permission.location.request(); // Request location permission
     await Permission.camera.request(); // Request camera permission
   });
@@ -128,11 +128,29 @@ void main() {
       // Manually interact with the camera to take a photo.
 
       // Wait for the camera interaction to complete and return to the app.
+      // Close keyboard first
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
       await tester.pumpAndSettle(
           Duration(seconds: 7)); // Adjust as needed for camera interaction.
 
+      // Scroll to submit button
+      // Find the scrollable area within the bottom sheet
+      final modalScrollable = find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.byType(Scrollable),
+      );
+
+      await tester.scrollUntilVisible(
+        find.text('Submit Donation'),
+        100, // Scroll amount per iteration
+        scrollable: modalScrollable.first,
+        maxScrolls: 2,
+      );
+
       // Proceed with the form submission
-      final submitButton = find.text('Submit');
+      final submitButton = find.text('Submit Donation');
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
 

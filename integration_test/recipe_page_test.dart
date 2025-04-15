@@ -19,7 +19,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    await dotenv.load(fileName: "assets/.env");
+    await dotenv.load(fileName: ".env");
          await Permission.location.request(); // Request location permission
       await Permission.camera.request();   // Request camera permission
       await Permission.storage.request();  

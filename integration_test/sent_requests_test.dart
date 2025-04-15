@@ -22,7 +22,7 @@ void main() {
 
   setUpAll(() async {
     await Firebase.initializeApp();
-    await dotenv.load(fileName: "assets/.env");
+    await dotenv.load(fileName: ".env");
   });
 
   group('Manage Donations Integration Tests', () {

@@ -278,32 +278,49 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                     // Pickup info preview
                     if (widget.pickupTimes.isNotEmpty || widget.pickupInstructions.isNotEmpty)
                       Container(
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.grey.shade800 
+                          : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            iconTheme: IconThemeData(
+                              color: Theme.of(context).brightness == Brightness.dark 
+                                ? Colors.white 
+                                : Colors.grey.shade700,
+                            ),
+                          ),
+                          child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (widget.pickupTimes.isNotEmpty) ...[
-                              _buildInfoRow(
-                                icon: Icons.schedule,
-                                label: 'Pickup times:',
-                                value: widget.pickupTimes,
-                              ),
-                              SizedBox(height: 6),
-                            ],
-                            if (widget.pickupInstructions.isNotEmpty)
-                              _buildInfoRow(
-                                icon: Icons.info,
-                                label: 'Instructions:',
-                                value: widget.pickupInstructions,
-                                maxLines: 2,
-                              ),
+                          if (widget.pickupTimes.isNotEmpty) ...[
+                            _buildInfoRow(
+                            icon: Icons.schedule,
+                            label: 'Pickup times:',
+                            value: widget.pickupTimes,
+                            valueColor: Theme.of(context).brightness == Brightness.dark 
+                              ? Colors.white 
+                              : Colors.black87,
+                            ),
+                            SizedBox(height: 6),
                           ],
+                          if (widget.pickupInstructions.isNotEmpty)
+                            _buildInfoRow(
+                            icon: Icons.info,
+                            label: 'Instructions:',
+                            value: widget.pickupInstructions,
+                            valueColor: Theme.of(context).brightness == Brightness.dark 
+                              ? Colors.white 
+                              : Colors.black87,
+                            maxLines: 2,
+                            ),
+                          ],
+                          ),
                         ),
-                      ),
+                        ),
                     
                     SizedBox(height: 24), // Increased spacing before buttons
                     
