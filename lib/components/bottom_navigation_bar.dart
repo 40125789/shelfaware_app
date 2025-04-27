@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
-import 'package:shelfaware_app/pages/add_food_item.dart';
+import 'package:shelfaware_app/screens/add_food_item.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

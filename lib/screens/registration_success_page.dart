@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'package:shelfaware_app/pages/login_page.dart';
+import 'package:shelfaware_app/screens/login_page.dart';
 
 
 class RegistrationSuccessPage extends StatelessWidget {

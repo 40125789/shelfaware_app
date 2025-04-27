@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
-import 'package:shelfaware_app/pages/statistics_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
+import 'package:shelfaware_app/screens/statistics_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -112,11 +112,11 @@ void main() {
       // Wait for the StatisticsPage to settle
       await tester.pumpAndSettle();
 
-      // Find the "March" text that represents the currently selected month
-      final monthText = find.text('March');
+      // Find the text that represents the currently selected month
+      final monthText = find.text('April 2025');
       expect(monthText, findsOneWidget);
 
-      // Tap on the "March" text to open the month picker
+      // Tap on the text to open the month picker
       await tester.tap(monthText);
       await tester.pumpAndSettle();
 
@@ -140,7 +140,7 @@ void main() {
       expect(monthPickerDialog, findsNothing);
 
       // Verify that the month has been updated to February
-      final febText = find.text('February');
+      final febText = find.text('February 2025');
       expect(febText, findsOneWidget);
     });
 
@@ -174,8 +174,11 @@ void main() {
       // Wait for the StatisticsPage to settle
       await tester.pumpAndSettle();
 
-      // Tap on the first expandable tile (Consumed Items)
-      final consumedTile = find.text('Consumed Items');
+      // Find the expandable tile for Consumed Items
+      final consumedTile = find.ancestor(
+        of: find.text('Consumed'),
+        matching: find.byType(ExpansionTile),
+      );
       expect(consumedTile, findsOneWidget);
 
       // Tap on the expandable tile to expand it

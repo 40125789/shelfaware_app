@@ -6,7 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
 
@@ -68,7 +68,7 @@ void main() {
       expect(find.text('Food History'), findsOneWidget);
     });
 
-    testWidgets('Tap on Sort by Newest First, Display March',
+    testWidgets('Tap on Sort by Newest First, Display April 2025',
         (WidgetTester tester) async {
       await navigateToHistoryPage(tester);
 
@@ -86,7 +86,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Expect the sorted data to show March first
-      expect(find.text('March 2025'), findsOneWidget);
+      expect(find.text('April 2025'), findsOneWidget);
     });
 
     testWidgets('Tap on Sort by Oldest First, Display November',

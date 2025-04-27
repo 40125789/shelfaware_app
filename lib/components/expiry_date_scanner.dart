@@ -67,18 +67,26 @@ class ScanExpiryDate extends StatelessWidget {
       DateFormat('yyyy.MM.dd'), // Added format for 2024.01.21
       DateFormat('yyyyMMdd'), // Added format for 20240121
       DateFormat('ddMMyyyy'), // Added format for 21012024
+      DateFormat('dd/MM/yy') //format for 21/01/24
     ];
 
-    for (var format in dateFormats) {
-      try {
-        return format.parseStrict(text);
-      } catch (e) {
-        print('Failed to parse date with format ${format.pattern}: $e');
-      }
-    }
+  for (var format in dateFormats) {
+    try {
+      DateTime parsed = format.parseStrict(text);
 
-    return null;
+      // Fix for 2-digit years being interpreted as year 0025
+      if (parsed.year < 100) {
+        parsed = DateTime(parsed.year + 2000, parsed.month, parsed.day);
+      }
+
+      return parsed;
+    } catch (e) {
+      print('Failed to parse date with format ${format.pattern}: $e');
+    }
   }
+
+  return null;
+}
 
   String _formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy').format(date);

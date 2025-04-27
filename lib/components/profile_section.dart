@@ -5,7 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shelfaware_app/pages/my_profile.dart';
+import 'package:shelfaware_app/screens/my_profile.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:shelfaware_app/providers/profile_image_provider.dart';
 

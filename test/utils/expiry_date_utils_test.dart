@@ -19,9 +19,9 @@ void main() {
         'formatExpiryDate returns "Expires in: X days" for dates within 4 days',
         () {
       Timestamp futureTimestamp =
-          Timestamp.fromDate(DateTime.now().add(Duration(days: 3)));
+          Timestamp.fromDate(DateTime.now().add(Duration(days: 4)));
       expect(ExpiryDateUtils.formatExpiryDate(futureTimestamp),
-          'Expires in: 3 days');
+          'Expires in: 4 days');
     });
 
     test(

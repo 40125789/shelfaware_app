@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:shelfaware_app/models/recipe_model.dart';
-import 'package:shelfaware_app/pages/favourites_page.dart';
-import 'package:shelfaware_app/pages/recipe_details_page.dart';
+import 'package:shelfaware_app/screens/favourites_page.dart';
+import 'package:shelfaware_app/screens/recipe_details_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fuzzy/fuzzy.dart';
 import 'package:shelfaware_app/repositories/favourites_repository.dart';
 import 'package:shelfaware_app/components/favourite_button.dart';
 import 'package:shelfaware_app/components/matching_ingredients_text.dart';
 
-
 class RecipeCard extends StatefulWidget {
   final Recipe recipe;
   final List<String> userIngredients;
   final FavouritesRepository favouritesRepository;
+  final void Function(bool isFavorite) onFavoriteChanged; // Callback to notify when favourite status changes
+  final bool isFavorite; // Initial favourite status
+  final String heroNamespace; // Added heroNamespace for Hero animations
 
   const RecipeCard({
     Key? key,
     required this.recipe,
     required this.userIngredients,
     required this.favouritesRepository,
+    required this.onFavoriteChanged,
+    required this.isFavorite,
+    this.heroNamespace = 'recipe', // Default value
   }) : super(key: key);
 
   @override
@@ -26,11 +31,12 @@ class RecipeCard extends StatefulWidget {
 }
 
 class _RecipeCardState extends State<RecipeCard> {
-  bool isFavourite = false;
+  late bool isFavourite;
 
   @override
   void initState() {
     super.initState();
+    isFavourite = widget.isFavorite; // Set initial state to passed-in favourite status
     _checkIfFavourite();
   }
 
@@ -50,27 +56,27 @@ class _RecipeCardState extends State<RecipeCard> {
 
   void _toggleFavourite() async {
     final newValue = !isFavourite;
+
     setState(() {
       isFavourite = newValue;
     });
 
     try {
-      if (isFavourite) {
+      if (newValue) {
         await widget.favouritesRepository.addFavourite({
           'id': widget.recipe.id,
           'title': widget.recipe.title,
           'imageUrl': widget.recipe.imageUrl,
           'ingredients': widget.recipe.ingredients
               .map((ingredient) => {
-                'name': ingredient.name,
-                'unit': ingredient.unit,
-                'amount': ingredient.amount
-              })
+                    'name': ingredient.name,
+                    'unit': ingredient.unit,
+                    'amount': ingredient.amount
+                  })
               .toList(),
           'totalIngredients': widget.recipe.ingredients.length,
           'instructions': widget.recipe.instructions,
-          'userId':
-              widget.favouritesRepository.auth.currentUser?.uid ?? 'Unknown',
+          'userId': widget.favouritesRepository.auth.currentUser?.uid ?? 'Unknown',
           'timestamp': FieldValue.serverTimestamp(),
         });
         _showSnackBar("Recipe added to favourites.", Icons.favorite);
@@ -79,14 +85,12 @@ class _RecipeCardState extends State<RecipeCard> {
             .removeFavourite(widget.recipe.id.toString());
         _showSnackBar("Recipe removed from favourites.", Icons.favorite_border);
       }
+
+      widget.onFavoriteChanged(isFavourite); // Notify parent (FavouritesPage) of the change
+
     } catch (e) {
       print("Error updating favourites: $e");
-      return;
     }
-    
-    setState(() {
-      isFavourite = newValue;
-    });
   }
 
   void _showSnackBar(String message, IconData icon) {
@@ -142,26 +146,26 @@ class _RecipeCardState extends State<RecipeCard> {
     final totalIngredients = widget.recipe.ingredients.length;
 
     return GestureDetector(
-onTap: () async {
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => RecipeDetailsPage(
-        recipe: widget.recipe,
-        matchedIngredients: matchingIngredients.toSet().toList(),
-        onFavoritesChanged: refreshFavorites,
-        isFavorite: isFavourite,
-        favouritesRepository: widget.favouritesRepository,
-      ),
-    ),
-  );
+      onTap: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RecipeDetailsPage(
+              recipe: widget.recipe,
+              matchedIngredients: matchingIngredients.toSet().toList(),
+              onFavoritesChanged: refreshFavorites,
+              isFavorite: isFavourite,
+              favouritesRepository: widget.favouritesRepository,
+            ),
+          ),
+        );
 
-  // Refresh favorite status when returning
-  if (mounted) {
-    _checkIfFavourite();
-    setState(() {}); // Force rebuild to reflect changes
-  }
-},
+        // Refresh favorite status when returning
+        if (mounted) {
+          _checkIfFavourite();
+          setState(() {}); // Force rebuild to reflect changes
+        }
+      },
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
@@ -178,7 +182,8 @@ onTap: () async {
                 Stack(
                   children: [
                     Hero(
-                      tag: 'recipe-image-${widget.recipe.id}',
+                      tag: '${widget.heroNamespace}-recipe-image-${widget.recipe.id}',
+
                       child: Image.network(
                         widget.recipe.imageUrl,
                         height: 180,

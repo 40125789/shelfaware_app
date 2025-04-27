@@ -3,7 +3,7 @@ import 'package:shelfaware_app/components/food_history_item_card.dart';
 import 'package:shelfaware_app/components/food_history_month_header.dart';
 import 'package:shelfaware_app/components/food_history_sorting_dropdown.dart';
 import 'package:shelfaware_app/models/food_history.dart';
-import 'package:shelfaware_app/pages/add_food_item.dart';
+import 'package:shelfaware_app/screens/add_food_item.dart';
 import 'package:shelfaware_app/services/history_service.dart';
 import 'package:shelfaware_app/utils/food_history_utils.dart';
 

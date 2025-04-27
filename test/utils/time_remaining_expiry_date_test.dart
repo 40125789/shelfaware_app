@@ -17,7 +17,7 @@ void main() {
     test('should return "This item expires today" for today\'s date', () {
       // Setup: Choose today's date
       DateTime today = DateTime.now();
-      String todayDate = DateFormat('21/03/2025').format(today);
+      String todayDate = DateFormat('24/04/2025').format(today);
 
       // Act: Call the function
       String result = getTimeRemaining(todayDate);
@@ -30,7 +30,7 @@ void main() {
         () {
       // Setup: Choose a date that will expire tomorrow
       DateTime tomorrow = DateTime.now().add(Duration(days: 1));
-      String tomorrowDate = DateFormat('22/03/2025').format(tomorrow);
+      String tomorrowDate = DateFormat('25/04/2025').format(tomorrow);
 
       // Act: Call the function
       String result = getTimeRemaining(tomorrowDate);
@@ -44,8 +44,7 @@ void main() {
         () {
       // Setup: Choose a date that will expire in more than one day
       DateTime futureDate = DateTime.now().add(Duration(days: 5));
-      String futureDateString = DateFormat('24/03/2025').format(futureDate);
-
+      String futureDateString = DateFormat('27/04/2025').format(futureDate);
       // Act: Call the function
       String result = getTimeRemaining(futureDateString);
 

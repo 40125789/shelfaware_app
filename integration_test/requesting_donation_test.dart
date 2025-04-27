@@ -8,9 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shelfaware_app/components/donation_card.dart';
-import 'package:shelfaware_app/pages/donations_page.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
-import 'package:shelfaware_app/pages/my_donations_page.dart';
+import 'package:shelfaware_app/screens/donations_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
+import 'package:shelfaware_app/screens/my_donations_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
 // Removing the test package as flutter_test already provides the testing functionality we need

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
 import 'package:shelfaware_app/components/password_strength_validator.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 
 class RegisterPage extends StatefulWidget {
   final Function()? onTap;

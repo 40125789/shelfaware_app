@@ -24,8 +24,8 @@ class ExpiryIcon extends StatelessWidget {
       // Expiring today
       iconData = Icons.warning;
       iconColor = Colors.orange[700]!;
-    } else if (daysDifference <= 5) {
-      // Expiring soon (within 5 days)
+    } else if (daysDifference <= 4) {
+      // Expiring soon (within 4days)
       iconData = Icons.warning;
       iconColor = Colors.orange[700]!;
     } else {

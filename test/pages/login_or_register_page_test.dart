@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shelfaware_app/pages/login_or_register_page.dart';
-import 'package:shelfaware_app/pages/login_page.dart';
-import 'package:shelfaware_app/pages/register_page.dart';
+import 'package:shelfaware_app/screens/login_or_register_page.dart';
+import 'package:shelfaware_app/screens/login_page.dart';
+import 'package:shelfaware_app/screens/register_page.dart';
 
 void main() {
   testWidgets('Initial state shows LoginPage', (WidgetTester tester) async {

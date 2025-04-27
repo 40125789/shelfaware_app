@@ -6,12 +6,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/services/location_service.dart';
 import 'package:shelfaware_app/utils/address_suggestion_util.dart';
 
-class LocationPage extends StatefulWidget {
+class LocationScreen extends StatefulWidget {
   @override
   _LocationPageState createState() => _LocationPageState();
 }
 
-class _LocationPageState extends State<LocationPage> {
+class _LocationPageState extends State<LocationScreen> {
   GoogleMapController? _mapController;
   LatLng _currentLocation = LatLng(0.0, 0.0);
   LatLng _selectedLocation = LatLng(0.0, 0.0);

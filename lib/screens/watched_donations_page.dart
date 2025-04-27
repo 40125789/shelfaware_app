@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/donation_card.dart';
-import 'package:shelfaware_app/pages/user_donation_map.dart';
+import 'package:shelfaware_app/screens/user_donation_map.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart';

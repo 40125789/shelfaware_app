@@ -3,10 +3,10 @@ import 'package:shelfaware_app/components/donation_request_card.dart';
 import 'package:shelfaware_app/components/my_donation_card.dart';
 import 'package:shelfaware_app/components/my_donation_status_filter.dart';
 import 'package:shelfaware_app/components/withdraw_request_dialog.dart';
-import 'package:shelfaware_app/pages/star_review_page.dart';
+import 'package:shelfaware_app/screens/star_review_page.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'package:shelfaware_app/providers/donation_provider.dart';
-import 'package:shelfaware_app/pages/donation_detail_page.dart';
+import 'package:shelfaware_app/screens/donation_detail_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/components/request_status_filter.dart';
 

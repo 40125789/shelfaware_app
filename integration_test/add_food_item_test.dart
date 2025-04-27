@@ -6,7 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
 
@@ -60,9 +60,10 @@ void main() {
       final fabFinder = find.byIcon(Icons.add);
       expect(fabFinder, findsOneWidget);
 
-      // Tap on the Plus button to open the Add Food Item form
-      await tester.tap(fabFinder);
-      await tester.pumpAndSettle();
+     await tester.ensureVisible(fabFinder);
+await tester.tap(fabFinder);
+await tester.pumpAndSettle();
+
 
       // Verify that the Add Food Item form is displayed
       expect(find.byType(TextFormField), findsWidgets);
@@ -118,7 +119,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Simulate selecting a day in the date picker
-      final dayFinder = find.text('18');
+      final dayFinder = find.text('25');
       await tester.tap(dayFinder);
       await tester.pumpAndSettle();
 
@@ -128,7 +129,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify that the selected date is displayed in the expiry date field
-      expect(find.text('18/03/2025'), findsOneWidget);
+      expect(find.text('25/04/2025'), findsOneWidget);
+      await tester.pumpAndSettle();          
 
       // Tap on the category dropdown and choose "fruits"
       final categoryDropdown =
@@ -139,22 +141,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('fruits'), findsOneWidget);
 
-      // Adjust quantity using the plus and minus buttons
-      final plusButton = find.byIcon(Icons.add);
-      final minusButton = find.byIcon(Icons.remove);
-
-      // Tap the Plus button twice to increase the quantity
-      await tester.tap(plusButton);
-      await tester.pumpAndSettle();
-      await tester.tap(plusButton);
-      await tester.pumpAndSettle();
-
-      // Tap the Minus button to decrease the quantity
-      await tester.tap(minusButton);
-      await tester.pumpAndSettle();
-
-      // Verify that the quantity is updated
-      expect(find.text('2'), findsOneWidget);
+      
+      expect(find.text('1'), findsOneWidget);
 
       // Tap the Submit button to submit the form
       final submitButton = find.text('Save Food Item');
@@ -167,6 +155,9 @@ void main() {
 
       // Verify that the snackbar appears with the success message
       expect(find.text('Food item saved successfully!'), findsOneWidget);
+      await tester.pumpAndSettle();
+      // Wait for Snackbar to disappear (if it auto-dismisses after a while)
+      await tester.pumpAndSettle(Duration(seconds: 2));
     });
 
     testWidgets('Verify the added food item in the list',

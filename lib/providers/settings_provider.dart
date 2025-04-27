@@ -3,10 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 class SettingsState {
   final bool isDarkMode;
-  final bool locationEnabled;
   final bool messagesNotifications;
   final bool requestNotifications;
   final bool expiryNotifications;
@@ -14,7 +12,6 @@ class SettingsState {
 
   SettingsState({
     required this.isDarkMode,
-    required this.locationEnabled,
     required this.messagesNotifications,
     required this.requestNotifications,
     required this.expiryNotifications,
@@ -23,7 +20,7 @@ class SettingsState {
 
   SettingsState copyWith({
     bool? isDarkMode,
-    bool? locationEnabled,
+
     bool? messagesNotifications,
     bool? requestNotifications,
     bool? expiryNotifications,
@@ -31,8 +28,9 @@ class SettingsState {
   }) {
     return SettingsState(
       isDarkMode: isDarkMode ?? this.isDarkMode,
-      locationEnabled: locationEnabled ?? this.locationEnabled,
-      messagesNotifications: messagesNotifications ?? this.messagesNotifications,
+   
+      messagesNotifications:
+          messagesNotifications ?? this.messagesNotifications,
       requestNotifications: requestNotifications ?? this.requestNotifications,
       expiryNotifications: expiryNotifications ?? this.expiryNotifications,
       isSettingsLoaded: isSettingsLoaded ?? this.isSettingsLoaded,
@@ -44,7 +42,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   SettingsNotifier()
       : super(SettingsState(
           isDarkMode: false,
-          locationEnabled: true,
           messagesNotifications: true,
           requestNotifications: true,
           expiryNotifications: true,
@@ -57,7 +54,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   Future<void> _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    bool locationEnabled = prefs.getBool('locationEnabled') ?? true;
     bool messagesNotifications = prefs.getBool('messagesNotifications') ?? true;
     bool requestNotifications = prefs.getBool('requestNotifications') ?? true;
     bool expiryNotifications = prefs.getBool('expiryNotifications') ?? true;
@@ -68,7 +64,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     // Update state
     state = state.copyWith(
       isDarkMode: isDarkMode,
-      locationEnabled: locationEnabled,
       messagesNotifications: messagesNotifications,
       requestNotifications: requestNotifications,
       expiryNotifications: expiryNotifications,
@@ -76,20 +71,12 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     );
 
     // Toggle dark mode setting and save to SharedPreferences
-  Future<void> toggleDarkMode(bool value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', value);
+    Future<void> toggleDarkMode(bool value) async {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isDarkMode', value);
 
-    // Update the state with the new dark mode setting
-    state = state.copyWith(isDarkMode: value);
-  }
-
-
-    // Handle location permission
-    if (locationEnabled) {
-      await _requestLocationPermission();
-    } else {
-      _stopLocationTracking();
+      // Update the state with the new dark mode setting
+      state = state.copyWith(isDarkMode: value);
     }
   }
 
@@ -98,11 +85,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     if (userId.isNotEmpty) {
-      DocumentSnapshot userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
       if (userDoc.exists) {
-        var preferences = (userDoc.data() as Map<String, dynamic>?)?['notificationPreferences'];
+        var preferences = (userDoc.data()
+            as Map<String, dynamic>?)?['notificationPreferences'];
 
         if (preferences == null) {
           await _createNotificationPreferences(userId);
@@ -112,8 +102,10 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
             requestNotifications: preferences['requests'] ?? true,
             expiryNotifications: preferences['expiry'] ?? true,
           );
-          await _saveSetting('messagesNotifications', state.messagesNotifications);
-          await _saveSetting('requestNotifications', state.requestNotifications);
+          await _saveSetting(
+              'messagesNotifications', state.messagesNotifications);
+          await _saveSetting(
+              'requestNotifications', state.requestNotifications);
           await _saveSetting('expiryNotifications', state.expiryNotifications);
         }
       }
@@ -121,7 +113,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 
   Future<void> _createNotificationPreferences(String userId) async {
-    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+    DocumentReference userRef =
+        FirebaseFirestore.instance.collection('users').doc(userId);
 
     await userRef.update({
       'notificationPreferences': {
@@ -145,30 +138,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   // Toggle Dark Mode
   void toggleDarkMode(bool isDarkMode) async {
-    state = state.copyWith(isDarkMode: isDarkMode); 
+    state = state.copyWith(isDarkMode: isDarkMode);
     await _saveSetting('isDarkMode', isDarkMode);
-  }
-
-  // Toggle Location
-  void toggleLocation(bool value) async {
-    state = state.copyWith(locationEnabled: value);
-    await _saveSetting('locationEnabled', value);
-
-    if (value) {
-      await _requestLocationPermission();
-    } else {
-      _stopLocationTracking();
-    }
-  }
-
-  // Request location permission
-  Future<void> _requestLocationPermission() async {
-    // Implement permission handling logic
-  }
-
-  // Stop location tracking
-  void _stopLocationTracking() {
-    // Implement location stop logic
   }
 
   // Toggle Messages Notifications
@@ -197,7 +168,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     if (userId.isNotEmpty) {
-      DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+      DocumentReference userRef =
+          FirebaseFirestore.instance.collection('users').doc(userId);
 
       await userRef.update({
         'notificationPreferences': {

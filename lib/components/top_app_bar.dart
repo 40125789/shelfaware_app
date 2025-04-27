@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shelfaware_app/pages/location_page.dart';
+import 'package:shelfaware_app/screens/location_page.dart';
 import 'package:shelfaware_app/providers/notification_count_provider.dart';
 
 
@@ -39,7 +39,7 @@ final unreadCount = ref.watch(notificationCountProvider);
                 // Navigate to LocationPage to let the user change their location
                 await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => LocationPage()),
+                  MaterialPageRoute(builder: (context) => LocationScreen()),
                 );
               },
             ),

@@ -22,7 +22,9 @@ class MapService {
         markerId: MarkerId('currentLocation'),
         position: currentLocation,
         infoWindow: InfoWindow(title: "You are here"),
-        icon: await BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(48, 48)), 'assets/custom_marker_home.png'), // Custom icon for user location
+        icon: await BitmapDescriptor.fromAssetImage
+        (ImageConfiguration(size: Size(48, 48)), 
+        'assets/custom_marker_home.png'), // Custom icon for user location
       ),
     );
 
@@ -46,7 +48,9 @@ class MapService {
               
               // Use formatted date
             ),
-            icon: await BitmapDescriptor.fromAssetImage(ImageConfiguration(size: Size(48, 48)), 'assets/custom_marker_donation.png'), // Custom icon for donation markers
+            icon: await BitmapDescriptor.fromAssetImage
+            (ImageConfiguration(size: Size(48, 48)),
+             'assets/custom_marker_donation.png'), // Custom icon for donation markers
             onTap: () => onMarkerTap(donation), // Tap handler
           ),
         );

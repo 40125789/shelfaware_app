@@ -5,8 +5,8 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shelfaware_app/components/food_list_view.dart';
-import 'package:shelfaware_app/pages/register_page.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/screens/register_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 
 
 

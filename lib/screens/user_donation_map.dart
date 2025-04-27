@@ -9,8 +9,8 @@ import 'package:shelfaware_app/components/donation_details_dialogue.dart';
 import 'package:shelfaware_app/components/pickedUp_dialog.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
 import 'package:shelfaware_app/components/watchlist_star_button.dart';
-import 'package:shelfaware_app/pages/chat_page.dart';
-import 'package:shelfaware_app/pages/donation_request_form.dart';
+import 'package:shelfaware_app/screens/chat_page.dart';
+import 'package:shelfaware_app/screens/donation_request_form.dart';
 import 'package:shelfaware_app/providers/watched_donations_provider.dart'; // Ensure this import is correct
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/repositories/donation_request_repository.dart';

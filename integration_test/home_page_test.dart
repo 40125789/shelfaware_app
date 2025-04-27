@@ -6,7 +6,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shelfaware_app/components/food_list_view.dart';
 import 'package:shelfaware_app/components/top_app_bar.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -143,6 +143,7 @@ testWidgets('Navigate through BottomNavigationBar and verify AppBar text', (Widg
     of: find.byType(AppBar), 
     matching: find.text('Recipes')
   ), findsOneWidget); // Target only the Text inside AppBar
+  await tester.pumpAndSettle();
 
   // Tap on the 'Donations' tab (index 2)
   await tester.tap(find.byIcon(Icons.food_bank)); // Icon for 'Donations' tab

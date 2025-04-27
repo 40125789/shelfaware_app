@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shelfaware_app/pages/chat_page.dart';
+import 'package:shelfaware_app/screens/chat_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shelfaware_app/repositories/donation_request_repository.dart';
 

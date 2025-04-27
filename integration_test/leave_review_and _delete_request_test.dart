@@ -7,8 +7,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
-import 'package:shelfaware_app/pages/my_donations_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
+import 'package:shelfaware_app/screens/my_donations_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
 

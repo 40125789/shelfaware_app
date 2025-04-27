@@ -5,15 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shelfaware_app/components/favourite_button.dart';
-import 'package:shelfaware_app/pages/recipe_details_page.dart';
-import 'package:shelfaware_app/pages/recipes_page.dart';
+import 'package:shelfaware_app/screens/recipe_details_page.dart';
+import 'package:shelfaware_app/screens/recipes_page.dart';
 import 'package:shelfaware_app/components/recipe_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shelfaware_app/components/my_button.dart';
 import 'package:shelfaware_app/components/my_textfield.dart';
 import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 import 'reset_password_page.dart';
 
 class LoginPage extends StatefulWidget {

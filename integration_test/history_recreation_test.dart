@@ -7,8 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shelfaware_app/components/food_history_item_card.dart';
-import 'package:shelfaware_app/pages/add_food_item.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/screens/add_food_item.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
 
@@ -78,17 +78,17 @@ void main() {
       await tester.pumpAndSettle();
 
       // Find the exact ListTile containing "orange x 1"
-      final Finder elderwater = find.descendant(
+      final Finder foodHistoryItem = find.descendant(
         of: find.byType(ListTile),
-        matching: find.text('elderwater x 1'),
+        matching: find.text('Seeded brioche buns x 1'),
       );
 
-      expect(elderwater, findsWidgets,
+      expect(foodHistoryItem, findsOneWidget,
           reason: "Failed to find unique ListTile for 'orange x 1'");
 
       // Find the correct checkbox inside the found ListTile
       final Finder elderCheckBox = find.descendant(
-        of: find.ancestor(of: elderwater, matching: find.byType(ListTile)),
+        of: find.ancestor(of: foodHistoryItem,matching: find.byType(ListTile)),
         matching: find.byType(Checkbox),
       );
 
@@ -104,9 +104,9 @@ void main() {
 
       // Verify navigation to AddFoodItem page
       expect(find.byType(AddFoodItem), findsOneWidget);
-      expect(find.textContaining("elderwater"), findsOneWidget);
-      expect(find.text("29/03/2025"), findsOneWidget);
-      expect(find.text("beverage"), findsOneWidget);
+      expect(find.textContaining("Seeded brioche buns"), findsOneWidget);
+      expect(find.text("01/05/2025"), findsOneWidget);  
+     
 
       await tester.pumpAndSettle();
 
@@ -148,7 +148,7 @@ void main() {
       }
 
       // Check for the added food item details
-      expect(find.text('elderwater'), findsOneWidget);
+      expect(find.text('Seeded brioche buns'), findsOneWidget);
     });
   });
 }

@@ -96,7 +96,8 @@ class _RecipesPageState extends State<RecipesPage> with SingleTickerProviderStat
                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                     child: RecipeCard(
                       recipe: recipes[index],
-                      userIngredients: userIngredients, favouritesRepository: FavouritesRepository(), 
+                      userIngredients: userIngredients, favouritesRepository: FavouritesRepository(), onFavoriteChanged: (bool isFavorite) {  }, isFavorite: false, 
+                      heroNamespace: 'recipesPage', // Add heroNamespace for the RecipeCard
                     ),
                   ),
                 );

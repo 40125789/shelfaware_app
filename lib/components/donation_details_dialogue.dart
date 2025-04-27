@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shelfaware_app/components/status_icon_widget.dart';
 import 'package:shelfaware_app/components/watchlist_star_button.dart';
-import 'package:shelfaware_app/pages/user_donation_map.dart';
+import 'package:shelfaware_app/screens/user_donation_map.dart';
 import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:shelfaware_app/repositories/watched_donations_repository.dart';
 import 'package:shelfaware_app/services/user_service.dart';
@@ -98,7 +98,7 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
 
   void toggleWatchlist() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
+
     if (isInWatchlist) {
       await watchedDonationsService.removeFromWatchlist(
           FirebaseAuth.instance.currentUser!.uid, widget.donationId);
@@ -113,7 +113,8 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
           ),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     } else {
@@ -130,7 +131,8 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
           ),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -145,7 +147,7 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
     // Calculate a better height based on screen size
     final screenHeight = MediaQuery.of(context).size.height;
     final dialogHeight = screenHeight * 0.75; // Use 75% of screen height
-    
+
     return Container(
       constraints: BoxConstraints(
         maxHeight: dialogHeight,
@@ -178,7 +180,8 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                           height: 150,
                           width: double.infinity,
                           color: Colors.grey.shade200,
-                          child: Icon(Icons.broken_image, size: 50, color: Colors.grey.shade400),
+                          child: Icon(Icons.broken_image,
+                              size: 50, color: Colors.grey.shade400),
                         ),
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
@@ -188,8 +191,9 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                             color: Colors.grey.shade100,
                             child: Center(
                               child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded / 
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
                                         loadingProgress.expectedTotalBytes!
                                     : null,
                               ),
@@ -201,10 +205,11 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                         height: 150,
                         width: double.infinity,
                         color: Colors.grey.shade200,
-                        child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey.shade400),
+                        child: Icon(Icons.image_not_supported,
+                            size: 50, color: Colors.grey.shade400),
                       ),
               ),
-              
+
               // Details below image
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -227,9 +232,9 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                         StatusIconWidget(status: widget.status),
                       ],
                     ),
-                    
+
                     SizedBox(height: 12),
-                    
+
                     // Donor info
                     _buildInfoRow(
                       icon: Icons.person,
@@ -249,9 +254,9 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                             )
                           : null,
                     ),
-                    
+
                     SizedBox(height: 8),
-                    
+
                     // Expiry
                     _buildInfoRow(
                       icon: Icons.calendar_today,
@@ -259,71 +264,76 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                       value: widget.expiryDate,
                       valueColor: _getExpiryColor(widget.expiryDate),
                     ),
-                    
+
                     SizedBox(height: 8),
-                    
+
                     // Posted time
                     _buildInfoRow(
                       icon: Icons.access_time,
                       label: 'Posted:',
-                      value: DateFormat('MMM d, yyyy • h:mm a').format(widget.donationTime),
+                      value: DateFormat('MMM d, yyyy • h:mm a')
+                          .format(widget.donationTime),
                     ),
-                    
+
                     // Divider
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
                       child: Divider(height: 1, thickness: 1),
                     ),
-                    
+
                     // Pickup info preview
-                    if (widget.pickupTimes.isNotEmpty || widget.pickupInstructions.isNotEmpty)
+                    if (widget.pickupTimes.isNotEmpty ||
+                        widget.pickupInstructions.isNotEmpty)
                       Container(
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark 
-                          ? Colors.grey.shade800 
-                          : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey.shade800
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         child: Theme(
                           data: Theme.of(context).copyWith(
                             iconTheme: IconThemeData(
-                              color: Theme.of(context).brightness == Brightness.dark 
-                                ? Colors.white 
-                                : Colors.grey.shade700,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white
+                                  : Colors.grey.shade700,
                             ),
                           ),
                           child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                          if (widget.pickupTimes.isNotEmpty) ...[
-                            _buildInfoRow(
-                            icon: Icons.schedule,
-                            label: 'Pickup times:',
-                            value: widget.pickupTimes,
-                            valueColor: Theme.of(context).brightness == Brightness.dark 
-                              ? Colors.white 
-                              : Colors.black87,
-                            ),
-                            SizedBox(height: 6),
-                          ],
-                          if (widget.pickupInstructions.isNotEmpty)
-                            _buildInfoRow(
-                            icon: Icons.info,
-                            label: 'Instructions:',
-                            value: widget.pickupInstructions,
-                            valueColor: Theme.of(context).brightness == Brightness.dark 
-                              ? Colors.white 
-                              : Colors.black87,
-                            maxLines: 2,
-                            ),
-                          ],
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (widget.pickupTimes.isNotEmpty) ...[
+                                _buildInfoRow(
+                                  icon: Icons.schedule,
+                                  label: 'Pickup times:',
+                                  value: widget.pickupTimes,
+                                  valueColor: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black87,
+                                ),
+                                SizedBox(height: 6),
+                              ],
+                              if (widget.pickupInstructions.isNotEmpty)
+                                _buildInfoRow(
+                                  icon: Icons.info,
+                                  label: 'Instructions:',
+                                  value: widget.pickupInstructions,
+                                  valueColor: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black87,
+                                  maxLines: 2,
+                                ),
+                            ],
                           ),
                         ),
-                        ),
-                    
+                      ),
+
                     SizedBox(height: 24), // Increased spacing before buttons
-                    
+
                     // Action buttons - moved to bottom with clear spacing
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -340,7 +350,8 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
                                 backgroundColor: Theme.of(context).primaryColor,
                                 elevation: 2,
                               ),
@@ -350,7 +361,8 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                                   MaterialPageRoute(
                                     builder: (context) => DonationMapScreen(
                                       donationLatitude: widget.donationLatitude,
-                                      donationLongitude: widget.donationLongitude,
+                                      donationLongitude:
+                                          widget.donationLongitude,
                                       userLatitude: widget.userLatitude,
                                       userLongitude: widget.userLongitude,
                                       productName: widget.productName,
@@ -365,9 +377,11 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                                       donorImageUrl: widget.donorImageUrl,
                                       donationTime: widget.donationTime,
                                       pickupTimes: widget.pickupTimes,
-                                      pickupInstructions: widget.pickupInstructions,
+                                      pickupInstructions:
+                                          widget.pickupInstructions,
                                       receiverEmail: '',
-                                      userId: FirebaseAuth.instance.currentUser!.uid,
+                                      userId: FirebaseAuth
+                                          .instance.currentUser!.uid,
                                       donorRating: donorRating ?? 0.0,
                                     ),
                                   ),
@@ -377,8 +391,11 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                                 });
                               },
                               icon: Icon(Icons.map, color: Colors.white),
-                              label: Text('View Details & Map',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                              label: Text('View Details',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13)),
                             ),
                           ),
                         ),
@@ -394,13 +411,13 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
       ),
     );
   }
-  
+
   Color _getExpiryColor(String expiryDate) {
     try {
       final expiry = DateFormat('yyyy-MM-dd').parse(expiryDate);
       final now = DateTime.now();
       final difference = expiry.difference(now).inDays;
-      
+
       if (difference < 0) return Colors.red;
       if (difference < 3) return Colors.orange;
       return Colors.green;
@@ -408,7 +425,7 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
       return Colors.red;
     }
   }
-  
+
   Widget _buildInfoRow({
     required IconData icon,
     required String label,
@@ -440,7 +457,9 @@ class _DonationDetailsDialogState extends State<DonationDetailsDialog> {
                   style: TextStyle(
                     fontSize: 14,
                     color: valueColor,
-                    fontWeight: valueColor != null ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: valueColor != null
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: maxLines,

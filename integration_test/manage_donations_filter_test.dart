@@ -10,9 +10,9 @@ import 'package:integration_test/integration_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shelfaware_app/components/my_donation_status_filter.dart';
-import 'package:shelfaware_app/pages/home_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 import 'package:firebase_storage_platform_interface/firebase_storage_platform_interface.dart';
-import 'package:shelfaware_app/pages/my_donations_page.dart';
+import 'package:shelfaware_app/screens/my_donations_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:shelfaware_app/services/food_service.dart';
 

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shelfaware_app/pages/location_page.dart';
+import 'package:shelfaware_app/screens/location_page.dart';
 import 'package:shelfaware_app/services/donation_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -138,7 +138,7 @@ class _AddPhotoAndDetailsFormState
   Future<void> _navigateToLocationPage() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => LocationPage()),
+      MaterialPageRoute(builder: (context) => LocationScreen()),
     );
 
     if (result != null && result is LatLng) {

@@ -10,12 +10,12 @@ import 'package:shelfaware_app/components/side_drawer_menu.dart';
 import 'package:shelfaware_app/components/top_app_bar.dart';
 import 'package:shelfaware_app/components/category_filter_dropdown.dart'; // Import the new component
 import 'package:shelfaware_app/controllers/bottom_nav_controller.dart';
-import 'package:shelfaware_app/pages/location_page.dart';
-import 'package:shelfaware_app/pages/notification_page.dart';
-import 'package:shelfaware_app/pages/recipes_page.dart';
-import 'package:shelfaware_app/pages/favourites_page.dart';
-import 'package:shelfaware_app/pages/donations_page.dart';
-import 'package:shelfaware_app/pages/statistics_page.dart';
+import 'package:shelfaware_app/screens/location_page.dart';
+import 'package:shelfaware_app/screens/notification_page.dart';
+import 'package:shelfaware_app/screens/recipes_page.dart';
+import 'package:shelfaware_app/screens/favourites_page.dart';
+import 'package:shelfaware_app/screens/donations_page.dart';
+import 'package:shelfaware_app/screens/statistics_page.dart';
 import 'package:shelfaware_app/controllers/auth_controller.dart'; // Ensure this import is correct
 import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:wiredash/wiredash.dart';
@@ -121,7 +121,7 @@ class _HomePageState extends ConsumerState<HomePage>
         onLocationPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => LocationPage()),
+            MaterialPageRoute(builder: (context) => LocationScreen()),
           );
         },
         onNotificationPressed: onNotificationPressed,

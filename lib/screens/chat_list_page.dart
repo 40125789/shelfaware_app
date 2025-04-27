@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:shelfaware_app/pages/chat_page.dart';
+import 'package:shelfaware_app/screens/chat_page.dart';
 import 'package:intl/intl.dart';
 import 'package:badges/badges.dart' as custom_badge;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
