@@ -61,7 +61,8 @@ class TrendsService {
         }
 
         totalDiscardedItems++;
-        totalTimeBetweenAddingAndDiscarding += discardedOn.toDate().difference(addedOn.toDate());
+        totalTimeBetweenAddingAndDiscarding += discardedOn.toDate()
+        .difference(addedOn.toDate());
       }
     }
 

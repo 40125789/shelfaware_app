@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,7 +23,6 @@ class SettingsState {
 
   SettingsState copyWith({
     bool? isDarkMode,
-
     bool? messagesNotifications,
     bool? requestNotifications,
     bool? expiryNotifications,
@@ -28,9 +30,7 @@ class SettingsState {
   }) {
     return SettingsState(
       isDarkMode: isDarkMode ?? this.isDarkMode,
-   
-      messagesNotifications:
-          messagesNotifications ?? this.messagesNotifications,
+      messagesNotifications: messagesNotifications ?? this.messagesNotifications,
       requestNotifications: requestNotifications ?? this.requestNotifications,
       expiryNotifications: expiryNotifications ?? this.expiryNotifications,
       isSettingsLoaded: isSettingsLoaded ?? this.isSettingsLoaded,
@@ -50,34 +50,41 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     _loadSettings();
   }
 
-  // Load saved settings from SharedPreferences and Firestore
+  // Load saved settings and detect the system theme
   Future<void> _loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    
+    // Load the previously saved theme setting (if available)
     bool isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    bool messagesNotifications = prefs.getBool('messagesNotifications') ?? true;
-    bool requestNotifications = prefs.getBool('requestNotifications') ?? true;
-    bool expiryNotifications = prefs.getBool('expiryNotifications') ?? true;
 
-    // Fetch user's notification preferences from Firestore
+    // Fetch user's notification preferences from Firestore (if needed)
     await _fetchUserNotificationPreferences();
 
-    // Update state
+    // Detect system theme (if no preference is saved)
+    if (prefs.getBool('isDarkMode') == null) {
+      isDarkMode = _isSystemDarkMode();
+      await prefs.setBool('isDarkMode', isDarkMode);
+    }
+
+    // Update state with the theme setting
     state = state.copyWith(
       isDarkMode: isDarkMode,
-      messagesNotifications: messagesNotifications,
-      requestNotifications: requestNotifications,
-      expiryNotifications: expiryNotifications,
       isSettingsLoaded: true,
     );
+  }
 
-    // Toggle dark mode setting and save to SharedPreferences
-    Future<void> toggleDarkMode(bool value) async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isDarkMode', value);
+  // Check if the system theme is dark mode
+  bool _isSystemDarkMode() {
+    return WidgetsBinding.instance!.window.platformBrightness == Brightness.dark;
+  }
 
-      // Update the state with the new dark mode setting
-      state = state.copyWith(isDarkMode: value);
-    }
+  // Toggle Dark Mode manually
+  Future<void> toggleDarkMode(bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', value);
+
+    // Update the state with the new dark mode setting
+    state = state.copyWith(isDarkMode: value);
   }
 
   // Fetch user notification preferences from Firestore
@@ -136,11 +143,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await prefs.setBool(key, value);
   }
 
-  // Toggle Dark Mode
-  void toggleDarkMode(bool isDarkMode) async {
-    state = state.copyWith(isDarkMode: isDarkMode);
-    await _saveSetting('isDarkMode', isDarkMode);
-  }
+
 
   // Toggle Messages Notifications
   void toggleMessageNotifications(bool value) async {
