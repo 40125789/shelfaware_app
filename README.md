@@ -69,7 +69,7 @@ flutter run
 
 For detailed instructions on how to use ShelfAware, please refer to the [User Manual](docs/user_manual.pdf).
 
-For a detailed report on tester feedback, including observations, issues, and suggested improvements, please refer to the [Testers Feedback Report] (docs/com.shelfaware.shelfaware_app_feedback.pdf).
+For a detailed report on tester feedback, including observations, issues, and suggested improvements, please refer to the [Testers Feedback Report](docs/com.shelfaware.shelfaware_app_feedback.pdf).
 
 
 ## 🔑 Environment Setup
