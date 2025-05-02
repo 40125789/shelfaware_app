@@ -124,11 +124,8 @@ void main() {
       await tester.tap(takePhotoButton);
       await tester.pumpAndSettle();
 
-      // At this point, the camera should open on your physical device.
+      // At this point, the camera should open on the  device.
       // Manually interact with the camera to take a photo.
-
-      // Wait for the camera interaction to complete and return to the app.
-      // Close keyboard first
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
 
@@ -136,7 +133,6 @@ void main() {
           Duration(seconds: 7)); // Adjust as needed for camera interaction.
 
       // Scroll to submit button
-      // Find the scrollable area within the bottom sheet
       final modalScrollable = find.descendant(
         of: find.byType(BottomSheet),
         matching: find.byType(Scrollable),

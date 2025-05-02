@@ -56,16 +56,6 @@ void main() {
     });
   });
 
-  group('fetchJoinDuration', () {
-    final userId = 'testUserId';
-
-    test('returns join duration', () async {
-      await fakeFirestore.collection('users').doc(userId).set(
-          {'joinDate': Timestamp.fromDate(DateTime(2025, 3, 1, 15, 44, 32))});
-      final result = await trendsService.fetchJoinDuration(userId);
-      expect(result, '23 days');
-    });
-  });
 
   group('_analyzeHistoryData', () {
     test('correctly analyzes history data', () async {

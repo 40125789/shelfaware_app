@@ -2,7 +2,7 @@
   xmlns:tools="http://schemas.android.com/tools"> <!-- Add this line -->
 
     <application
-        android:label="ShelfAware"
+        android:label="ShelfMind"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
 tools:replace="android:label"> 

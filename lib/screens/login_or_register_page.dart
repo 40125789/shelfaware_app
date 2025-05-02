@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 
+// Code adapted from:
+// Mitch Koko. "Modern Login UI • Flutter Auth Tutorial." YouTube, 14 Oct. 2024, 
+// https://www.youtube.com/watch?v=Dh-cTQJgM-Q
+
+
 class LoginOrRegisterPage extends StatefulWidget {
   const LoginOrRegisterPage({super.key});
 
@@ -34,3 +39,4 @@ class _LoginOrRegisterPageState extends State<LoginOrRegisterPage> {
     }
   }
 }
+

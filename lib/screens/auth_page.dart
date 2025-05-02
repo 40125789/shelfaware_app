@@ -4,6 +4,11 @@ import 'package:shelfaware_app/providers/auth_provider.dart';
 import 'home_page.dart';
 import 'login_or_register_page.dart';
 
+// Code adapted from:
+// Mitch Koko. "Modern Login UI • Flutter Auth Tutorial." YouTube, 14 Oct. 2024, 
+// https://www.youtube.com/watch?v=Dh-cTQJgM-Q
+
+
 class AuthPage extends ConsumerWidget {
   const AuthPage({Key? key}) : super(key: key);
 

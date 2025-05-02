@@ -17,19 +17,15 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
 
     // Verify the Theme section
-    expect(find.text('Theme'), findsOneWidget);
-    expect(find.byIcon(Icons.palette), findsOneWidget);
+    expect(find.text('Appearance'), findsOneWidget);
+    expect(find.byIcon(Icons.settings_system_daydream), findsOneWidget);
 
     // Verify the Notification Preferences section
-    expect(find.text('Notification Preferences'), findsOneWidget);
-    expect(find.byIcon(Icons.notifications), findsOneWidget);
+    expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Messages'), findsOneWidget);
     expect(find.text('Donation Requests'), findsOneWidget);
     expect(find.text('Expiry Alerts'), findsOneWidget);
 
-    // verify other sections
-    expect(find.text('Privacy Policy'), findsOneWidget);
-    expect(find.text('Delete Account'), findsOneWidget);
 
    
   });

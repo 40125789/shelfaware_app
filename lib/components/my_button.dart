@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+// Code adapted from:
+// Mitch Koko. "Modern Login UI • Flutter Auth Tutorial." YouTube, 14 Oct. 2024, 
+// https://www.youtube.com/watch?v=Dh-cTQJgM-Q
+
+
 class MyButton extends StatelessWidget {
   final Function()? onTap;
   final String text;

@@ -6,8 +6,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelfaware_app/screens/chat_page.dart';
+import 'package:shelfaware_app/screens/home_page.dart';
 import 'package:shelfaware_app/screens/my_donations_page.dart';
+import 'package:shelfaware_app/screens/onboarding_screen.dart';
 import 'package:shelfaware_app/screens/settings_page.dart';
 import 'package:shelfaware_app/providers/settings_provider.dart'; // Ensure this import is correct
 import 'package:wiredash/wiredash.dart';
@@ -132,7 +135,9 @@ class MyApp extends ConsumerWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'ShelfAware',
-        themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light, // Dynamically set themeMode
+      themeMode: settingsState.isSystemMode
+        ? ThemeMode.system 
+        : (isDarkMode ? ThemeMode.dark : ThemeMode.light),
         theme: ThemeData(
           appBarTheme: AppBarTheme(
             backgroundColor: isDarkMode ? Colors.black87 : Colors.green,
@@ -161,8 +166,24 @@ class MyApp extends ConsumerWidget {
           ),
         ),
         darkTheme: ThemeData.dark(),
-        home: AuthPage(),
+        home: FutureBuilder<bool>(
+          future: _checkIfOnboardingComplete(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Scaffold(body: Center(child: CircularProgressIndicator()));
+            }
+
+            // Show the home page if onboarding is complete
+            if (snapshot.data == true) {
+              return AuthPage(); // Auth page
+            }
+
+            // Otherwise, show the onboarding
+            return OnboardingPage(); // Onboarding page
+          },
+        ),
         routes: {
+          '/home': (context) => AuthPage(),
           '/chat': (context) => ChatPage(
             receiverEmail: 'example@example.com',
             receiverId: 'receiverId',
@@ -174,17 +195,21 @@ class MyApp extends ConsumerWidget {
           ),
           '/settings': (context) => SettingsPage(),
           '/login': (context) => AuthPage(),
-          '/myDonations': (context) {
-            final user = FirebaseAuth.instance.currentUser;
-            if (user != null) {
-              return MyDonationsPage(userId: user.uid);
-            } else {
-              return AuthPage();
-            }
+            '/myDonations': (context) {
+              final user = FirebaseAuth.instance.currentUser;
+              if (user != null) {
+                return MyDonationsPage(userId: user.uid);
+              } else {
+                return AuthPage();
+              }
+            },
           },
-
-        },
-      ),
-    );
+        ),
+      );
+    }
+  
+  Future<bool> _checkIfOnboardingComplete() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isOnboardingComplete') ?? false; // Default to false if not set
   }
 }
