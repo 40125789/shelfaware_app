@@ -78,6 +78,7 @@ Create `.env` in root directory:
 ```bash
 SPOONACULAR_API_KEY=your_api_key_here
 GOOGLE_MAPS_API_KEY=your_other_api_key_here
+MAPBOX_ACCESS_TOKEN=your_access_token_here
 ```
 
 > **Note:** Do not commit your .env file. Add it to .gitignore.
