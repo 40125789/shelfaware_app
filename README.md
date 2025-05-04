@@ -67,7 +67,7 @@ flutter run
 
 ## 📖 Documentation
 
-For detailed instructions on how to use MindYourShelf, please refer to the [User Manual](docs/user_manual.pdf).
+For detailed instructions on how to use MindYourShelf, please refer to the [User Manual](docs/MindYourShelf User Manual.pdf).
 
 For a detailed report on tester feedback, including observations, issues, and suggested improvements, please refer to the [Testers Feedback Report](docs/com.shelfaware.shelfaware_app_feedback.pdf).
 
