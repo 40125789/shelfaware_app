@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:shelfaware_app/models/place.dart';
+import 'package:shelfaware_app/models/place_model.dart';
 
 void main() {
   group('Place', () {

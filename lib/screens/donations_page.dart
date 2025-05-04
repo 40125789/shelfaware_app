@@ -11,7 +11,7 @@ import 'package:shelfaware_app/repositories/user_repository.dart';
 import 'package:shelfaware_app/services/location_service.dart';
 import 'package:shelfaware_app/services/map_service.dart';
 import 'package:shelfaware_app/services/places_service.dart';
-import 'package:shelfaware_app/models/place.dart';
+import 'package:shelfaware_app/models/place_model.dart';
 import 'package:shelfaware_app/models/place_details.dart';
 import 'package:shelfaware_app/models/donation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
