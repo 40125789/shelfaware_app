@@ -2,6 +2,17 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shelfaware_app/models/product_details.dart';
 
+/// A service class for interacting with the Open Food Facts API.
+/// 
+/// This service provides functionality to fetch product details by barcode from
+/// the Open Food Facts database (https://world.openfoodfacts.org/).
+/// 
+/// API Documentation: https://openfoodfacts.github.io/api-documentation/
+/// 
+/// This implementation uses the public Open Food Facts API which is licensed under
+/// the Open Database License (ODbL). For terms of use, see:
+/// https://world.openfoodfacts.org/terms-of-use
+/// 
 class FoodApiService {
   static const String _baseUrl = 'https://world.openfoodfacts.org/api/v0/product';
 

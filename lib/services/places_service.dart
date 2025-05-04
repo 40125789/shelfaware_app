@@ -5,6 +5,21 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shelfaware_app/models/place_model.dart';
 import 'package:shelfaware_app/models/place_details.dart';
 
+/*
+ * This code uses the Google Maps Places API to fetch nearby food banks
+ * and their details.
+ * 
+ * References:
+ * 1. Places API Nearby Search: 
+ *    https://developers.google.com/maps/documentation/places/web-service/search-nearby
+ * 
+ * 2. Places API Place Details: 
+ *    https://developers.google.com/maps/documentation/places/web-service/details
+ * 
+ * API usage is subject to Google's Terms of Service:
+ * https://developers.google.com/maps/terms-20180207
+ */
+
 class PlacesService {
   final String apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 

@@ -3,6 +3,13 @@ import 'package:http/http.dart' as http;
 import 'package:http/src/mock_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+/// This application utilizes the Mapbox Geocoding API for address search functionality.
+/// Mapbox Geocoding API: https://docs.mapbox.com/api/search/geocoding/
+/// © Mapbox, Inc. Used in accordance with Mapbox Terms of Service.
+/// Terms: https://www.mapbox.com/legal/tos
+/// Attribution is required according to Mapbox's terms of service.
+///
+
 class AddressSuggestionUtil {
   static Future<List<dynamic>> fetchAddressSuggestions(String query) async {
     if (query.isEmpty) {

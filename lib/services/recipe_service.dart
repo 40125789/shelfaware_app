@@ -3,6 +3,11 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shelfaware_app/models/recipe_model.dart';
 
+   // This app uses the Spoonacular API (https://spoonacular.com/food-api)
+    // for recipe search and information. The API is used under the terms
+    // specified in Spoonacular's documentation and terms of service.
+    // Documentation: https://spoonacular.com/food-api/docs
+
 class RecipeService {
   final Map<String, List<Recipe>> _recipeCache = {}; // Cache for recipes
 
@@ -12,7 +17,7 @@ class RecipeService {
     if (apiKey.isEmpty) {
       throw Exception('API key is missing!');
     }
-
+  
     String query = ingredients.join(',');
     String cacheKey = 'recipes_$query';
 
