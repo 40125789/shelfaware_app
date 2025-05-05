@@ -7,6 +7,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/utils/system_theme_observer_util.dart';
 
+// Note: Parts of this code were generated with the assistance of
+// ChatGPT and GitHub Copilot, including the theme management
+// and notification preference functionality.
+
 class SettingsState {
   final bool isDarkMode;
   final bool messagesNotifications;
