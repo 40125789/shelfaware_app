@@ -120,7 +120,7 @@ We welcome contributions! You can:
 ### Utilities
 - flutter_dotenv
 - provider
-- hive
+- Riverpod
 - barcode_scan2
 - camera
 - google_ml_kit
