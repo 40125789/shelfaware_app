@@ -8,6 +8,20 @@ import 'package:shelfaware_app/utils/date_utils.dart' as custom_date_utils;
 import 'package:shelfaware_app/components/message_item.dart';
 import 'package:shelfaware_app/components/donation_details_chat_header.dart';
 import 'package:shelfaware_app/components/chat_user_input.dart';
+
+/// ChatPage Screen
+/// 
+/// This file implements a real-time chat interface between users discussing a donation.
+/// 
+/// Some parts of this implementation were developed with assistance from
+/// ChatGPT (OpenAI) and modified to fit the application's specific requirements.
+/// Specifically, the UI animations, message grouping by date, and profanity filtering
+/// logic were implemented with AI assistance.
+/// 
+/// References:
+/// - OpenAI. (2023). ChatGPT [Large language model].
+///   https://chat.openai.com
+
 class ChatPage extends StatefulWidget {
   final String receiverEmail;
   final String receiverId;

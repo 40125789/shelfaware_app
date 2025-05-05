@@ -7,6 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shelfaware_app/providers/chat_list_provider.dart';
 import 'package:shelfaware_app/providers/auth_provider.dart';
 
+/// This code was developed with assistance from GitHub Copilot and ChatGPT.
+/// 
+/// ChatGPT was used to help design the chat list interface, particularly
+/// for implementing the search functionality, unread message indicators,
+/// and formatting the chat list items.
+/// 
+/// OpenAI ChatGPT version: GPT-4
+
 class ChatListPage extends ConsumerStatefulWidget {
   @override
   ChatListPageState createState() => ChatListPageState();
