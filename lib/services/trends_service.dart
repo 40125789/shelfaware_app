@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/repositories/trends_repository.dart';
 
+// This code was partially developed with assistance from ChatGPT
 class TrendsService {
   final TrendsRepository _trendsRepository;
 

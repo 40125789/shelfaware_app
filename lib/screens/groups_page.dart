@@ -1,9 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/services.dart'; // For clipboard functionality
+import 'package:flutter/services.dart'; 
 import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// This screen was designed for managing food inventory sharing groups,
+/// allowing users to create groups, invite others via generated codes,
+/// and join existing groups.
+/// 
+/// Note: This feature was not included in the final build but is
+/// maintained for potential future development as part of the
+/// collaborative inventory management roadmap.
 
 class GroupsPage extends StatefulWidget {
   final String? userId;
@@ -13,6 +21,7 @@ class GroupsPage extends StatefulWidget {
   @override
   _GroupsPageState createState() => _GroupsPageState();
 }
+
 
 class _GroupsPageState extends State<GroupsPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

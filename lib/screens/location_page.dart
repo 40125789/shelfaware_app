@@ -6,6 +6,33 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shelfaware_app/services/location_service.dart';
 import 'package:shelfaware_app/utils/address_suggestion_util.dart';
 
+/// A screen for selecting and managing user location.
+///
+/// This screen allows users to:
+/// - View their current location on a map
+/// - Search for specific locations using address search
+/// - Select a location from search suggestions
+/// - Set and save a location to their user profile in Firestore
+///
+/// The location data is stored as a GeoPoint in the user's document in Firestore.
+/// The screen utilizes Google Maps for displaying the map and the LocationService
+/// for handling location-related operations.
+///
+/// Portions of this code were created with assistance from ChatGPT and GitHub Copilot.
+///
+/// Key components:
+/// - Google Maps integration for visualizing locations
+/// - Firebase authentication for user identification
+/// - Firestore for storing user location data
+/// - Address search with suggestion list
+/// - Location detection using device GPS
+///
+/// Features:
+/// - Automatic location detection
+/// - Manual location search
+/// - Real-time address suggestions
+/// - Persistent location storage
+/// - User-friendly UI with visual markers
 class LocationScreen extends StatefulWidget {
   @override
   _LocationPageState createState() => _LocationPageState();

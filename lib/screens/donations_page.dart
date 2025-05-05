@@ -22,6 +22,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
 
 
+/// This Donations map feature was developed with assistance from ChatGPT.
+/// The map functionality includes displaying donation markers, food bank locations,
+/// and allowing users to view details of each location by tapping on markers.
+
 class DonationsPage extends StatefulWidget {
   @override
   _DonationsScreenState createState() => _DonationsScreenState();
