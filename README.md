@@ -13,6 +13,12 @@ MindYourShelf is a Flutter-based mobile app designed to help users manage their 
 - **Push Notifications:** Get notified when items are about to expire
 - **Monthly Food Stats:** Monitor food waste reduction progress through visual statistics and actionable insights
 
+## 📱 Download on Google Play Store
+
+<a href="https://play.google.com/store/apps/details?id=com.shelfaware.shelfaware_app&pcampaignid=web_share">
+  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80"/>
+</a>
+
 ## 🔧 Tech Stack
 
 - **Flutter:** Cross-platform mobile app development
