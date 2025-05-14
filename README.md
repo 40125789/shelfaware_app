@@ -7,9 +7,9 @@ MindYourShelf is a Flutter-based mobile app designed to help users manage their 
 
 ## ✨ Features
 
-- **Track Food Expiry:** Keep track of the expiry dates of food items and receive notifications before they expire
+- **Track Food Expiry Dates:** Keep track of the expiry dates of food items and receive notifications before they expire
 - **Donate Surplus Food:** Easily donate surplus food to people in your local area
-- **Donation Map:** View donation locations on a map for easy collection
+- **Recipe Suggestions:** Discover recipes tailored to the ingredients you already have at home
 - **Push Notifications:** Get notified when items are about to expire
 - **Monthly Food Stats:** Monitor food waste reduction progress through visual statistics and actionable insights
 
